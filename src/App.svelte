@@ -6,7 +6,9 @@
   import Game from './ui/Game.svelte'
   import NewGame from './ui/NewGame.svelte'
 
-  let game = $state<GameState | null>(loadGame())
+  // $state.raw: Der Spielstand wird nie verändert, sondern bei jedem Zug ersetzt. Ein tief reaktiver
+  // Proxy wäre überflüssig – und die Engine könnte ihn nicht per structuredClone kopieren.
+  let game = $state.raw<GameState | null>(loadGame())
 
   function update(next: GameState | null) {
     game = next

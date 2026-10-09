@@ -22,6 +22,8 @@ export default defineConfig({
       },
     }),
   ],
+  // Klick-Tests (jsdom) brauchen die Browser-Variante von Svelte statt der Server-Variante.
+  resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
   test: {
     include: ['src/**/*.test.ts'],
   },
