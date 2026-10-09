@@ -136,14 +136,14 @@ Jeder Wein hat neben der Stufe eine **Güte von 0–100**. Sie ergibt sich aus Q
 - **Keltern:** passiert automatisch nach der Lese, 1 ha ≈ Ertrag in hl Most.
 - **Lagerkapazität:** Edelstahltank (frisch, schnell fertig) oder Barrique (+5 Güte für Rotwein, 12 Monate Ausbau). Erweiterung kostet 200 € pro hl Edelstahl bzw. 600 € pro hl Barrique.
 - **Ausbauzeit bis zur Abfüllreife:** einfache Weine 3 Monate, Prädikate 6 Monate, Barrique 12 Monate.
-- **Fassweinverkauf** an die Großkellerei geht **jederzeit** und sofort, aber billig (0,8–2 € pro Liter je nach Stufe). Das ist der Liquiditätsanker.
+- **Fassweinverkauf** an die Großkellerei geht **jederzeit** und sofort, aber billig (1,0–3,0 € pro Liter je nach Stufe und Güte). Das ist der Liquiditätsanker: Beim Start-Weingut deckt reiner Fassweinverkauf ungefähr die laufenden Kosten, Gewinn bringt erst die Flasche.
 - **Abfüllung:** 1 hl ergibt 133 Flaschen à 0,75 l. Flaschen, Korken und Etiketten kosten 0,60 € pro Flasche (Mengenrabatt ab 10.000).
 - **Sekt** (ab Jahr 2): Grundwein in Flaschengärung, 9 Monate. Gibt 10 Punkte bei Güte ≥ 80.
 - **Kellermeister:** einstellbar, +5 Güte, 4.000 € pro Monat.
 
 ## 9. Weinprüfung (AP-Nummer)
 
-Der abgefüllte Wein wird angemeldet (Gebühr 150 € pro Charge, mindestens 5 hl). Er bekommt dann seine Prädikatsbezeichnung und **Siegpunkte** (siehe Tabelle). Ohne AP-Nummer gilt jeder Wein als „Deutscher Wein“. Bei der Prüfung werden auch gepanschte Weine entdeckt (siehe §13).
+Der abgefüllte Wein wird angemeldet (Gebühr 150 € pro Posten, mindestens 5 hl = 665 Flaschen). Kleine Abfüllungen desselben Weins landen im selben Posten. Er bekommt dann seine Prädikatsbezeichnung und **Siegpunkte** (siehe Tabelle). Ohne AP-Nummer gilt jeder Wein als „Deutscher Wein“. Bei der Prüfung werden auch gepanschte Weine entdeckt (siehe §13).
 
 ## 10. Vertrieb & Preise
 
@@ -151,21 +151,26 @@ Der abgefüllte Wein wird angemeldet (Gebühr 150 € pro Charge, mindestens 5 h
 |---|---|---|---|
 | Fasswein an Kellerei | – | sehr niedrig | unbegrenzt, sofort |
 | Großhandel | AP-Nummer | niedrig | groß |
-| Hofladen/Direktvermarktung | – | hoch | begrenzt durch Bekanntheit |
-| Online-Shop | 15.000 € Einrichtung | hoch | Bekanntheit × Reichweite |
+| Hofladen/Direktvermarktung | – | hoch, abzüglich 20 % Vertriebskosten | 150 + 30 × Bekanntheit Flaschen/Monat, automatisch |
+| Online-Shop | 15.000 € Einrichtung | wie Hofladen | zusätzlich 40 × Bekanntheit Flaschen/Monat |
 | Exportvertrag | Angebot (Ereignis) | fest vereinbart | feste Menge über 12 Monate, Vertragsstrafe bei Lieferausfall |
 
-**Flaschenpreis** = Basispreis der Stufe × (0,5 + Güte/100) × Faktor Bekanntheit × Faktor Marktsättigung.
+**Flaschenpreis** = Basispreis der Stufe (3 € Deutscher Wein bis 25 € Beerenauslese) × (0,5 + Güte/100) × (0,8 + Bekanntheit/250). Der Großhandel zahlt 45 % davon. Eine Marktsättigung ist für später vorgesehen.
 
-**Bekanntheit** (0–100) steigt durch Prämierungen, Marketing und Hoffeste. Sie sinkt durch Skandale und langsam von selbst.
+Der Hofladen verkauft zuerst geprüfte Weine und Deutschen Wein, ältere Posten zuerst. Ungeprüfte Prädikatsweine dürfen nur als „Deutscher Wein“ verkauft werden und kommen zuletzt dran. Zur Prämierung angemeldete Weine bleiben im Lager.
 
-**Marketing pro Monat:** Social Media (1.000 €, +1 Bekanntheit), Weinprobe/Hoffest (5.000 €, +4, nur Mai–Sep), Messe (12.000 €, +8, nur März).
+**Bekanntheit** (0–100, Start 10) steigt durch Prämierungen und Marketing. Zuwächse schrumpfen mit dem Faktor (1 − Bekanntheit/120), und jeden Monat gehen 3 % verloren. Dauerhaft hohe Bekanntheit braucht deshalb Medaillen, nicht nur Werbung. Skandale (ab M4) senken sie zusätzlich.
+
+**Marketing**, jede Maßnahme höchstens einmal pro Monat: Social Media (1.000 €, +1 Bekanntheit), Weinprobe/Hoffest (5.000 €, +4, nur Mai–Sep), Messe (12.000 €, +8, nur März).
 
 ## 11. Prämierungen
 
 - **Regional (Juni)** und **Bundesweit (November):** bis zu 3 Weine einreichen.
-- Bewertung = Güte + Stufenbonus + Zufall (±5).
+- Nur amtlich geprüfte Weine. Teilnahmegebühr 100 € (regional) bzw. 300 € (Bund).
+- Bewertung = Güte + Stufenbonus (Kabinett +2 bis Beerenauslese +10) + Zufall (±5).
+- Medaillen ab Wertung: regional Gold 88, Silber 80, Bronze 72; Bund Gold 93, Silber 86, Bronze 79.
 - Regional: Gold 20, Silber 10, Bronze 5 Punkte. Bundesweit: Gold 60, Silber 30, Bronze 15 Punkte. Dazu kommt jeweils ein Bonus auf die Bekanntheit.
+- Ein Wein kann jede Prämierung nur einmal gewinnen.
 
 ## 12. Weinberg, Pflanzenschutz & Ereignisse
 
@@ -211,9 +216,9 @@ Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe
 
 ## 14. Finanzen
 
-- **Laufende Kosten:** Festangestellte 3.000 € pro Monat. Unterhalt 50 € pro ha und Monat.
-- **Kredit:** bis 50 % des Werts von Land und Ausstattung, 6 % Zinsen p. a., monatlich belastet.
-- **Landwert:** 25.000 € pro ha brach, bestockt + Rebwert.
+- **Laufende Kosten pro Monat:** Festangestellte 2.500 €, Kellermeister 4.000 €. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
+- **Kredit:** bis 50 % des Betriebswerts (Land 25.000 €/ha, Reben +15.000 €/ha, Tank 150 €/hl), 6 % Zinsen p. a., monatlich belastet. Aufnahme und Tilgung jederzeit in ganzen Euro.
+- **Dispo:** Ein negatives Konto kostet 12 % Zinsen p. a. Die Lese darf ins Minus führen.
 - **Jahresabschluss im Dezember:** Bilanz, Gewinn- und Verlustrechnung, Rangliste.
 
 ## 15. KI-Gegner
@@ -240,7 +245,7 @@ Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheide
 - **PWA:** TypeScript, Vite, Svelte 5 und vite-plugin-pwa; installierbar und offlinefähig
 - **Engine** (`src/engine/`) ohne UI-Abhängigkeit:
   - `GameState` ist ein serialisierbares Objekt
-  - `applyAction(state, action)` und `endMonth(state)` sind reine Funktionen
+  - `applyAction(state, action)` ist eine reine Funktion; der Monatsabschluss läuft über die Aktion `endTurn` des letzten Spielers
   - Ein Seed-basierter Zufallsgenerator (Zustand liegt im GameState)
 - **Spielstände** liegen in IndexedDB (später Export/Import als Datei)
 - **Tests** mit Vitest. Dazu kommt eine Balancing-Simulation, in der KI-Partien im Node-Prozess laufen.
@@ -250,11 +255,20 @@ Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheide
 
 | # | Inhalt |
 |---|---|
-| **M1 – Kernzyklus** | 1 Spieler, 3 Gebiete, 5 Sorten. Wetter, Reife, Lese, Keller, Fassweinverkauf, AP-Prüfung, Punkte |
-| **M2 – Markt** | Abfüllung, Direktvermarktung, Bekanntheit, Marketing, Prämierungen, Kredit |
+| ✅ **M1 – Kernzyklus** | 1 Spieler, 3 Gebiete, 5 Sorten. Wetter, Reife, Lese, Keller, Fassweinverkauf, AP-Prüfung, Punkte |
+| ✅ **M2 – Markt** | Abfüllung, Direktvermarktung, Großhandel, Online-Shop, Bekanntheit, Marketing, Prämierungen, Kellermeister, Tankausbau, Kredit, Insolvenz |
 | **M3 – Gegner** | Hot-Seat, KI-Gegner, Versteigerung, Rangliste |
 | **M4 – Würze** | Krankheiten, Ereignisse, Panschen, Sabotage, Eiswein/Botrytis, Sekt, Export |
 | **M5 – Feinschliff** | alle 13 Gebiete und 11 Sorten, Lexikon, Klimawandel, Tages-Challenge, Grafik und Sound |
+
+### Balancing-Stand nach M2
+
+Eine Simulation mit einfacher, vernünftiger Strategie lief 12 Jahre lang in allen drei Gebieten. Die Strategie: höchstens eine Parzelle pro Jahr pflanzen, Fasswein nur für die Liquidität verkaufen, den Rest abfüllen, prüfen lassen und prämieren lassen.
+
+- Alle drei Gebiete überleben. Die Kreditlast liegt in Jahr 2–4 bei 100.000–180.000 €.
+- Aggressives Wachstum kann in die Insolvenz führen, besonders mit Müller-Thurgau als Startsorte: alles auf Kredit pflanzen, sofort einen Kellermeister einstellen, nichts verkaufen. Das ist gewollt.
+- Nach 12 Jahren stehen 290–430 Punkte. 600 Punkte („Normal“) wären erst nach etwa 16 Jahren erreicht. Das ist zu lang; M4 bringt zusätzliche Punktequellen (Sekt, Eiswein, Beerenauslese, Export).
+- Ab Jahr 7–8 häuft sich Geld ohne sinnvolle Verwendung an. Die Versteigerungen in M3 sollen das als Geldsenke auffangen.
 
 ## 19. Rechtliches
 
