@@ -61,6 +61,42 @@ body {
   color: var(--muted);
 }
 
+.small {
+  font-size: 0.85rem;
+}
+
+.card h2 {
+  font-size: 1.05rem;
+  margin: 0 0 8px;
+}
+
+.item {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.item-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+
+.item > .small {
+  margin: 2px 0 6px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.row input[type='number'] {
+  width: 6em;
+}
+
 button,
 input,
 select {

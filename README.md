@@ -17,6 +17,7 @@ npm run build    # Produktions-Build inkl. Service Worker
 ## Aufbau
 
 - `src/engine/` enthält die Spiellogik ohne UI-Abhängigkeit. `applyAction(state, action)` ist eine reine Funktion, der Zufall ist Seed-basiert.
-- `src/engine/data/` enthält Anbaugebiete, Rebsorten und Qualitätsstufen (die Balancing-Werte).
-- `src/ui/` enthält die Svelte-5-Komponenten.
+- `src/engine/market.ts` enthält reine Berechnungen: Preise, Nachfrage, Kreditrahmen, Prämierungswertung.
+- `src/engine/data/` enthält Anbaugebiete, Rebsorten, Qualitätsstufen und in `economy.ts` alle Kosten- und Balancing-Werte.
+- `src/ui/` enthält die Svelte-5-Komponenten, je Bereich eine Karte. Ein Smoke-Test rendert die Oberfläche serverseitig.
 - `src/save.ts` speichert den Spielstand (aktuell localStorage).
