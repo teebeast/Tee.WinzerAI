@@ -2,7 +2,7 @@ import type { GameState } from './engine/types'
 
 // Für M1 genügt localStorage; laut Design wandert der Spielstand später nach IndexedDB.
 const KEY = 'winzer.save.v1'
-const CURRENT_VERSION: GameState['version'] = 2
+const CURRENT_VERSION: GameState['version'] = 3
 
 export function loadGame(): GameState | null {
   try {

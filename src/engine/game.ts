@@ -1,28 +1,24 @@
 import {
   BOTTLE_COST,
   CELLAR_MASTER_QUALITY_BONUS,
-  CELLAR_MASTER_SALARY,
+  AUCTION_MONTH,
   COMPETITIONS,
   DIRECT_SALES_COST_SHARE,
   HARVEST_COST_PER_HA,
   INSOLVENCY_MONTHS,
-  LOAN_INTEREST_RATE,
   MARKETING,
   MEDAL_NAMES,
   ONLINE_SHOP_COST,
-  OVERDRAFT_INTEREST_RATE,
   OVERFLOW_PRICE_PER_LITER,
   REGISTER_FEE,
   REGISTER_MIN_BOTTLES,
   REPUTATION_DECAY_RATE,
   REPUTATION_SATURATION,
+  SITE_QUALITY_BONUS,
   START_MONEY,
   START_REPUTATION,
   START_TANK_HL,
   TANK_COST_PER_HL,
-  UPKEEP_PER_HA,
-  VINEYARD_COST_PER_HA,
-  WORKER_SALARY,
   type CompetitionInfo,
 } from './data/economy'
 import { GRAPES } from './data/grapes'
@@ -35,17 +31,21 @@ import {
   competitionBaseScore,
   creditLimit,
   hlToBottles,
+  monthlyCosts,
   monthlyDemand,
   upcomingCompetition,
   wholesalePrice,
 } from './market'
+import { generateAuction, placeBid, resolveAuction, validateBid } from './auction'
 import { nextRange } from './rng'
 import type { Action, BottleLot, GameState, Medal, NewGameOptions, Player, Plot, WineInfo } from './types'
+import { addLog, formatEuro, newId } from './util'
 import { drawWeather, makeForecast, SUN_FACTOR, WEATHER_LABELS, type WeatherKind } from './weather'
+
+export { formatEuro }
 
 export const PLANT_MONTHS = [3, 4]
 export const HARVEST_MONTHS = [8, 9, 10, 11, 12]
-const MAX_LOG = 300
 
 /** Basis-Reifezuwachs in °Oe am Ende des jeweiligen Monats */
 const RIPENING_BASE: Record<number, number> = { 8: 20, 9: 18, 10: 12, 11: 5 }
@@ -64,7 +64,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 2,
+    version: 3,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -75,6 +75,7 @@ export function newGame(options: NewGameOptions): GameState {
     targetPoints: options.targetPoints ?? 600,
     winnerId: null,
     finished: false,
+    auction: [],
     nextId: 1,
     log: [],
   }
@@ -84,6 +85,7 @@ export function newGame(options: NewGameOptions): GameState {
       id: `p${i + 1}`,
       name: p.name,
       regionId: p.regionId,
+      ai: p.ai ?? null,
       money: START_MONEY,
       points: 0,
       reputation: START_REPUTATION,
@@ -93,9 +95,9 @@ export function newGame(options: NewGameOptions): GameState {
       hasCellarMaster: false,
       workers: 1,
       plots: [
-        makePlot(state, 'Hauslage', 4, region.startGrape, -10),
-        makePlot(state, 'Südhang', 3, null, null),
-        makePlot(state, 'Talweg', 3, null, null),
+        makePlot(state, 'Hauslage', 4, region.startGrape, -10, 0),
+        makePlot(state, 'Südhang', 3, null, null, 1),
+        makePlot(state, 'Talweg', 3, null, null, -1),
       ],
       cellar: [],
       bottles: [],
@@ -116,6 +118,7 @@ function makePlot(
   hectares: number,
   grape: Plot['grape'],
   plantedYear: number | null,
+  site: number,
 ): Plot {
   return {
     id: newId(state, 'plot'),
@@ -123,20 +126,12 @@ function makePlot(
     hectares,
     grape,
     plantedYear,
+    site,
     oechsle: 0,
     health: 1,
     cropFactor: 1,
     harvestedThisYear: false,
   }
-}
-
-function newId(state: GameState, prefix: string): string {
-  return `${prefix}${state.nextId++}`
-}
-
-function addLog(state: GameState, playerId: string | null, text: string) {
-  state.log.push({ year: state.year, month: state.month, playerId, text })
-  if (state.log.length > MAX_LOG) state.log.splice(0, state.log.length - MAX_LOG)
 }
 
 export function currentPlayer(state: GameState): Player {
@@ -159,10 +154,9 @@ export function usedTankHl(player: Player): number {
 export function computeQuality(player: Player, plot: Plot): number {
   const grape = GRAPES[plot.grape!]
   const suitability = REGIONS[player.regionId].suitability[grape.id]
-  const cellarMaster = player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0
+  const bonus = (player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0) + plot.site * SITE_QUALITY_BONUS
   const raw =
-    20 + grape.qualityPotential * 4 + suitability * 6 + (plot.oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 +
-    cellarMaster
+    20 + grape.qualityPotential * 4 + suitability * 6 + (plot.oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 + bonus
   return Math.max(0, Math.min(100, Math.round(raw)))
 }
 
@@ -293,6 +287,8 @@ export function validateAction(state: GameState, action: Action): string | null 
       if (!Number.isInteger(action.amount) || action.amount <= 0 || action.amount > player.loan) return 'Ungültiger Betrag.'
       if (action.amount > player.money) return 'Nicht genug Geld auf dem Konto.'
       return null
+    case 'bid':
+      return validateBid(state, player, action.parcelId, action.amount)
     case 'endTurn':
       return null
   }
@@ -389,6 +385,9 @@ export function applyAction(state: GameState, action: Action): GameState {
       player.loan -= action.amount
       player.money -= action.amount
       addLog(next, player.id, `${formatEuro(action.amount)} Kredit getilgt.`)
+      break
+    case 'bid':
+      placeBid(next, player, action.parcelId, action.amount)
       break
     case 'endTurn':
       endTurn(next)
@@ -505,6 +504,7 @@ function resolveMonth(state: GameState) {
   addLog(state, null, `Wetter im ${MONTH_NAMES[state.month - 1]}: ${WEATHER_LABELS[weather]}.`)
 
   const competition = Object.values(COMPETITIONS).find((c) => c.month === state.month)
+  if (state.month === AUCTION_MONTH) resolveAuction(state)
 
   for (const player of state.players) {
     if (player.bankrupt) continue
@@ -532,6 +532,7 @@ function resolveMonth(state: GameState) {
   } else {
     state.month++
   }
+  if (state.month === AUCTION_MONTH) generateAuction(state)
   state.forecast = makeForecast(state.rng, state.month, 0.8)
 }
 
@@ -602,22 +603,15 @@ function judgeCompetition(state: GameState, player: Player, competition: Competi
     changeReputation(player, competition.reputation[medal])
     addLog(
       state,
-      player.id,
-      `${competition.name}: ${MEDAL_NAMES[medal]} für ${wineLabel(lot)}! +${competition.points[medal]} Punkte.`,
+      null,
+      `${competition.name}: ${MEDAL_NAMES[medal]} für ${player.name} – ${wineLabel(lot)}! +${competition.points[medal]} Punkte.`,
     )
   }
   player.competitionEntries = []
 }
 
 function payMonthlyCosts(state: GameState, player: Player) {
-  const upkeep = player.plots.reduce(
-    (sum, p) => sum + p.hectares * (p.grape ? VINEYARD_COST_PER_HA : UPKEEP_PER_HA),
-    0,
-  )
-  const interest = (player.loan * LOAN_INTEREST_RATE) / 12
-  const overdraft = player.money < 0 ? (-player.money * OVERDRAFT_INTEREST_RATE) / 12 : 0
-  const salaries = player.workers * WORKER_SALARY + (player.hasCellarMaster ? CELLAR_MASTER_SALARY : 0)
-  player.money -= Math.round(salaries + upkeep + interest + overdraft)
+  player.money -= monthlyCosts(player).total
   if (player.money < 0) addLog(state, player.id, `Konto im Minus: ${formatEuro(player.money)}!`)
 }
 
@@ -628,7 +622,7 @@ function checkInsolvency(state: GameState, player: Player) {
     if (player.monthsInsolvent >= INSOLVENCY_MONTHS) {
       player.bankrupt = true
       player.competitionEntries = []
-      addLog(state, player.id, `${player.name} ist insolvent und scheidet aus.`)
+      addLog(state, null, `${player.name} ist insolvent und scheidet aus.`)
     } else {
       const left = INSOLVENCY_MONTHS - player.monthsInsolvent
       addLog(state, player.id, `Achtung: Kein Kreditrahmen mehr! Noch ${left} Monat${left === 1 ? '' : 'e'} bis zur Insolvenz.`)
@@ -661,7 +655,7 @@ function checkWinner(state: GameState) {
     .sort((a, b) => b.points - a.points)[0]
   if (best) {
     state.winnerId = best.id
-    addLog(state, best.id, `${best.name} erreicht ${best.points} Punkte und gewinnt!`)
+    addLog(state, null, `${best.name} erreicht ${best.points} Punkte und gewinnt!`)
   }
 }
 
@@ -669,6 +663,3 @@ export function wineLabel(wine: WineInfo): string {
   return `${GRAPES[wine.grape].name} ${qualityInfo(wine.level).name} (Jg. ${wine.vintage})`
 }
 
-export function formatEuro(value: number): string {
-  return value.toLocaleString('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 })
-}
