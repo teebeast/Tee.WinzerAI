@@ -1,9 +1,10 @@
 <script lang="ts">
   import { MONTH_NAMES } from '../engine/game'
-  import type { GameState } from '../engine/types'
+  import type { GameState, Player } from '../engine/types'
+  import { iceWineChance } from '../engine/vineyard'
   import { WEATHER_KINDS, WEATHER_LABELS } from '../engine/weather'
 
-  let { game }: { game: GameState } = $props()
+  let { game, player }: { game: GameState; player: Player } = $props()
 </script>
 
 <section class="card">
@@ -16,6 +17,9 @@
       <span class="num">{Math.round(game.forecast[kind] * 100)} %</span>
     </div>
   {/each}
+  {#if game.month === 11 || game.month === 12}
+    <p class="small">❄️ Chance auf Eiswein-Frost (−7 °C) im Dezember: {Math.round(iceWineChance(player.regionId) * 100)} %</p>
+  {/if}
   {#if game.lastWeather}
     <p class="muted">Vormonat: {WEATHER_LABELS[game.lastWeather]}</p>
   {/if}

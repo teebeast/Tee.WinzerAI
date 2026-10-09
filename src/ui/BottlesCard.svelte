@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { COMPETITIONS, MEDAL_NAMES, REGISTER_FEE } from '../engine/data/economy'
-  import { qualityInfo } from '../engine/data/quality'
+  import { COMPETITIONS, MEDAL_NAMES, REGISTER_FEE, REGISTER_MIN_BOTTLES } from '../engine/data/economy'
   import { formatEuro, MONTH_NAMES, validateAction, wineLabel } from '../engine/game'
-  import { bottlePrice, monthlyDemand, upcomingCompetition, wholesalePrice } from '../engine/market'
+  import { bottlePrice, monthlyDemand, registrationPoints, upcomingCompetition, wholesalePrice } from '../engine/market'
   import type { Action, GameState, Player } from '../engine/types'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -33,21 +32,31 @@
     {@const entered = player.competitionEntries.includes(lot.id)}
     <div class="item">
       <div class="item-head">
-        <strong>{wineLabel(lot)}</strong>
+        <strong>{wineLabel(lot)}{lot.adulterated ? ' 🧪' : ''}</strong>
         <span class="muted">{lot.bottles.toLocaleString('de-DE')} Fl. · Güte {lot.quality}</span>
       </div>
       <div class="muted small">
-        {lot.registered ? '✔ amtlich geprüft' : lot.level === 'deutscher-wein' ? 'Deutscher Wein' : 'ungeprüft – wird nur als Deutscher Wein verkauft'}
-        · ab Hof {formatEuro(bottlePrice(lot, player))}/Fl.
+        {#if lot.monthsUntilReady > 0}
+          🍾 reift noch {lot.monthsUntilReady} Monat{lot.monthsUntilReady === 1 ? '' : 'e'} auf der Hefe
+        {:else if lot.registered}
+          ✔ amtlich geprüft
+        {:else if !lot.sparkling && lot.level === 'deutscher-wein'}
+          Deutscher Wein
+        {:else if lot.bottles >= REGISTER_MIN_BOTTLES}
+          ⏳ wartet auf die amtliche Prüfung – erst danach wird verkauft
+        {:else}
+          Restposten (zu klein für eine Prüfung) – geht als {lot.sparkling ? 'einfacher Schaumwein' : 'Deutscher Wein'} weg
+        {/if}
+        · ab Hof {formatEuro(bottlePrice(lot, player, game.year))}/Fl.
         {#each lot.awards as award, i (i)}
           · 🏅 {MEDAL_NAMES[award.medal]} {COMPETITIONS[award.competition].name.split(' ')[0]} {award.year}
         {/each}
         {#if entered}· zur {competition.name} angemeldet{/if}
       </div>
       <div class="row">
-        {#if !lot.registered && lot.level !== 'deutscher-wein'}
+        {#if !lot.registered && lot.monthsUntilReady === 0 && (lot.sparkling || lot.level !== 'deutscher-wein')}
           <button disabled={registerProblem !== null} title={registerProblem ?? ''} onclick={() => run(registerAction)}>
-            Prüfen ({formatEuro(REGISTER_FEE)}, +{qualityInfo(lot.level).apPoints} P.)
+            Prüfen ({formatEuro(REGISTER_FEE)}, +{registrationPoints(lot)} P.)
           </button>
         {/if}
         {#if lot.registered && !entered}
@@ -67,7 +76,7 @@
             Fl.
           </label>
           <button disabled={wholesaleProblem !== null} title={wholesaleProblem ?? ''} onclick={() => run(wholesaleAction)}>
-            Großhandel (+{formatEuro(wholesalePrice(lot, player) * amount)})
+            Großhandel (+{formatEuro(wholesalePrice(lot, player, game.year) * amount)})
           </button>
         {/if}
       </div>

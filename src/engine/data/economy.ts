@@ -1,4 +1,11 @@
-import type { CompetitionId, MarketingKind, Medal } from '../types'
+import type {
+  AdulterationMethod,
+  CompetitionId,
+  MarketingKind,
+  Medal,
+  ProtectionStrategy,
+  SabotageKind,
+} from '../types'
 
 // Startwerte fürs Balancing, siehe docs/spieldesign.md
 
@@ -101,3 +108,65 @@ export const AUCTION_MIN_BID_SHARE = 0.8
 export const AUCTION_OUTSIDE_BID_RANGE: [number, number] = [0.85, 1.35]
 /** Güte-Bonus je Stufe Lagenqualität */
 export const SITE_QUALITY_BONUS = 4
+
+/** Personal: ein Festangestellter je angefangene 10 ha – das Startweingut kommt mit einer Kraft aus */
+export const HECTARES_PER_WORKER = 10
+
+/** Pflanzenschutz: Kosten je bestocktem ha und Saison (verteilt auf Mai–August) und Schutzwirkung */
+export const PROTECTION: Record<ProtectionStrategy, { name: string; costPerHa: number; protection: number }> = {
+  none: { name: 'Kein Pflanzenschutz', costPerHa: 0, protection: 0 },
+  conventional: { name: 'Konventionell', costPerHa: 600, protection: 0.9 },
+  bio: { name: 'Bio', costPerHa: 900, protection: 0.7 },
+}
+export const PROTECTION_MONTHS = [5, 6, 7, 8]
+export const BIO_CONVERSION_YEARS = 3
+/** Aufschlag im Direktverkauf für zertifizierte Bio-Weine */
+export const BIO_PRICE_BONUS = 0.1
+
+/** Eiswein: Frost ≤ −7 °C im Dezember; Chance = Basis + Frostrisiko des Gebiets × Faktor */
+export const ICE_WINE_BASE_CHANCE = 0.2
+export const ICE_WINE_CHANCE_PER_FROST_RISK = 0.04
+export const ICE_WINE_YIELD_SHARE = 0.15
+export const ICE_WINE_MIN_OECHSLE = 80
+
+/** Sekt: Flaschengärung */
+export const SEKT_EXTRA_COST_PER_BOTTLE = 1.0
+export const SEKT_MONTHS = 9
+export const SEKT_QUALITY_BONUS = 3
+export const SEKT_BOTTLE_PRICE = 12
+export const SEKT_COMPETITION_BONUS = 6
+export const SEKT_POINTS_HIGH = 10
+export const SEKT_POINTS_LOW = 3
+export const SEKT_HIGH_QUALITY = 80
+
+/** Panschen: Wirkung und Entdeckungsrisiko bei der amtlichen Prüfung */
+export const ADULTERATION: Record<
+  AdulterationMethod,
+  { name: string; volumeFactor: number; qualityDelta: number; levelSteps: number; detection: number }
+> = {
+  wasser: { name: 'Strecken mit Wasser', volumeFactor: 1.2, qualityDelta: -15, levelSteps: 0, detection: 0.15 },
+  zucker: { name: 'Unerlaubte Aufzuckerung', volumeFactor: 1, qualityDelta: 0, levelSteps: 1, detection: 0.25 },
+  glykol: { name: '„Frostschutz-Süße“', volumeFactor: 1, qualityDelta: 0, levelSteps: 2, detection: 0.4 },
+}
+/** Monatliche Chance einer Kontrolle der Weinaufsicht, solange gepanschter Wein im Betrieb ist */
+export const CONTROL_CHANCE = 0.03
+export const SCANDAL_FINE = 20_000
+export const SCANDAL_POINTS = 50
+export const SCANDAL_REPUTATION = 40
+
+export const SABOTAGE: Record<SabotageKind, { name: string; cost: number }> = {
+  geruecht: { name: 'Gerüchte streuen', cost: 3_000 },
+  weinberg: { name: 'Weinberg beschädigen', cost: 8_000 },
+}
+export const SABOTAGE_RUMOR_REPUTATION = 10
+export const SABOTAGE_VINEYARD_LOSS = 0.3
+export const SABOTAGE_DETECTION = 0.3
+export const SABOTAGE_FINE = 25_000
+export const SABOTAGE_REPUTATION = 30
+
+/** Export: Anfragen ab dieser Bekanntheit, Bonus bei vollständiger Erfüllung, Strafe je fehlender Flasche */
+export const EXPORT_MIN_REPUTATION = 20
+export const EXPORT_OFFER_CHANCE = 0.08
+export const EXPORT_COMPLETION_POINTS = 15
+export const EXPORT_COMPLETION_REPUTATION = 5
+export const EXPORT_PENALTY_PER_BOTTLE = 2

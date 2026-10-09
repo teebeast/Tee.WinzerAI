@@ -43,6 +43,19 @@ describe('Oberfläche', () => {
     }
   })
 
+  it('rendert Sekt, Exportanfrage, Panschen und Konkurrenz', () => {
+    let game = advancedGame()
+    game = applyAction(game, { type: 'makeSekt', batchId: currentPlayer(game).cellar[0].id, hectoliters: 5 })
+    currentPlayer(game).exportOffer = {
+      id: 'x', country: 'Japan', bottlesPerMonth: 500, pricePerBottle: 6,
+      minLevel: 'qualitaetswein', minQuality: 60, months: 12,
+    }
+    const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
+    for (const text of ['Sekt', 'reift noch', 'Anfrage aus Japan', 'Kellertricks', 'Konkurrenz', 'Pflanzenschutz', 'Laufende Kosten']) {
+      expect(body).toContain(text)
+    }
+  })
+
   it('rendert eine Partie gegen die KI mit laufender Versteigerung', () => {
     let game = runAiTurns(
       newGame({

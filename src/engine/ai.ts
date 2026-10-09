@@ -1,5 +1,15 @@
 import { maxAffordableBid, parcelValue } from './auction'
-import { AUCTION_MONTH, BOTTLE_COST, COMPETITIONS, MARKETING, ONLINE_SHOP_COST, TANK_COST_PER_HL } from './data/economy'
+import { SEKT_COST_PER_BOTTLE } from './cellar'
+import {
+  AUCTION_MONTH,
+  BOTTLE_COST,
+  COMPETITIONS,
+  MARKETING,
+  ONLINE_SHOP_COST,
+  SABOTAGE,
+  SABOTAGE_FINE,
+  TANK_COST_PER_HL,
+} from './data/economy'
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
 import {
@@ -23,7 +33,9 @@ import {
   totalHectares,
   wholesalePrice,
 } from './market'
-import type { Action, AiProfileId, CompetitionId, GameState, MarketingKind, Player } from './types'
+import { exportEligible } from './exports'
+import type { Action, AiProfileId, CompetitionId, GameState, MarketingKind, Player, ProtectionStrategy } from './types'
+import { iceWineChance } from './vineyard'
 
 export interface AiProfile {
   id: AiProfileId
@@ -50,6 +62,13 @@ export interface AiProfile {
   maxHectares: number
   /** Anteil des Kreditrahmens, den die KI höchstens ausschöpft */
   maxLoanShare: number
+  protection: ProtectionStrategy
+  /** Lässt in frostsicheren Gebieten eine kleine Parzelle für Eiswein hängen */
+  iceWine: boolean
+  /** Setzt jedes Frühjahr etwas Sekt an */
+  sekt: boolean
+  /** Panscht ab und zu und streut Gerüchte über den Spitzenreiter */
+  intrigue: boolean
 }
 
 export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
@@ -59,6 +78,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['riesling', 'spaetburgunder'], harvestMonth: 10, minOechsle: 73, bulkShare: 0.1, cashReserve: 20_000,
     keepMonthsOfDemand: 12, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: false,
     marketing: ['social', 'messe'], auctionPremium: 1.3, maxHectares: 25, maxLoanShare: 0.6,
+    protection: 'conventional', iceWine: true, sekt: true, intrigue: false,
   },
   genossenschaft: {
     id: 'genossenschaft', name: 'Genossenschafts-Typ',
@@ -66,26 +86,37 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['mueller-thurgau', 'dornfelder', 'silvaner'], harvestMonth: 9, minOechsle: 68, bulkShare: 0.3, cashReserve: 30_000,
     keepMonthsOfDemand: 6, competitions: ['regional', 'bund'], cellarMaster: false, onlineShop: false,
     marketing: ['social'], auctionPremium: 1.15, maxHectares: 40, maxLoanShare: 0.5,
+    protection: 'conventional', iceWine: false, sekt: false, intrigue: false,
   },
   bio: {
     id: 'bio', name: 'Biopionier',
-    description: 'Silvaner und Spätburgunder, alles in die Flasche, Hoffeste und Online-Shop.',
+    description: 'Bio-Weinbau mit Silvaner und Spätburgunder, alles in die Flasche, Hoffeste und Online-Shop.',
     grapes: ['silvaner', 'spaetburgunder', 'riesling'], harvestMonth: 10, minOechsle: 70, bulkShare: 0, cashReserve: 15_000,
-    keepMonthsOfDemand: 18, competitions: ['regional', 'bund'], cellarMaster: false, onlineShop: true,
+    keepMonthsOfDemand: 18, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
     marketing: ['social', 'hoffest'], auctionPremium: 1.1, maxHectares: 20, maxLoanShare: 0.5,
+    protection: 'bio', iceWine: false, sekt: true, intrigue: false,
   },
   schlitzohr: {
     id: 'schlitzohr', name: 'Schlitzohr',
-    description: 'Riskant: kauft auf Pump, bietet hoch und rührt kräftig die Werbetrommel.',
-    grapes: ['dornfelder', 'riesling'], harvestMonth: 10, minOechsle: 65, bulkShare: 0.3, cashReserve: 5_000,
+    description: 'Riskant: kauft auf Pump, bietet hoch, panscht gelegentlich und streut Gerüchte.',
+    grapes: ['dornfelder', 'riesling'], harvestMonth: 10, minOechsle: 65, bulkShare: 0.3, cashReserve: 15_000,
     keepMonthsOfDemand: 8, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
-    marketing: ['social', 'hoffest', 'messe'], auctionPremium: 1.5, maxHectares: 35, maxLoanShare: 0.9,
+    marketing: ['social', 'hoffest', 'messe'], auctionPremium: 1.5, maxHectares: 35, maxLoanShare: 0.8,
+    protection: 'conventional', iceWine: true, sekt: false, intrigue: true,
   },
 }
 
 /** Zusätzliches Polster über der Reserve, ab dem Marketing gebucht wird */
 const MARKETING_BUFFER: Record<MarketingKind, number> = { social: 0, hoffest: 15_000, messe: 30_000 }
 const TANK_STEP = 100
+/** Ab dieser Frostchance lässt die KI Trauben für Eiswein hängen */
+const ICE_WINE_MIN_CHANCE = 0.35
+/** Höchstens dieser Anteil der tragenden Fläche wird für Eiswein riskiert */
+const ICE_WINE_MAX_SHARE = 0.25
+const SEKT_HECTOLITERS = 15
+/** Gepanscht wird nur, wenn ein Skandal (Strafe, beschlagnahmter Jahrgang) verkraftbar wäre */
+const SCHEME_MIN_CREDIT = 150_000
+const SCHEME_MAX_HL = 120
 
 /**
  * Spielt den Zug des aktuellen Computergegners und beendet ihn.
@@ -121,7 +152,7 @@ export function playAiTurn(state: GameState): GameState {
    * finanzierbar bleiben – sonst fehlt später das Geld fürs Abfüllen.
    */
   const canExpand = (cost: number) => {
-    const yearOfCosts = 12 * monthlyCosts(me()).total
+    const yearOfCosts = 12 * monthlyCosts(me(), s.month).total
     const cash = Math.max(0, me().money)
     const fullHeadroom = cash + availableCredit(me()) - cost
     return cash + usableCredit() - cost >= profile.cashReserve && fullHeadroom >= profile.cashReserve + yearOfCosts
@@ -130,6 +161,15 @@ export function playAiTurn(state: GameState): GameState {
   // 1. Liquidität sichern: lieber Kredit als jungen Wein verramschen
   if (me().money < 0) ensureCash(0, 0, true)
   if (me().money < 0) raiseCash(-me().money)
+
+  if (me().protection !== profile.protection) act({ type: 'setProtection', strategy: profile.protection })
+
+  // Exportanfrage nur annehmen, wenn der Vorrat für mehrere Monate reicht
+  const offer = me().exportOffer
+  if (offer) {
+    const stock = exportEligible(me(), offer).reduce((sum, l) => sum + l.bottles, 0)
+    act({ type: 'answerExport', accept: stock >= offer.bottlesPerMonth * 4 })
+  }
 
   // Gestaffeltes Wachstum: erst pflanzen, wenn die letzte Junganlage trägt; erst Land kaufen, wenn alles trägt.
   const hasYoungVines = me().plots.some((p) => p.grape !== null && plotAgeFactor(p, s.year) === 0)
@@ -166,8 +206,32 @@ export function playAiTurn(state: GameState): GameState {
     }
   }
 
-  // 4. Lese – spätestens im Dezember, damit nichts verloren geht
-  if (HARVEST_MONTHS.includes(s.month) && s.month >= profile.harvestMonth) harvestAll()
+  // 4. Lese – eine kleine Nebenfläche bleibt in frostsicheren Gebieten für Eiswein hängen
+  const bearingHa = me()
+    .plots.filter((p) => p.grape !== null && plotAgeFactor(p, s.year) > 0)
+    .reduce((sum, p) => sum + p.hectares, 0)
+  const iceWinePlot =
+    profile.iceWine && iceWineChance(me().regionId) >= ICE_WINE_MIN_CHANCE
+      ? me()
+          .plots.filter((p) => validateAction(s, { type: 'harvest', plotId: p.id }) === null && p.oechsle >= 80)
+          .filter((p) => p.iceWineGamble || p.hectares <= bearingHa * ICE_WINE_MAX_SHARE)
+          .sort((a, b) => a.hectares - b.hectares)[0]
+      : undefined
+  if (iceWinePlot && s.month === 11) act({ type: 'gambleIceWine', plotId: iceWinePlot.id, gamble: true })
+  if (HARVEST_MONTHS.includes(s.month) && s.month >= profile.harvestMonth) harvestAll(iceWinePlot?.id)
+
+  // Sekt: im Frühjahr aus einem einfachen, ausgebauten Grundwein
+  if (profile.sekt && s.month === 4 && !me().bottles.some((l) => l.sparkling && l.monthsUntilReady > 0)) {
+    const base = me()
+      .cellar.filter((b) => b.monthsUntilReady === 0 && (b.level === 'qualitaetswein' || b.level === 'kabinett'))
+      .sort((a, b) => b.quality - a.quality)[0]
+    if (base) {
+      const hectoliters = Math.min(SEKT_HECTOLITERS, base.hectoliters)
+      if (ensureCash(hlToBottles(hectoliters) * SEKT_COST_PER_BOTTLE, 0, true)) {
+        act({ type: 'makeSekt', batchId: base.id, hectoliters })
+      }
+    }
+  }
 
   // 5. Ausgebauten Wein abfüllen, sonst als Fasswein verkaufen
   for (const batch of me().cellar.filter((b) => b.monthsUntilReady === 0)) {
@@ -195,8 +259,10 @@ export function playAiTurn(state: GameState): GameState {
     }
   }
 
-  // 8. Großhandel: Vorrat für den Hofladen behalten, die besten Weine zuerst
+  // 8. Großhandel: Vorrat für Hofladen und Export behalten, die besten Weine zuerst
   sellSurplusWholesale()
+
+  if (profile.intrigue) scheme()
   if (me().money < 0) raiseCash(-me().money)
 
   // 9. Investitionen und Marketing
@@ -221,9 +287,10 @@ export function playAiTurn(state: GameState): GameState {
 
   return applyAction(s, { type: 'endTurn' })
 
-  function harvestAll() {
+  function harvestAll(reservedPlotId?: string) {
     const plots = me()
       .plots.filter((p) => validateAction(s, { type: 'harvest', plotId: p.id }) === null)
+      .filter((p) => !p.iceWineGamble && p.id !== reservedPlotId)
       .filter((p) => p.oechsle >= profile.minOechsle || s.month >= 11)
       .map((p) => ({ plot: p, preview: harvestPreview(s, me(), p) }))
       .sort((a, b) => b.preview.quality - a.preview.quality)
@@ -250,12 +317,38 @@ export function playAiTurn(state: GameState): GameState {
   }
 
   function sellSurplusWholesale() {
-    let keep = monthlyDemand(me()) * profile.keepMonthsOfDemand
+    const contract = me().exportContract
+    let keep =
+      monthlyDemand(me()) * profile.keepMonthsOfDemand +
+      (contract ? contract.bottlesPerMonth * Math.min(3, contract.monthsLeft) : 0)
     for (const lot of [...me().bottles].sort((a, b) => b.quality - a.quality)) {
       if (me().competitionEntries.includes(lot.id)) continue
       const surplus = lot.bottles - Math.max(0, keep)
       keep -= lot.bottles
       if (surplus > 0 && lot.registered) act({ type: 'sellWholesale', lotId: lot.id, bottles: surplus })
+    }
+  }
+
+  /**
+   * Schlitzohr: zuckert alle drei Jahre nach der Lese heimlich einen Wein auf und
+   * streut im Mai Gerüchte über den Spitzenreiter, wenn es sich das leisten kann.
+   */
+  function scheme() {
+    if (s.month === 10 && s.year % 3 === 0 && availableCredit(me()) >= SCHEME_MIN_CREDIT) {
+      // Nur eine kleine Charge riskieren – fliegt sie auf, wird nicht der ganze Jahrgang beschlagnahmt.
+      const target = me()
+        .cellar.filter((b) => b.vintage === s.year && (b.level === 'qualitaetswein' || b.level === 'kabinett'))
+        .filter((b) => b.hectoliters <= SCHEME_MAX_HL)
+        .sort((a, b) => a.hectoliters - b.hectoliters)[0]
+      if (target) act({ type: 'adulterate', batchId: target.id, method: 'zucker' })
+    }
+    if (s.month === 5) {
+      const leader = s.players
+        .filter((p) => p.id !== me().id && !p.bankrupt && p.points > me().points)
+        .sort((a, b) => b.points - a.points)[0]
+      if (leader && me().money >= profile.cashReserve + SABOTAGE.geruecht.cost + SABOTAGE_FINE) {
+        act({ type: 'sabotage', targetId: leader.id, kind: 'geruecht' })
+      }
     }
   }
 
@@ -265,14 +358,14 @@ export function playAiTurn(state: GameState): GameState {
     for (const batch of [...me().cellar].sort((a, b) => a.quality - b.quality)) {
       const missing = target - me().money
       if (missing <= 0) return
-      const hectoliters = Math.min(batch.hectoliters, Math.ceil(missing / bulkPricePerHl(batch)))
+      const hectoliters = Math.min(batch.hectoliters, Math.ceil(missing / Math.max(1, bulkPricePerHl(batch, s))))
       act({ type: 'sellBulk', batchId: batch.id, hectoliters })
     }
     for (const lot of [...me().bottles].sort((a, b) => a.quality - b.quality)) {
       const missing = target - me().money
       if (missing <= 0) return
       if (!lot.registered || me().competitionEntries.includes(lot.id)) continue
-      const bottles = Math.min(lot.bottles, Math.ceil(missing / Math.max(0.01, wholesalePrice(lot, me()))))
+      const bottles = Math.min(lot.bottles, Math.ceil(missing / Math.max(0.01, wholesalePrice(lot, me(), s.year))))
       act({ type: 'sellWholesale', lotId: lot.id, bottles })
     }
   }

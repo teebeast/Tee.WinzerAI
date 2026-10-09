@@ -80,6 +80,15 @@ describe('Bedienung', () => {
     expect(target.textContent).toContain('Zug beenden')
   })
 
+  it('Pflanzenschutz lässt sich umstellen', () => {
+    click('Spiel starten')
+    const select = [...target.querySelectorAll('select')].find((s) => s.querySelector('option[value="bio"]'))!
+    select.value = 'bio'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    flushSync()
+    expect(target.textContent).toContain('In Umstellung')
+  })
+
   it('speichert den Spielstand nach jedem Zug', () => {
     click('Spiel starten')
     click('Monat beenden')

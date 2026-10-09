@@ -19,7 +19,17 @@ export interface Plot {
   /** Mengenfaktor des laufenden Jahrgangs (Fäulnis, später Frost/Hagel) */
   cropFactor: number
   harvestedThisYear: boolean
+  /** Edelfäule hat eingesetzt: weniger Menge, aber sprunghaft mehr Mostgewicht */
+  botrytis: boolean
+  /** Trauben bleiben für Eiswein hängen – gelesen wird nur bei starkem Frost im Dezember */
+  iceWineGamble: boolean
 }
+
+export type AdulterationMethod = 'wasser' | 'zucker' | 'glykol'
+
+export type ProtectionStrategy = 'none' | 'conventional' | 'bio'
+
+export type SabotageKind = 'geruecht' | 'weinberg'
 
 /** Gemeinsame Eigenschaften von Wein im Tank und in der Flasche */
 export interface WineInfo {
@@ -29,6 +39,8 @@ export interface WineInfo {
   level: QualityLevel
   /** Güte 0–100 */
   quality: number
+  /** Heimlich gepanscht – fliegt womöglich bei Prüfung oder Kontrolle auf */
+  adulterated: AdulterationMethod | null
 }
 
 /** Wein im Tank */
@@ -46,12 +58,31 @@ export type Medal = 'gold' | 'silber' | 'bronze'
 export interface BottleLot extends WineInfo {
   id: string
   bottles: number
+  /** Sekt aus Flaschengärung */
+  sparkling: boolean
+  /** Sekt reift noch in der Flasche und ist bis dahin nicht verkäuflich */
+  monthsUntilReady: number
   /** Amtlich geprüft (AP-Nummer) – Voraussetzung für Prädikat, Großhandel und Prämierung */
   registered: boolean
   awards: { competition: CompetitionId; year: number; medal: Medal }[]
 }
 
 export type MarketingKind = 'social' | 'hoffest' | 'messe'
+
+export interface ExportOffer {
+  id: string
+  country: string
+  bottlesPerMonth: number
+  pricePerBottle: number
+  minLevel: QualityLevel
+  minQuality: number
+  months: number
+}
+
+export interface ExportContract extends ExportOffer {
+  monthsLeft: number
+  missedMonths: number
+}
 
 export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
@@ -86,7 +117,6 @@ export interface Player {
   tankCapacityHl: number
   hasOnlineShop: boolean
   hasCellarMaster: boolean
-  workers: number
   plots: Plot[]
   cellar: WineBatch[]
   bottles: BottleLot[]
@@ -94,6 +124,13 @@ export interface Player {
   marketingThisMonth: MarketingKind[]
   /** Für die nächste Prämierung eingereichte Flaschenposten */
   competitionEntries: string[]
+  protection: ProtectionStrategy
+  /** Jahr der Umstellung auf Bio; zertifiziert nach drei Jahren */
+  bioSinceYear: number | null
+  /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
+  intrigueThisMonth: boolean
+  exportOffer: ExportOffer | null
+  exportContract: ExportContract | null
   /** Aufeinanderfolgende Monate ohne Liquidität */
   monthsInsolvent: number
   bankrupt: boolean
@@ -107,7 +144,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 3
+  version: 4
   rng: Rng
   year: number
   month: number
@@ -124,6 +161,8 @@ export interface GameState {
   finished: boolean
   /** Weinberge, die im laufenden Februar versteigert werden */
   auction: AuctionParcel[]
+  /** Restmonate einer Krise der Großkellereien (Fassweinpreis halbiert) */
+  bulkCrisisMonths: number
   nextId: number
   log: LogEntry[]
 }
@@ -143,6 +182,12 @@ export type Action =
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
   | { type: 'bid'; parcelId: string; amount: number }
+  | { type: 'setProtection'; strategy: ProtectionStrategy }
+  | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
+  | { type: 'makeSekt'; batchId: string; hectoliters: number }
+  | { type: 'adulterate'; batchId: string; method: AdulterationMethod }
+  | { type: 'sabotage'; targetId: string; kind: SabotageKind }
+  | { type: 'answerExport'; accept: boolean }
   | { type: 'endTurn' }
 
 export interface NewGameOptions {

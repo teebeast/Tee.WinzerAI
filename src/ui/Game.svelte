@@ -7,6 +7,7 @@
   import BottlesCard from './BottlesCard.svelte'
   import CellarCard from './CellarCard.svelte'
   import EstateCard from './EstateCard.svelte'
+  import ExportCard from './ExportCard.svelte'
   import RankingCard from './RankingCard.svelte'
   import VineyardCard from './VineyardCard.svelte'
   import WeatherCard from './WeatherCard.svelte'
@@ -92,7 +93,8 @@
 
   <main class="grid">
     <AuctionCard {game} {player} {run} />
-    <WeatherCard {game} />
+    <ExportCard {player} {run} />
+    <WeatherCard {game} {player} />
     <VineyardCard {game} {player} {run} />
     <CellarCard {game} {player} {run} />
     <BottlesCard {game} {player} {run} />
