@@ -41,8 +41,13 @@
       if (action.type === 'endTurn' && hotSeat && currentPlayer(next).id !== player.id) handover = true
       onChange(next)
     } catch (e) {
-      if (e instanceof RuleError) error = e.message
-      else throw e
+      if (e instanceof RuleError) {
+        error = e.message
+      } else {
+        // Programmfehler sichtbar machen statt still zu scheitern
+        console.error(e)
+        error = `Interner Fehler: ${e instanceof Error ? e.message : String(e)}`
+      }
     }
   }
 </script>
