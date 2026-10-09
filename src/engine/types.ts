@@ -43,11 +43,13 @@ export interface WineInfo {
   adulterated: AdulterationMethod | null
 }
 
-/** Wein im Tank */
+/** Wein im Tank oder im Barriquefass */
 export interface WineBatch extends WineInfo {
   id: string
   hectoliters: number
   monthsUntilReady: number
+  /** Reift im kleinen Eichenfass statt im Edelstahltank */
+  barrique: boolean
 }
 
 export type CompetitionId = 'regional' | 'bund'
@@ -115,7 +117,11 @@ export interface Player {
   /** Offener Kreditbetrag */
   loan: number
   tankCapacityHl: number
+  barriqueCapacityHl: number
   hasOnlineShop: boolean
+  hasVinothek: boolean
+  /** Im laufenden Jahr an den Großhandel verkaufte Flaschen – drückt den Preis */
+  wholesaleThisYear: number
   hasCellarMaster: boolean
   plots: Plot[]
   cellar: WineBatch[]
@@ -144,7 +150,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 4
+  version: 5
   rng: Rng
   year: number
   month: number
@@ -163,6 +169,12 @@ export interface GameState {
   auction: AuctionParcel[]
   /** Restmonate einer Krise der Großkellereien (Fassweinpreis halbiert) */
   bulkCrisisMonths: number
+  /** Jedes Jahr wird es etwas wärmer: frühere Reife, mehr Hitze, weniger Eiswein */
+  climateChange: boolean
+  /** Spielende nach so vielen Jahren (Tages-Challenge); null = bis zum Punkteziel */
+  yearLimit: number | null
+  /** Datum der Tages-Challenge (JJJJ-MM-TT) */
+  challenge: string | null
   nextId: number
   log: LogEntry[]
 }
@@ -188,10 +200,16 @@ export type Action =
   | { type: 'adulterate'; batchId: string; method: AdulterationMethod }
   | { type: 'sabotage'; targetId: string; kind: SabotageKind }
   | { type: 'answerExport'; accept: boolean }
+  | { type: 'expandBarrique'; hectoliters: number }
+  | { type: 'toBarrique'; batchId: string }
+  | { type: 'buildVinothek' }
   | { type: 'endTurn' }
 
 export interface NewGameOptions {
   seed: number
   players: { name: string; regionId: RegionId; ai?: AiProfileId | null }[]
   targetPoints?: number
+  climateChange?: boolean
+  yearLimit?: number | null
+  challenge?: string | null
 }

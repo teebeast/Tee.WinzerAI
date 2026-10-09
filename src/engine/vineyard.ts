@@ -1,4 +1,6 @@
 import {
+  CLIMATE_HEAT_PER_YEAR,
+  CLIMATE_ICE_WINE_LOSS_PER_YEAR,
   HARVEST_COST_PER_HA,
   ICE_WINE_BASE_CHANCE,
   ICE_WINE_CHANCE_PER_FROST_RISK,
@@ -9,7 +11,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { REGIONS, type RegionId } from './data/regions'
 import { nextFloat } from './rng'
-import { computeQuality, plotAgeFactor, storeWine } from './rules'
+import { climateWarming, computeQuality, plotAgeFactor, storeWine } from './rules'
 import type { GameState, Player, Plot, ProtectionStrategy } from './types'
 import { addLog, formatEuro } from './util'
 import { SUN_FACTOR, type WeatherKind } from './weather'
@@ -40,7 +42,8 @@ export function growPlot(state: GameState, player: Player, plot: Plot, weather: 
   const base = RIPENING_BASE[state.month]
   if (base && plot.oechsle < grape.maxOechsle) {
     const headroom = (grape.maxOechsle - plot.oechsle) / (grape.maxOechsle - RIPENING_START_OECHSLE)
-    const gain = (base * SUN_FACTOR[weather] * (0.8 + region.warmth * 0.04) * headroom) / grape.ripeningNeed
+    const warmth = region.warmth + climateWarming(state)
+    const gain = (base * SUN_FACTOR[weather] * (0.8 + warmth * 0.04) * headroom) / grape.ripeningNeed
     plot.oechsle = Math.min(grape.maxOechsle, plot.oechsle + gain)
   }
 
@@ -105,7 +108,8 @@ export function vineyardEvents(state: GameState, player: Player, weather: Weathe
     plot.health = Math.max(0, plot.health - 0.1)
     addLog(state, player.id, `Hagelschlag über ${plot.name} – die Hälfte der Trauben ist zerstört.`)
   }
-  if ((state.month === 7 || state.month === 8) && weather === 'sonnig' && nextFloat(state.rng) < 0.15) {
+  const heatChance = 0.15 + (state.climateChange ? (state.year - 1) * CLIMATE_HEAT_PER_YEAR : 0)
+  if ((state.month === 7 || state.month === 8) && weather === 'sonnig' && nextFloat(state.rng) < heatChance) {
     for (const plot of plots) {
       plot.cropFactor *= 0.9
       plot.oechsle += 4
@@ -115,8 +119,11 @@ export function vineyardEvents(state: GameState, player: Player, weather: Weathe
   }
 }
 
-export function iceWineChance(regionId: RegionId): number {
-  return ICE_WINE_BASE_CHANCE + REGIONS[regionId].frostRisk * ICE_WINE_CHANCE_PER_FROST_RISK
+/** Chance auf starken Dezemberfrost – der Klimawandel macht Eiswein Jahr für Jahr seltener. */
+export function iceWineChance(state: GameState, regionId: RegionId): number {
+  const base = ICE_WINE_BASE_CHANCE + REGIONS[regionId].frostRisk * ICE_WINE_CHANCE_PER_FROST_RISK
+  const loss = state.climateChange ? (state.year - 1) * CLIMATE_ICE_WINE_LOSS_PER_YEAR : 0
+  return Math.max(0.05, base - loss)
 }
 
 export function validateIceWineGamble(state: GameState, player: Player, plotId: string, gamble: boolean): string | null {

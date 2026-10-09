@@ -22,10 +22,11 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Runde | 1 Monat; alle Spieler ziehen nacheinander, danach wird der Monat aufgelöst |
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
+| Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Gebiet, gleiches Wetter, zwei feste KI-Gegner. Gewertet werden die Punkte nach 10 Jahren, der Bestwert wird auf dem Gerät gespeichert. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
 
-**Startausstattung:** 10 ha Land: 4 ha bestockt mit einer gebietstypischen Rebsorte (Ertrag ab Jahr 1) und zwei brachliegende Parzellen à 3 ha (Südhang: sehr gute Lage, Talweg: einfache Lage). Alles auf einmal zu bepflanzen sprengt das Startkapital, man muss also priorisieren. Die Lese darf das Konto ins Minus bringen (Dispo). Dazu 80.000 € Startkapital, Edelstahltanks mit 300 hl Kapazität und 1 Festangestellter.
+**Startausstattung:** 10 ha Land: 4 ha bestockt mit einer gebietstypischen Rebsorte (Ertrag ab Jahr 1) und zwei brachliegende Parzellen à 3 ha (Südhang: sehr gute Lage, Talweg: einfache Lage). Alles auf einmal zu bepflanzen sprengt das Startkapital, man muss also priorisieren. Die Lese darf das Konto ins Minus bringen (Dispo). Dazu 80.000 € Startkapital, Edelstahltanks mit 300 hl Kapazität und 1 Vollzeitkraft. Die gebietstypische Startsorte ist die Rebsorte, die im Gebiet am besten passt, zum Beispiel Spätburgunder an der Ahr, Silvaner in Franken und Rheinhessen, Lemberger in Württemberg.
 
 ## 3. Anbaugebiete
 
@@ -40,7 +41,7 @@ Es gibt alle 13 deutschen Anbaugebiete. Damit ist auch der Fehler im Original be
 |---|---|---|---|---|
 | Ahr | 5 | 5 | 4 | Spätburgunder |
 | Baden | 9 | 2 | 6 | Grau-/Weiß-/Spätburgunder |
-| Franken | 5 | 6 | 3 | Silvaner, Müller-Thurgau |
+| Franken | 5 | 6 | 3 | Silvaner, Müller-Thurgau, auch Riesling und Spätburgunder |
 | Hessische Bergstraße | 7 | 3 | 5 | Riesling, Grauburgunder |
 | Mittelrhein | 5 | 5 | 5 | Riesling |
 | Mosel | 4 | 6 | 5 | Riesling (Steillage) |
@@ -48,8 +49,8 @@ Es gibt alle 13 deutschen Anbaugebiete. Damit ist auch der Fehler im Original be
 | Pfalz | 9 | 2 | 3 | breites Spektrum, Dornfelder |
 | Rheingau | 6 | 4 | 4 | Riesling, Spätburgunder |
 | Rheinhessen | 7 | 3 | 3 | Silvaner, Müller-Thurgau, Dornfelder |
-| Saale-Unstrut | 3 | 8 | 2 | Müller-Thurgau, Weißburgunder |
-| Sachsen | 3 | 8 | 3 | Müller-Thurgau, Riesling |
+| Saale-Unstrut | 4 | 8 | 2 | Weißburgunder, Müller-Thurgau, Solaris |
+| Sachsen | 4 | 7 | 3 | Müller-Thurgau, Riesling, Solaris |
 | Württemberg | 6 | 4 | 5 | Trollinger, Lemberger |
 
 ## 4. Rebsorten
@@ -99,7 +100,7 @@ Wenn die Aufgabenliste leer ist, kann der Spieler „Bis zum nächsten Ereignis 
 
 - **Monatswetter:** Temperatur-Abweichung, Niederschlag, Sonne. Daraus ergibt sich der **Reifezuwachs in °Oechsle**.
 - **Prognose:** Für die nächsten 2 Monate gibt es Wahrscheinlichkeiten, z. B. „Oktober: 60 % sonnig, 30 % nass, 10 % früher Frost“. Je weiter in der Zukunft, desto unschärfer.
-- **Klimawandel** (abschaltbar): Die Durchschnittstemperatur steigt um 0,05 °C pro Spieljahr. Das bringt frühere Reife, mehr Hitzestress und weniger Eiswein-Chancen, macht aber Rotwein in kühlen Gebieten attraktiver.
+- **Klimawandel** (beim Spielstart abschaltbar, Standard an): Jedes Spieljahr wird jedes Gebiet um 0,1 Wärmestufen wärmer. Die Frostchance für Eiswein sinkt um 1 Prozentpunkt pro Jahr (mindestens 5 %), Hitzewellen werden um 0,5 Prozentpunkte pro Jahr häufiger. Kühle Gebiete holen dadurch im Lauf des Spiels auf.
 
 ### Reife & Lesezeitpunkt
 
@@ -136,7 +137,9 @@ Jeder Wein hat neben der Stufe eine **Güte von 0–100**. Sie ergibt sich aus Q
 ## 8. Keller
 
 - **Keltern:** passiert automatisch nach der Lese, 1 ha ≈ Ertrag in hl Most.
-- **Lagerkapazität:** Edelstahltank (frisch, schnell fertig) oder Barrique (+5 Güte für Rotwein, 12 Monate Ausbau). Erweiterung kostet 200 € pro hl Edelstahl bzw. 600 € pro hl Barrique.
+- **Lagerkapazität:** Edelstahltank (200 € pro hl). Die Barrique-Kapazität kostet 600 € pro hl und wird separat gekauft.
+- **Barrique:** Wein aus dem Tank lässt sich ins Eichenfass umlagern, solange Platz ist. Er reift dann mindestens 12 Monate und gewinnt Güte (Rotwein +6, Weißwein +2); im Tank wird dafür Platz frei. Eiswein und Trockenbeerenauslese bleiben im Tank.
+- **Vinothek:** Verkaufsraum mit Probierstube für 150.000 € und 1.000 € pro Monat. Sie bringt +30 % Ab-Hof-Nachfrage und einmalig +5 Bekanntheit.
 - **Ausbauzeit bis zur Abfüllreife:** einfache Weine 3 Monate, Prädikate 6 Monate, Barrique 12 Monate.
 - **Fassweinverkauf** an die Großkellerei geht **jederzeit** und sofort, aber billig (1,0–3,0 € pro Liter je nach Stufe und Güte). Das ist der Liquiditätsanker: Beim Start-Weingut deckt reiner Fassweinverkauf ungefähr die laufenden Kosten, Gewinn bringt erst die Flasche.
 - **Abfüllung:** 1 hl ergibt 133 Flaschen à 0,75 l. Flaschen, Korken und Etiketten kosten 0,60 € pro Flasche (Mengenrabatt ab 10.000).
@@ -152,7 +155,7 @@ Der abgefüllte Wein wird angemeldet (Gebühr 150 € pro Posten, mindestens 5 h
 | Kanal | Voraussetzung | Preis | Menge |
 |---|---|---|---|
 | Fasswein an Kellerei | – | sehr niedrig | unbegrenzt, sofort |
-| Großhandel | AP-Nummer | niedrig | groß |
+| Großhandel | AP-Nummer | niedrig, sinkt mit der Jahresmenge | groß |
 | Hofladen/Direktvermarktung | – | hoch, abzüglich 20 % Vertriebskosten | 150 + 30 × Bekanntheit Flaschen/Monat, automatisch |
 | Online-Shop | 15.000 € Einrichtung | wie Hofladen | zusätzlich 40 × Bekanntheit Flaschen/Monat |
 | Exportvertrag | Anfrage (ab Bekanntheit 20, 8 % pro Monat) | fest vereinbart, etwa 75 % des Ab-Hof-Grundpreises | 300–1.500 Flaschen/Monat über 12 Monate |
@@ -238,7 +241,8 @@ Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe
 
 ## 14. Finanzen
 
-- **Laufende Kosten pro Monat:** 2.500 € je Festangestelltem, wobei je angefangene 10 ha einer nötig ist; Kellermeister 4.000 €; Pflanzenschutz siehe §12. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
+- **Laufende Kosten pro Monat:** 2.500 € je Vollzeitkraft, eine je 10 ha, mindestens eine, dazwischen anteilig (11 ha = 1,1 Kräfte). Kellermeister 4.000 €, Vinothek 1.000 €, Pflanzenschutz siehe §12.
+- **Marktsättigung im Großhandel:** Je 20.000 Flaschen, die ein Weingut im Jahr an den Großhandel verkauft, zahlt er 10 % weniger, höchstens 50 % weniger. Zum Jahreswechsel wird zurückgesetzt. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
 - **Kredit:** bis 50 % des Betriebswerts (Land 25.000 €/ha, Reben +15.000 €/ha, Tank 150 €/hl), 6 % Zinsen p. a., monatlich belastet. Aufnahme und Tilgung jederzeit in ganzen Euro.
 - **Dispo:** Ein negatives Konto kostet 12 % Zinsen p. a. Die Lese darf ins Minus führen.
 - **Jahresabschluss im Dezember:** Bilanz, Gewinn- und Verlustrechnung, Rangliste.
@@ -267,15 +271,25 @@ Ab M4 kommen hinzu:
 - **Sekt:** Traditionswinzer und Biopionier setzen jeden April 15 hl an.
 - **Schlitzohr:** Es zuckert alle drei Jahre eine kleine Charge (bis 120 hl) auf, aber nur mit mindestens 150.000 € freiem Kreditrahmen. Außerdem streut es im Mai Gerüchte über den Spitzenreiter.
 
+Ab M5 kommen hinzu:
+- **Sparmodus (alle Profile):** Ist der Kredit zu mehr als 75 % ausgeschöpft, wird der Kellermeister entlassen und es gibt nur noch günstiges Marketing, keine Fässer und keine Vinothek. Der Vorrat schrumpft auf drei Monate, der Rest geht an den Großhandel. Ohne diese Regel gab die KI oft geliehenes Geld (etwa fürs Abfüllen) für Gehälter und Werbung aus.
+- **Barrique:** Traditionswinzer und Schlitzohr kaufen ab Jahr 3 bis zu 200 hl Barrique, sobald sie rote Reben haben, und legen den besten frischen Rotwein hinein.
+- **Vinothek:** Jedes Profil baut eine, sobald Reserve, Baukosten und 100.000 € Polster auf dem Konto liegen.
+- **Rebsorten:** Die Wunschliste umfasst jetzt auch die neuen Sorten (Lemberger, Weißburgunder, Grauburgunder, Trollinger, Regent). Gepflanzt wird die, die am besten zum Gebiet passt.
+- **Profilwerte:** Das Schlitzohr nutzt höchstens 70 % des Kreditrahmens und bietet bei Versteigerungen bis 135 % des Schätzwerts.
+
 ## 16. Bedienung
 
 - **Hauptbildschirm (Dashboard)** mit Monat/Jahr, Wetter samt Prognose, Kontostand, Punkten und Rangliste
 - **Weinberg-Karte:** Parzellen als Kacheln zeigen Sorte, Alter, Reife und Gesundheit
-- **Aufgabenliste** „Diesen Monat“ mit Aktionsknöpfen, außerdem der Knopf „Monat beenden“ bzw. „Vorspulen“
+- **Aufgabenliste** „Diesen Monat“: Der Ratgeber (`advisor.ts`) zeigt, was ansteht, etwa Lese, Pflanzzeit, abfüllbereiter Wein, Prüfung, Prämierung, Versteigerung, Exportanfrage, Eiswein-Entscheidung oder ein Minus auf dem Konto.
+- **Vorspulen** (nur mit einem Menschen am Tisch): Monate laufen durch, bis eine wichtige Entscheidung ansteht, höchstens ein Jahr. Die KI zieht wie gewohnt mit.
 - **Keller** als Liste der Chargen (Stufe, Güte, Menge, Reife), **Verkauf** und **Finanzen**
 - **Hot-Seat:** Übergabebildschirm „Spieler 2 ist dran“, damit niemand die Werte der anderen sieht. Er erscheint nur, wenn mehrere Menschen mitspielen; KI-Züge laufen ohne Unterbrechung.
 - **Rangliste** mit Punkten, Bekanntheit, Rebfläche und Vermögen aller Weingüter
-- **Lexikon** und Tooltips für jeden Fachbegriff
+- **Lexikon:** 26 Fachbegriffe von Oechsle bis Vinothek, mit Suche. Dazu Tooltips an den Aktionsknöpfen, die erklären, warum etwas gerade nicht geht.
+- **Grafik:** eine kleine SVG-Landschaft im Kopf, die mit Jahreszeit und Wetter wechselt (kahle Reben im Winter, Trauben ab Juli, Herbstlaub). Im Weinberg zeigen Reifebalken das Mostgewicht.
+- **Sound:** kurze Klänge per Web Audio ohne Audiodateien für Lese, Verkauf, Monatswechsel, Medaille, Frost und Skandal. Ein Ton-Schalter merkt sich die Einstellung.
 - Bedienbar mit Maus, Touch und Tastatur; responsiv vom Handy bis zum Desktop
 
 ## 17. Technik
@@ -285,9 +299,9 @@ Ab M4 kommen hinzu:
   - `GameState` ist ein serialisierbares Objekt
   - `applyAction(state, action)` ist eine reine Funktion; der Monatsabschluss läuft über die Aktion `endTurn` des letzten Spielers
   - Ein Seed-basierter Zufallsgenerator (Zustand liegt im GameState)
-- **Spielstände** liegen in IndexedDB (später Export/Import als Datei)
-- **Tests** mit Vitest, dazu ein serverseitiger Render-Smoke-Test der Oberfläche.
-- **Balancing-Report:** `npm run sim` lässt jedes KI-Profil in jedem Gebiet 5 Partien über 15 Jahre spielen und danach alle Profile gegeneinander antreten (`scripts/balance.sim.ts`).
+- **Spielstände** liegen derzeit in localStorage (ein laufendes Spiel plus die Bestwerte der Tages-Challenge). IndexedDB sowie Export und Import als Datei sind für später vorgesehen.
+- **Tests** mit Vitest: Engine-Tests, ein serverseitiger Render-Smoke-Test und Klick-Tests im simulierten Browser (jsdom).
+- **Balancing-Report:** `npm run sim` lässt jedes KI-Profil in jedem der 13 Gebiete 3 Partien über 15 Jahre spielen und danach alle Profile gegeneinander antreten (`scripts/balance.sim.ts`).
 - **Später:** asynchroner Online-Mehrspieler. Durch die reine Engine reicht es, Aktionen zu synchronisieren.
 
 ## 18. Meilensteine
@@ -298,7 +312,7 @@ Ab M4 kommen hinzu:
 | ✅ **M2 – Markt** | Abfüllung, Direktvermarktung, Großhandel, Online-Shop, Bekanntheit, Marketing, Prämierungen, Kellermeister, Tankausbau, Kredit, Insolvenz |
 | ✅ **M3 – Gegner** | KI-Gegner mit 4 Profilen, Weinbergversteigerung mit Investorengebot, Lagenqualität, Rangliste, Balancing-Report |
 | ✅ **M4 – Würze** | Pflanzenschutz und Krankheiten, Wetter- und Glücksereignisse, Botrytis/BA/TBA, Eiswein-Wette, Sekt, Export, Panschen mit Weinskandal, Sabotage, Personal nach Fläche |
-| **M5 – Feinschliff** | alle 13 Gebiete und 11 Sorten, Lexikon, Klimawandel, Tages-Challenge, Grafik und Sound |
+| ✅ **M5 – Feinschliff** | alle 13 Gebiete und 11 Sorten (inkl. PIWI), Klimawandel, Tages-Challenge, Lexikon, Aufgabenliste und Vorspulen, Barrique, Vinothek, Großhandelssättigung, Landschaftsgrafik und Sound |
 
 ### Balancing-Stand nach M2
 
@@ -326,6 +340,17 @@ Eine Simulation mit einfacher, vernünftiger Strategie lief 12 Jahre lang in all
 - **Spieldauer:** Starke Profile stehen nach 10 Jahren bei 390–780 Punkten, nach 15 Jahren bei 760–1.330. „Normal“ (600) ist nach etwa 9–12 Jahren erreicht.
 - **Kräfteverhältnis:** Biopionier (seit M4 mit Kellermeister) und Traditionswinzer teilen sich die Siege. Das Schlitzohr bleibt durch Skandale und Strafen schwankend, der Genossenschafts-Typ ist der leichte Gegner.
 - **Offen:** Das Vermögen erreicht nach 15 Jahren weiterhin 2–9 Mio. €. M5 sollte eine echte Geldsenke bringen, zum Beispiel Barrique-Ausbau, Kellerneubau oder eine Marktsättigung im Großhandel.
+
+### Balancing-Stand nach M5 (`npm run sim`, 13 Gebiete × 3 Partien × 15 Jahre)
+
+- **Zählfehler im Report:** Bis M4 zählte der Report Insolvenzen mitten im Jahr nicht mit. Die früheren „0 Pleiten“ waren daher zu optimistisch. Nach der Korrektur ging das Schlitzohr in 13 von 39 Partien pleite.
+- **Insolvenz heute:** Mit Sparmodus und anteiligem Personal sind es noch 2 von 39 Partien beim Schlitzohr (beide Sachsen) und 1 von 39 beim Biopionier. Traditionswinzer und Genossenschafts-Typ gehen nie pleite.
+- **Personal:** Wird jetzt anteilig berechnet. Vorher kostete eine Erbschaft von 1 ha über 10 ha hinaus sofort eine ganze zweite Stelle, was Rotwein-Betriebe an der Ahr in die Insolvenz trieb.
+- **Spieldauer:** Starke Profile erreichen 600 Punkte („Normal“) je nach Gebiet nach etwa 8–12 Jahren. Nach 15 Jahren liegen sie zwischen 650 (Württemberg) und 1.790 Punkten (Bergstraße, Baden).
+- **Gebiete:** Warme Riesling- und Burgundergebiete bleiben vorn. Franken (jetzt mit Riesling- und Spätburgunder-Eignung) sowie Sachsen und Saale-Unstrut (eine Wärmestufe mehr) haben aufgeholt.
+- **Offen:**
+  - Das Vermögen erreicht weiterhin 1–12 Mio. €. Barrique, Vinothek und Großhandelssättigung bremsen das nur. Für den Sieg zählen allein die Punkte, das Vermögen dient nur der Rangliste.
+  - Der Genossenschafts-Typ bleibt mit 80–230 Punkten der bewusst leichte Gegner.
 
 ## 19. Rechtliches
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    BARRIQUE_COST_PER_HL,
     CELLAR_MASTER_QUALITY_BONUS,
     CELLAR_MASTER_SALARY,
     LOAN_INTEREST_RATE,
@@ -9,9 +10,10 @@
     SABOTAGE_DETECTION,
     SABOTAGE_FINE,
     TANK_COST_PER_HL,
+    VINOTHEK_COST,
   } from '../engine/data/economy'
   import { formatEuro, validateAction } from '../engine/game'
-  import { availableCredit, creditLimit, monthlyCosts, workersNeeded } from '../engine/market'
+  import { availableCredit, creditLimit, monthlyCosts, staffFte, wholesaleSaturation } from '../engine/market'
   import type { Action, GameState, MarketingKind, Player, SabotageKind } from '../engine/types'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -61,6 +63,24 @@
       >
         +{TANK_STEP} hl Tank ({formatEuro(TANK_STEP * TANK_COST_PER_HL)})
       </button>
+      <button
+        {...button({ type: 'expandBarrique', hectoliters: TANK_STEP })}
+        onclick={() => run({ type: 'expandBarrique', hectoliters: TANK_STEP })}
+        title="Eichenfässer für den Ausbau – vor allem Rotwein gewinnt an Güte"
+      >
+        +{TANK_STEP} hl Barrique ({formatEuro(TANK_STEP * BARRIQUE_COST_PER_HL)})
+      </button>
+      {#if !player.hasVinothek}
+        <button
+          {...button({ type: 'buildVinothek' })}
+          onclick={() => run({ type: 'buildVinothek' })}
+          title="Verkaufsraum mit Probierstube: +30 % Ab-Hof-Absatz"
+        >
+          Vinothek bauen ({formatEuro(VINOTHEK_COST)})
+        </button>
+      {:else}
+        <span class="muted small">✔ Vinothek</span>
+      {/if}
       {#if !player.hasOnlineShop}
         <button {...button({ type: 'buyOnlineShop' })} onclick={() => run({ type: 'buyOnlineShop' })}>
           Online-Shop ({formatEuro(ONLINE_SHOP_COST)})
@@ -82,11 +102,16 @@
       <span class="muted">{formatEuro(costs.total)} diesen Monat</span>
     </div>
     <div class="muted small">
-      Personal {formatEuro(costs.salaries)} ({workersNeeded(player)} Festangestellte{player.hasCellarMaster ? ' + Kellermeister' : ''})
+      Personal {formatEuro(costs.salaries)} ({staffFte(player).toLocaleString('de-DE', { maximumFractionDigits: 1 })} Vollzeitkräfte{player.hasCellarMaster ? ' + Kellermeister' : ''}{player.hasVinothek ? ' + Vinothek' : ''})
       · Weinberge {formatEuro(costs.upkeep)}
       {#if costs.protection > 0}· Pflanzenschutz {formatEuro(costs.protection)}{/if}
       · Zinsen {formatEuro(costs.interest)}
     </div>
+    {#if wholesaleSaturation(player) < 1}
+      <div class="muted small">
+        Großhandel gesättigt: In diesem Jahr gibt es nur noch {Math.round(wholesaleSaturation(player) * 100)} % des üblichen Preises.
+      </div>
+    {/if}
   </div>
 
   {#if rivals.length > 0 && target}

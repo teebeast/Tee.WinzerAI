@@ -1,4 +1,15 @@
-export type GrapeId = 'mueller-thurgau' | 'silvaner' | 'riesling' | 'spaetburgunder' | 'dornfelder'
+export type GrapeId =
+  | 'mueller-thurgau'
+  | 'silvaner'
+  | 'riesling'
+  | 'weissburgunder'
+  | 'grauburgunder'
+  | 'spaetburgunder'
+  | 'dornfelder'
+  | 'trollinger'
+  | 'lemberger'
+  | 'regent'
+  | 'solaris'
 
 export interface Grape {
   id: GrapeId
@@ -17,6 +28,8 @@ export interface Grape {
   /** 0–1: Anfälligkeit für Pilzkrankheiten (Peronospora, Oidium) */
   diseaseSusceptibility: number
   plantCostPerHa: number
+  /** Pilzwiderstandsfähige Neuzüchtung: kaum Krankheiten, aber weniger Prestige */
+  piwi?: boolean
 }
 
 export const GRAPES: Record<GrapeId, Grape> = {
@@ -35,6 +48,16 @@ export const GRAPES: Record<GrapeId, Grape> = {
     yieldPerHa: 80, ripeningNeed: 1.15, maxOechsle: 125, qualityPotential: 9,
     rotSusceptibility: 0.3, diseaseSusceptibility: 0.5, plantCostPerHa: 22_000,
   },
+  weissburgunder: {
+    id: 'weissburgunder', name: 'Weißburgunder', color: 'weiss',
+    yieldPerHa: 85, ripeningNeed: 1.0, maxOechsle: 110, qualityPotential: 7,
+    rotSusceptibility: 0.5, diseaseSusceptibility: 0.5, plantCostPerHa: 22_000,
+  },
+  grauburgunder: {
+    id: 'grauburgunder', name: 'Grauburgunder', color: 'weiss',
+    yieldPerHa: 85, ripeningNeed: 1.0, maxOechsle: 115, qualityPotential: 7,
+    rotSusceptibility: 0.8, diseaseSusceptibility: 0.5, plantCostPerHa: 22_000,
+  },
   spaetburgunder: {
     id: 'spaetburgunder', name: 'Spätburgunder', color: 'rot',
     yieldPerHa: 70, ripeningNeed: 1.15, maxOechsle: 115, qualityPotential: 9,
@@ -44,5 +67,25 @@ export const GRAPES: Record<GrapeId, Grape> = {
     id: 'dornfelder', name: 'Dornfelder', color: 'rot',
     yieldPerHa: 120, ripeningNeed: 0.85, maxOechsle: 92, qualityPotential: 4,
     rotSusceptibility: 0.5, diseaseSusceptibility: 0.5, plantCostPerHa: 18_000,
+  },
+  trollinger: {
+    id: 'trollinger', name: 'Trollinger', color: 'rot',
+    yieldPerHa: 120, ripeningNeed: 1.15, maxOechsle: 90, qualityPotential: 3,
+    rotSusceptibility: 0.5, diseaseSusceptibility: 0.5, plantCostPerHa: 18_000,
+  },
+  lemberger: {
+    id: 'lemberger', name: 'Lemberger', color: 'rot',
+    yieldPerHa: 90, ripeningNeed: 1.15, maxOechsle: 105, qualityPotential: 7,
+    rotSusceptibility: 0.3, diseaseSusceptibility: 0.5, plantCostPerHa: 22_000,
+  },
+  regent: {
+    id: 'regent', name: 'Regent (PIWI)', color: 'rot',
+    yieldPerHa: 85, ripeningNeed: 1.0, maxOechsle: 100, qualityPotential: 5,
+    rotSusceptibility: 0.3, diseaseSusceptibility: 0.1, plantCostPerHa: 20_000, piwi: true,
+  },
+  solaris: {
+    id: 'solaris', name: 'Solaris (PIWI)', color: 'weiss',
+    yieldPerHa: 75, ripeningNeed: 0.75, maxOechsle: 110, qualityPotential: 5,
+    rotSusceptibility: 0.3, diseaseSusceptibility: 0.1, plantCostPerHa: 20_000, piwi: true,
   },
 }

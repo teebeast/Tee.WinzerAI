@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SEKT_MONTHS, SEKT_POINTS_HIGH } from './data/economy'
 import { answerExport, deliverExport } from './exports'
 import { applyAction, currentPlayer, newGame } from './game'
-import { bulkPricePerHl, monthlyCosts, workersNeeded } from './market'
+import { bulkPricePerHl, monthlyCosts, staffFte } from './market'
 import type { GameState, Player } from './types'
 import { resolveIceWine } from './vineyard'
 
@@ -213,11 +213,11 @@ describe('Export', () => {
 })
 
 describe('Betrieb', () => {
-  it('Personal wächst mit der Fläche', () => {
+  it('Personal wächst anteilig mit der Fläche', () => {
     const player = currentPlayer(start())
-    expect(workersNeeded(player)).toBe(1)
+    expect(staffFte(player)).toBe(1)
     player.plots.push({ ...player.plots[1], id: 'extra', hectares: 5 })
-    expect(workersNeeded(player)).toBe(2)
+    expect(staffFte(player)).toBe(1.5)
   })
 
   it('eine Kellerei-Krise halbiert den Fassweinpreis', () => {

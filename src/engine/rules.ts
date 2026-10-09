@@ -4,6 +4,7 @@
  */
 import {
   CELLAR_MASTER_QUALITY_BONUS,
+  CLIMATE_WARMTH_PER_YEAR,
   OVERFLOW_PRICE_PER_LITER,
   REPUTATION_SATURATION,
   SITE_QUALITY_BONUS,
@@ -30,8 +31,18 @@ export function plotAgeFactor(plot: Plot, year: number): number {
   return 1
 }
 
+/** Belegter Edelstahltank – Wein im Barrique zählt nicht mit */
 export function usedTankHl(player: Player): number {
-  return player.cellar.reduce((sum, b) => sum + b.hectoliters, 0)
+  return player.cellar.filter((b) => !b.barrique).reduce((sum, b) => sum + b.hectoliters, 0)
+}
+
+export function usedBarriqueHl(player: Player): number {
+  return player.cellar.filter((b) => b.barrique).reduce((sum, b) => sum + b.hectoliters, 0)
+}
+
+/** Zusätzliche Wärme durch den Klimawandel (Skala der Gebietswärme) */
+export function climateWarming(state: GameState): number {
+  return state.climateChange ? (state.year - 1) * CLIMATE_WARMTH_PER_YEAR : 0
 }
 
 /** Güte 0–100 bei der Lese – `oechsle` überschreibt das Mostgewicht (z. B. für Eiswein). */
@@ -87,7 +98,7 @@ export function removeBatchVolume(player: Player, batch: WineBatch, hectoliters:
 export function storeWine(
   state: GameState,
   player: Player,
-  wine: Omit<WineBatch, 'id' | 'monthsUntilReady' | 'adulterated'>,
+  wine: Omit<WineBatch, 'id' | 'monthsUntilReady' | 'adulterated' | 'barrique'>,
 ) {
   const freeHl = Math.max(0, player.tankCapacityHl - usedTankHl(player))
   const storedHl = Math.min(wine.hectoliters, freeHl)
@@ -99,6 +110,7 @@ export function storeWine(
       hectoliters: storedHl,
       monthsUntilReady: qualityInfo(wine.level).maturingMonths,
       adulterated: null,
+      barrique: false,
     })
   }
   if (overflowHl > 0) {

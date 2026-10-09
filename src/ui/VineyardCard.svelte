@@ -13,7 +13,7 @@
   const grapeIds = Object.keys(GRAPES) as GrapeId[]
   const strategies = Object.keys(PROTECTION) as ProtectionStrategy[]
   let plantChoice = $state<Record<string, GrapeId>>({})
-  const frostChance = $derived(Math.round(iceWineChance(player.regionId) * 100))
+  const frostChance = $derived(Math.round(iceWineChance(game, player.regionId) * 100))
 </script>
 
 <section class="card">
@@ -58,6 +58,13 @@
           {:else if plot.harvestedThisYear}
             gelesen
           {:else}
+            {#if plot.oechsle > 0}
+              <span
+                class="ripeness {GRAPES[plot.grape].color}"
+                style:--ripe="{Math.min(100, (plot.oechsle / 130) * 100)}%"
+                title="Mostgewicht"
+              ></span>
+            {/if}
             {plot.oechsle > 0 ? `${Math.round(plot.oechsle)} °Oe` : 'Reife noch nicht begonnen'}
             · Gesundheit {Math.round(plot.health * 100)} %
             {#if plot.cropFactor < 0.99}· Ertrag {Math.round(plot.cropFactor * 100)} %{/if}
@@ -102,6 +109,21 @@
 <style>
   .warning {
     color: var(--danger);
+  }
+  .ripeness {
+    display: inline-block;
+    width: 60px;
+    height: 8px;
+    margin-right: 4px;
+    border-radius: 4px;
+    vertical-align: middle;
+    background: linear-gradient(90deg, var(--grape) var(--ripe), var(--border) var(--ripe));
+  }
+  .ripeness.weiss {
+    --grape: #b8b14a;
+  }
+  .ripeness.rot {
+    --grape: #7b2346;
   }
   select {
     max-width: 100%;

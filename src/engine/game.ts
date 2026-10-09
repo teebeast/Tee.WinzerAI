@@ -1,5 +1,15 @@
 import { generateAuction, placeBid, resolveAuction, validateBid } from './auction'
-import { bottle, makeSekt, matureCellar, validateBottle, validateSekt } from './cellar'
+import {
+  bottle,
+  expandBarrique,
+  makeSekt,
+  matureCellar,
+  toBarrique,
+  validateBottle,
+  validateExpandBarrique,
+  validateSekt,
+  validateToBarrique,
+} from './cellar'
 import {
   AUCTION_MONTH,
   COMPETITIONS,
@@ -16,6 +26,8 @@ import {
   START_REPUTATION,
   START_TANK_HL,
   TANK_COST_PER_HL,
+  VINOTHEK_COST,
+  VINOTHEK_REPUTATION,
   type CompetitionInfo,
 } from './data/economy'
 import { GRAPES } from './data/grapes'
@@ -87,7 +99,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 4,
+    version: 5,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -100,6 +112,9 @@ export function newGame(options: NewGameOptions): GameState {
     finished: false,
     auction: [],
     bulkCrisisMonths: 0,
+    climateChange: options.climateChange ?? true,
+    yearLimit: options.yearLimit ?? null,
+    challenge: options.challenge ?? null,
     nextId: 1,
     log: [],
   }
@@ -115,7 +130,10 @@ export function newGame(options: NewGameOptions): GameState {
       reputation: START_REPUTATION,
       loan: 0,
       tankCapacityHl: START_TANK_HL,
+      barriqueCapacityHl: 0,
       hasOnlineShop: false,
+      hasVinothek: false,
+      wholesaleThisYear: 0,
       hasCellarMaster: false,
       plots: [
         makePlot(state, 'Hauslage', 4, region.startGrape, -10, 0),
@@ -136,7 +154,13 @@ export function newGame(options: NewGameOptions): GameState {
     }
   })
   state.forecast = makeForecast(state.rng, state.month, 0.8)
-  addLog(state, null, `Jahr 1 beginnt. Ziel: ${state.targetPoints} Punkte.`)
+  addLog(
+    state,
+    null,
+    state.yearLimit
+      ? `Jahr 1 beginnt. Wer nach ${state.yearLimit} Jahren die meisten Punkte hat, gewinnt.`
+      : `Jahr 1 beginnt. Ziel: ${state.targetPoints} Punkte.`,
+  )
   return state
 }
 
@@ -299,6 +323,14 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateSabotage(state, player, action.targetId, action.kind)
     case 'answerExport':
       return validateAnswerExport(player)
+    case 'expandBarrique':
+      return validateExpandBarrique(player, action.hectoliters)
+    case 'toBarrique':
+      return validateToBarrique(player, action.batchId)
+    case 'buildVinothek':
+      if (player.hasVinothek) return 'Die Vinothek steht bereits.'
+      if (player.money < VINOTHEK_COST) return `Nicht genug Geld (benötigt ${formatEuro(VINOTHEK_COST)}).`
+      return null
     case 'endTurn':
       return null
   }
@@ -356,6 +388,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       const lot = lotOf(action.lotId)
       const revenue = Math.round(wholesalePrice(lot, player, next.year) * action.bottles)
       player.money += revenue
+      player.wholesaleThisYear += action.bottles
       removeBottles(player, lot, action.bottles)
       addLog(next, player.id, `${action.bottles} Fl. ${wineLabel(lot)} an den Großhandel: +${formatEuro(revenue)}.`)
       break
@@ -426,6 +459,18 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'answerExport':
       answerExport(next, player, action.accept)
       break
+    case 'expandBarrique':
+      expandBarrique(next, player, action.hectoliters)
+      break
+    case 'toBarrique':
+      toBarrique(next, player, action.batchId)
+      break
+    case 'buildVinothek':
+      player.money -= VINOTHEK_COST
+      player.hasVinothek = true
+      changeReputation(player, VINOTHEK_REPUTATION)
+      addLog(next, null, `${player.name} eröffnet eine Vinothek mit Probierstube.`)
+      break
     case 'endTurn':
       endTurn(next)
       break
@@ -487,7 +532,7 @@ function resolveMonth(state: GameState) {
   const frost = new Map<RegionId, boolean>()
   if (state.month === 12) {
     for (const regionId of new Set(state.players.map((p) => p.regionId))) {
-      frost.set(regionId, nextFloat(state.rng) < iceWineChance(regionId))
+      frost.set(regionId, nextFloat(state.rng) < iceWineChance(state, regionId))
     }
   }
 
@@ -515,6 +560,10 @@ function resolveMonth(state: GameState) {
     endOfYear(state)
     state.month = 1
     state.year++
+    if (state.yearLimit && state.year > state.yearLimit) {
+      finishByTime(state)
+      return
+    }
     addLog(state, null, `Jahr ${state.year} beginnt.`)
   } else {
     state.month++
@@ -598,8 +647,19 @@ function checkInsolvency(state: GameState, player: Player) {
   }
 }
 
+/** Zeitlimit erreicht: Die meisten Punkte gewinnen, auch unterhalb des Punkteziels. */
+function finishByTime(state: GameState) {
+  state.finished = true
+  state.year = state.yearLimit!
+  state.month = 12
+  const best = state.players.filter((p) => !p.bankrupt).sort((a, b) => b.points - a.points)[0]
+  if (!state.winnerId && best) state.winnerId = best.id
+  addLog(state, null, `Nach ${state.yearLimit} Jahren ist Schluss${best ? `: ${best.name} liegt mit ${best.points} Punkten vorn` : ''}.`)
+}
+
 function endOfYear(state: GameState) {
   for (const player of state.players) {
+    player.wholesaleThisYear = 0
     for (const plot of player.plots) {
       const hadCrop = plot.grape !== null && plotAgeFactor(plot, state.year) > 0
       if (hadCrop && !plot.harvestedThisYear && !player.bankrupt) {

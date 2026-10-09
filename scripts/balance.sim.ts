@@ -9,7 +9,7 @@ import { simulate } from '../src/engine/simulate'
 import type { AiProfileId } from '../src/engine/types'
 
 const YEARS = 15
-const SEEDS = [1, 2, 3, 4, 5]
+const SEEDS = [1, 2, 3]
 const profiles = Object.keys(AI_PROFILES) as AiProfileId[]
 const regions = Object.keys(REGIONS) as RegionId[]
 
@@ -18,17 +18,18 @@ const pad = (value: string | number, width: number) => String(value).padStart(wi
 
 it('Solo-Partien je Profil und Gebiet', () => {
   const lines = [
-    `${'Profil'.padEnd(20)}${'Gebiet'.padEnd(13)}${pad('P. J5', 7)}${pad('P. J10', 8)}${pad('P. J15', 8)}${pad('ha', 5)}${pad('Vermögen', 12)}${pad('pleite', 8)}`,
+    `${'Profil'.padEnd(20)}${'Gebiet'.padEnd(22)}${pad('P. J5', 7)}${pad('P. J10', 8)}${pad('P. J15', 8)}${pad('ha', 5)}${pad('Vermögen', 12)}${pad('pleite', 8)}`,
   ]
   for (const ai of profiles) {
     for (const regionId of regions) {
       const runs = SEEDS.map((seed) => simulate({ seed, years: YEARS, players: [{ regionId, ai }] }).snapshots)
       const at = (year: number) => runs.map((s) => s[year - 1]?.players[0]).filter((p) => p !== undefined)
       const final = at(YEARS)
-      const bankrupt = runs.filter((s) => s.at(-1)?.players[0].bankrupt).length
+      // Eine Insolvenz beendet die Partie vorzeitig – dann fehlen Jahresstände.
+      const bankrupt = runs.filter((s) => s.length < YEARS || s.at(-1)?.players[0].bankrupt).length
       lines.push(
         AI_PROFILES[ai].name.padEnd(20) +
-          REGIONS[regionId].name.padEnd(13) +
+          REGIONS[regionId].name.padEnd(22) +
           pad(avg(at(5).map((p) => p.points)), 7) +
           pad(avg(at(10).map((p) => p.points)), 8) +
           pad(avg(final.map((p) => p.points)), 8) +
