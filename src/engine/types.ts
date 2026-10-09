@@ -10,6 +10,8 @@ export interface Plot {
   hectares: number
   grape: GrapeId | null
   plantedYear: number | null
+  /** Lagenqualität −1 bis +2, wirkt auf die Güte */
+  site: number
   /** Aktuelles Mostgewicht in °Oechsle (0 vor Reifebeginn) */
   oechsle: number
   /** 0–1, sinkt durch Fäulnis */
@@ -51,10 +53,30 @@ export interface BottleLot extends WineInfo {
 
 export type MarketingKind = 'social' | 'hoffest' | 'messe'
 
+export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
+
+/** Ein Weinberg, der im Februar versteigert wird */
+export interface AuctionParcel {
+  id: string
+  regionId: RegionId
+  name: string
+  hectares: number
+  grape: GrapeId | null
+  plantedYear: number | null
+  site: number
+  minimumBid: number
+  /** Verdecktes Gebot auswärtiger Investoren – muss überboten werden */
+  outsideBid: number
+  /** Verdeckte Gebote der Spieler je Spieler-ID */
+  bids: Record<string, number>
+}
+
 export interface Player {
   id: string
   name: string
   regionId: RegionId
+  /** null = Mensch, sonst das Profil des Computergegners */
+  ai: AiProfileId | null
   money: number
   points: number
   /** Bekanntheit 0–100 */
@@ -85,7 +107,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 2
+  version: 3
   rng: Rng
   year: number
   month: number
@@ -100,6 +122,8 @@ export interface GameState {
   winnerId: string | null
   /** Ende ohne Sieger, wenn alle insolvent sind */
   finished: boolean
+  /** Weinberge, die im laufenden Februar versteigert werden */
+  auction: AuctionParcel[]
   nextId: number
   log: LogEntry[]
 }
@@ -118,10 +142,11 @@ export type Action =
   | { type: 'cellarMaster'; hire: boolean }
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
+  | { type: 'bid'; parcelId: string; amount: number }
   | { type: 'endTurn' }
 
 export interface NewGameOptions {
   seed: number
-  players: { name: string; regionId: RegionId }[]
+  players: { name: string; regionId: RegionId; ai?: AiProfileId | null }[]
   targetPoints?: number
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { runAiTurns } from './engine/ai'
   import { newGame } from './engine/game'
   import type { GameState, NewGameOptions } from './engine/types'
   import { loadGame, saveGame } from './save'
@@ -20,5 +21,5 @@
 {#if game}
   <Game {game} onChange={update} onQuit={quit} />
 {:else}
-  <NewGame onStart={(options: NewGameOptions) => update(newGame(options))} />
+  <NewGame onStart={(options: NewGameOptions) => update(runAiTurns(newGame(options)))} />
 {/if}

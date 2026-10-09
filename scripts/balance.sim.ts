@@ -1,0 +1,60 @@
+/**
+ * Balancing-Report: `npm run sim`
+ * Jedes KI-Profil spielt in jedem Anbaugebiet mehrere Partien allein, danach treten alle Profile gegeneinander an.
+ */
+import { it } from 'vitest'
+import { AI_PROFILES } from '../src/engine/ai'
+import { REGIONS, type RegionId } from '../src/engine/data/regions'
+import { simulate } from '../src/engine/simulate'
+import type { AiProfileId } from '../src/engine/types'
+
+const YEARS = 15
+const SEEDS = [1, 2, 3, 4, 5]
+const profiles = Object.keys(AI_PROFILES) as AiProfileId[]
+const regions = Object.keys(REGIONS) as RegionId[]
+
+const avg = (values: number[]) => Math.round(values.reduce((a, b) => a + b, 0) / Math.max(1, values.length))
+const pad = (value: string | number, width: number) => String(value).padStart(width)
+
+it('Solo-Partien je Profil und Gebiet', () => {
+  const lines = [
+    `${'Profil'.padEnd(20)}${'Gebiet'.padEnd(13)}${pad('P. J5', 7)}${pad('P. J10', 8)}${pad('P. J15', 8)}${pad('ha', 5)}${pad('Vermögen', 12)}${pad('pleite', 8)}`,
+  ]
+  for (const ai of profiles) {
+    for (const regionId of regions) {
+      const runs = SEEDS.map((seed) => simulate({ seed, years: YEARS, players: [{ regionId, ai }] }).snapshots)
+      const at = (year: number) => runs.map((s) => s[year - 1]?.players[0]).filter((p) => p !== undefined)
+      const final = at(YEARS)
+      const bankrupt = runs.filter((s) => s.at(-1)?.players[0].bankrupt).length
+      lines.push(
+        AI_PROFILES[ai].name.padEnd(20) +
+          REGIONS[regionId].name.padEnd(13) +
+          pad(avg(at(5).map((p) => p.points)), 7) +
+          pad(avg(at(10).map((p) => p.points)), 8) +
+          pad(avg(final.map((p) => p.points)), 8) +
+          pad(avg(final.map((p) => p.hectares)), 5) +
+          pad(avg(final.map((p) => p.netWorth)).toLocaleString('de-DE'), 12) +
+          pad(`${bankrupt}/${SEEDS.length}`, 8),
+      )
+    }
+  }
+  console.log(lines.join('\n'))
+})
+
+it('Alle Profile gegeneinander', () => {
+  for (const regionId of regions) {
+    const wins: Record<string, number> = {}
+    const points: Record<string, number[]> = {}
+    for (const seed of SEEDS) {
+      const { snapshots } = simulate({ seed, years: YEARS, players: profiles.map((ai) => ({ regionId, ai })) })
+      const final = snapshots.at(-1)!.players
+      const best = [...final].sort((a, b) => b.points - a.points)[0]
+      wins[best.ai] = (wins[best.ai] ?? 0) + 1
+      for (const p of final) (points[p.ai] ??= []).push(p.points)
+    }
+    console.log(
+      `${REGIONS[regionId].name}: ` +
+        profiles.map((ai) => `${AI_PROFILES[ai].name} ${avg(points[ai])} P. (${wins[ai] ?? 0} Siege)`).join(' · '),
+    )
+  }
+})

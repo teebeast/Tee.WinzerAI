@@ -92,3 +92,12 @@ export const VINES_VALUE_PER_HA = 15_000
 export const TANK_VALUE_PER_HL = 150
 /** Monate ohne Liquidität bis zur Insolvenz */
 export const INSOLVENCY_MONTHS = 3
+
+/** Weinbergversteigerung */
+export const AUCTION_MONTH = 2
+/** Mindestgebot als Anteil des Schätzwerts */
+export const AUCTION_MIN_BID_SHARE = 0.8
+/** Spanne des verdeckten Investorengebots als Anteil des Schätzwerts */
+export const AUCTION_OUTSIDE_BID_RANGE: [number, number] = [0.85, 1.35]
+/** Güte-Bonus je Stufe Lagenqualität */
+export const SITE_QUALITY_BONUS = 4

@@ -1,14 +1,20 @@
 import {
   BOTTLES_PER_HL,
+  CELLAR_MASTER_SALARY,
   COMPETITIONS,
   FARM_SHOP_BASE_DEMAND,
   FARM_SHOP_DEMAND_PER_REPUTATION,
   LAND_VALUE_PER_HA,
+  LOAN_INTEREST_RATE,
   LOAN_TO_VALUE,
   ONLINE_DEMAND_PER_REPUTATION,
+  OVERDRAFT_INTEREST_RATE,
   TANK_VALUE_PER_HL,
+  UPKEEP_PER_HA,
   VINES_VALUE_PER_HA,
+  VINEYARD_COST_PER_HA,
   WHOLESALE_SHARE,
+  WORKER_SALARY,
   type CompetitionInfo,
 } from './data/economy'
 import { qualityInfo } from './data/quality'
@@ -62,4 +68,32 @@ export function upcomingCompetition(month: number): CompetitionInfo {
 
 export function competitionBaseScore(lot: BottleLot): number {
   return lot.quality + qualityInfo(lot.level).competitionBonus
+}
+
+export interface MonthlyCosts {
+  salaries: number
+  upkeep: number
+  interest: number
+  total: number
+}
+
+/** Laufende Kosten, die am Monatsende abgebucht werden */
+export function monthlyCosts(player: Player): MonthlyCosts {
+  const salaries = player.workers * WORKER_SALARY + (player.hasCellarMaster ? CELLAR_MASTER_SALARY : 0)
+  const upkeep = player.plots.reduce(
+    (sum, p) => sum + p.hectares * (p.grape ? VINEYARD_COST_PER_HA : UPKEEP_PER_HA),
+    0,
+  )
+  const overdraft = player.money < 0 ? -player.money * OVERDRAFT_INTEREST_RATE : 0
+  const interest = (player.loan * LOAN_INTEREST_RATE + overdraft) / 12
+  return { salaries, upkeep, interest, total: Math.round(salaries + upkeep + interest) }
+}
+
+/** Reinvermögen: Betriebswert plus Konto minus Kredit */
+export function netWorth(player: Player): number {
+  return assetValue(player) + player.money - player.loan
+}
+
+export function totalHectares(player: Player): number {
+  return player.plots.reduce((sum, p) => sum + p.hectares, 0)
 }

@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { activeHumans, runAiTurns } from '../engine/ai'
   import { REGIONS } from '../engine/data/regions'
   import { applyAction, currentPlayer, formatEuro, MONTH_NAMES, RuleError } from '../engine/game'
   import type { Action, GameState } from '../engine/types'
+  import AuctionCard from './AuctionCard.svelte'
   import BottlesCard from './BottlesCard.svelte'
   import CellarCard from './CellarCard.svelte'
   import EstateCard from './EstateCard.svelte'
+  import RankingCard from './RankingCard.svelte'
   import VineyardCard from './VineyardCard.svelte'
   import WeatherCard from './WeatherCard.svelte'
 
@@ -18,8 +21,11 @@
   const player = $derived(currentPlayer(game))
   const region = $derived(REGIONS[player.regionId])
   const multiplayer = $derived(game.players.length > 1)
+  /** Mehrere Menschen am selben Gerät: Bildschirm bei jedem Wechsel verdecken */
+  const hotSeat = $derived(game.players.filter((p) => p.ai === null).length > 1)
   const winner = $derived(game.players.find((p) => p.id === game.winnerId))
-  const over = $derived(!!winner || game.finished)
+  const humansLeft = $derived(activeHumans(game).length > 0)
+  const over = $derived(!!winner || game.finished || !humansLeft)
   const recentLog = $derived(
     game.log
       .filter((e) => e.playerId === null || e.playerId === player.id)
@@ -29,9 +35,10 @@
 
   function run(action: Action) {
     try {
-      const next = applyAction(game, action)
+      // Nach einem Zug ziehen die Computergegner, bis wieder ein Mensch dran ist.
+      const next = action.type === 'endTurn' ? runAiTurns(applyAction(game, action)) : applyAction(game, action)
       error = ''
-      if (action.type === 'endTurn' && multiplayer && !next.finished) handover = true
+      if (action.type === 'endTurn' && hotSeat && currentPlayer(next).id !== player.id) handover = true
       onChange(next)
     } catch (e) {
       if (e instanceof RuleError) error = e.message
@@ -61,16 +68,16 @@
 
   {#if over}
     <div class="card banner">
-      <strong>{winner ? `${winner.name} hat gewonnen!` : 'Alle Weingüter sind insolvent – Spiel vorbei.'}</strong>
+      <strong>
+        {#if winner}
+          {winner.name} hat gewonnen!
+        {:else if game.finished}
+          Alle Weingüter sind insolvent – Spiel vorbei.
+        {:else}
+          Du bist insolvent und scheidest aus.
+        {/if}
+      </strong>
       <button onclick={onQuit}>Neues Spiel</button>
-    </div>
-  {/if}
-
-  {#if multiplayer}
-    <div class="ranking">
-      {#each [...game.players].sort((a, b) => b.points - a.points) as p (p.id)}
-        <span class:current={p.id === player.id} class:out={p.bankrupt}>{p.name}: {p.points} P.</span>
-      {/each}
     </div>
   {/if}
 
@@ -79,11 +86,15 @@
   {/if}
 
   <main class="grid">
+    <AuctionCard {game} {player} {run} />
     <WeatherCard {game} />
     <VineyardCard {game} {player} {run} />
     <CellarCard {game} {player} {run} />
     <BottlesCard {game} {player} {run} />
     <EstateCard {game} {player} {run} />
+    {#if multiplayer}
+      <RankingCard {game} {player} />
+    {/if}
     <section class="card">
       <h2>Logbuch</h2>
       <ul class="log">
@@ -97,7 +108,7 @@
   <footer class="bottombar">
     <button class="ghost" onclick={onQuit}>Spiel beenden</button>
     <button class="primary" disabled={over} onclick={() => run({ type: 'endTurn' })}>
-      {multiplayer ? 'Zug beenden' : 'Monat beenden'} →
+      {hotSeat ? 'Zug beenden' : 'Monat beenden'} →
     </button>
   </footer>
 {/if}
@@ -132,23 +143,6 @@
   }
   .negative {
     color: var(--danger);
-  }
-  .ranking {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 16px;
-    max-width: 1200px;
-    margin: 12px auto 0;
-    padding: 0 16px;
-    font-size: 0.9rem;
-  }
-  .ranking .current {
-    font-weight: 600;
-    color: var(--wine);
-  }
-  .ranking .out {
-    text-decoration: line-through;
-    color: var(--muted);
   }
   .grid {
     display: grid;

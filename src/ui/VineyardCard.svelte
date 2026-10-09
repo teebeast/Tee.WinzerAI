@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SITE_LABELS } from '../engine/auction'
   import { GRAPES, type GrapeId } from '../engine/data/grapes'
   import { qualityInfo } from '../engine/data/quality'
   import { formatEuro, harvestPreview, plotAgeFactor, validateAction } from '../engine/game'
@@ -17,7 +18,9 @@
     <div class="item">
       <div class="item-head">
         <strong>{plot.name}</strong>
-        <span class="muted">{plot.hectares} ha · {plot.grape ? GRAPES[plot.grape].name : 'brach'}</span>
+        <span class="muted">
+          {plot.hectares} ha · {plot.grape ? GRAPES[plot.grape].name : 'brach'} · {SITE_LABELS[plot.site]}
+        </span>
       </div>
       {#if plot.grape}
         <div class="muted small">

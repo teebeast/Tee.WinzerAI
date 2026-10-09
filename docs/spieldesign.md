@@ -25,7 +25,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
 
-**Startausstattung:** 10 ha Land: 4 ha bestockt mit einer gebietstypischen Rebsorte (Ertrag ab Jahr 1) und zwei brachliegende Parzellen à 3 ha. Alles auf einmal zu bepflanzen sprengt das Startkapital, man muss also priorisieren. Die Lese darf das Konto ins Minus bringen (Dispo). Dazu 80.000 € Startkapital, Edelstahltanks mit 300 hl Kapazität und 1 Festangestellter.
+**Startausstattung:** 10 ha Land: 4 ha bestockt mit einer gebietstypischen Rebsorte (Ertrag ab Jahr 1) und zwei brachliegende Parzellen à 3 ha (Südhang: sehr gute Lage, Talweg: einfache Lage). Alles auf einmal zu bepflanzen sprengt das Startkapital, man muss also priorisieren. Die Lese darf das Konto ins Minus bringen (Dispo). Dazu 80.000 € Startkapital, Edelstahltanks mit 300 hl Kapazität und 1 Festangestellter.
 
 ## 3. Anbaugebiete
 
@@ -194,7 +194,12 @@ Der Hofladen verkauft zuerst geprüfte Weine und Deutschen Wein, ältere Posten 
 - Kellerei-Insolvenz (Fassweinpreis halbiert)
 - Erbschaft eines Weinbergs, Kontrolle der Weinaufsicht
 
-**Weinbergversteigerung (Februar):** 1–3 Parzellen à 1–5 ha mit Lagenqualität (−1 bis +2 Güte-Stufen). Sie wird als Bietrunde gegen KI und Mitspieler ausgetragen.
+**Weinbergversteigerung (Februar):**
+- Je Anbaugebiet, in dem noch jemand wirtschaftet, kommen 1–2 Weinberge à 1–5 ha unter den Hammer. Rund 60 % davon sind bereits bestockt (3–27 Jahre alt) und tragen sofort, der Rest ist Brache.
+- Die Lagenqualität reicht von −1 bis +2 und bringt je Stufe ±4 Güte. Ein Schätzwert wird angezeigt: Boden 25.000 €/ha plus Reben 15.000 €/ha, je Lagenstufe ±15 %. Das Mindestgebot liegt bei 80 % des Schätzwerts.
+- Mitbieten darf, wer im selben Gebiet wirtschaftet. Die Gebote sind verdeckt und können bis Monatsende geändert oder zurückgezogen werden. Ein Gebot muss über Konto und freien Kreditrahmen finanzierbar sein.
+- Auswärtige Investoren bieten verdeckt 85–135 % des Schätzwerts. Das höchste Spielergebot gewinnt nur, wenn es darüber liegt. So gibt es auch im Einzelspiel Bietspannung, und der Investorenpreis wird hinterher veröffentlicht.
+- Ein Fehlbetrag beim Kauf wird automatisch über den Kredit gedeckt.
 
 ## 13. Panschen & Sabotage
 
@@ -223,12 +228,22 @@ Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe
 
 ## 15. KI-Gegner
 
-Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheiden sich nur in ihren Gewichtungen.
+Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen. Sie sind deterministisch und unterscheiden sich nur in ihren Gewichtungen (`src/engine/ai.ts`).
 
-- **Traditionswinzer:** Riesling/Spätburgunder, Handlese, Prämierungen
-- **Genossenschafts-Typ:** Masse, Vollernter, Fasswein und Großhandel
-- **Biopionier:** PIWI und Bio, Direktvermarktung
-- **Schlitzohr:** riskant, panscht und sabotiert gelegentlich
+| Profil | Sorten | Stil | Stärke |
+|---|---|---|---|
+| **Traditionswinzer** | Riesling, Spätburgunder | späte Lese, wenig Fasswein, Kellermeister, Messe, beide Prämierungen | stark |
+| **Genossenschafts-Typ** | Müller-Thurgau, Dornfelder, Silvaner | frühe Lese, 30 % Fasswein, viel Großhandel, kaum Marketing | leicht |
+| **Biopionier** | Silvaner, Spätburgunder, Riesling | kein Fasswein, großer Ab-Hof-Vorrat, Online-Shop, Hoffeste | stark |
+| **Schlitzohr** | Dornfelder, Riesling | bis 90 % Kreditrahmen, bietet bei Versteigerungen am höchsten | stark, schwankend |
+
+Gemeinsame Grundregeln aller KI-Gegner:
+- **Gestaffeltes Wachstum:** Gepflanzt wird erst, wenn die letzte Junganlage trägt. Land wird erst ersteigert, wenn alle Flächen tragen.
+- **Expansion nur mit Puffer:** Nach dem Pflanzen oder Ersteigern müssen Reserve plus zwölf Monate laufende Kosten finanzierbar bleiben.
+- **Betriebsnotwendiges hat Vorrang:** Abfüllen, Tankausbau und Liquidität dürfen den vollen Kreditrahmen nutzen. Lieber Kredit aufnehmen als jungen Wein verramschen.
+- **Prämierungen:** Angemeldet wird erst im Monat der Prämierung, damit der Wein nicht lange im Lager blockiert.
+
+Panschen und Sabotage für das Schlitzohr folgen mit M4.
 
 ## 16. Bedienung
 
@@ -236,7 +251,8 @@ Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheide
 - **Weinberg-Karte:** Parzellen als Kacheln zeigen Sorte, Alter, Reife und Gesundheit
 - **Aufgabenliste** „Diesen Monat“ mit Aktionsknöpfen, außerdem der Knopf „Monat beenden“ bzw. „Vorspulen“
 - **Keller** als Liste der Chargen (Stufe, Güte, Menge, Reife), **Verkauf** und **Finanzen**
-- **Hot-Seat:** Übergabebildschirm „Spieler 2 ist dran“, damit niemand die Werte der anderen sieht
+- **Hot-Seat:** Übergabebildschirm „Spieler 2 ist dran“, damit niemand die Werte der anderen sieht. Er erscheint nur, wenn mehrere Menschen mitspielen; KI-Züge laufen ohne Unterbrechung.
+- **Rangliste** mit Punkten, Bekanntheit, Rebfläche und Vermögen aller Weingüter
 - **Lexikon** und Tooltips für jeden Fachbegriff
 - Bedienbar mit Maus, Touch und Tastatur; responsiv vom Handy bis zum Desktop
 
@@ -248,7 +264,8 @@ Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheide
   - `applyAction(state, action)` ist eine reine Funktion; der Monatsabschluss läuft über die Aktion `endTurn` des letzten Spielers
   - Ein Seed-basierter Zufallsgenerator (Zustand liegt im GameState)
 - **Spielstände** liegen in IndexedDB (später Export/Import als Datei)
-- **Tests** mit Vitest. Dazu kommt eine Balancing-Simulation, in der KI-Partien im Node-Prozess laufen.
+- **Tests** mit Vitest, dazu ein serverseitiger Render-Smoke-Test der Oberfläche.
+- **Balancing-Report:** `npm run sim` lässt jedes KI-Profil in jedem Gebiet 5 Partien über 15 Jahre spielen und danach alle Profile gegeneinander antreten (`scripts/balance.sim.ts`).
 - **Später:** asynchroner Online-Mehrspieler. Durch die reine Engine reicht es, Aktionen zu synchronisieren.
 
 ## 18. Meilensteine
@@ -257,7 +274,7 @@ Die KI-Gegner nutzen dieselben Regeln und Aktionen wie Menschen und unterscheide
 |---|---|
 | ✅ **M1 – Kernzyklus** | 1 Spieler, 3 Gebiete, 5 Sorten. Wetter, Reife, Lese, Keller, Fassweinverkauf, AP-Prüfung, Punkte |
 | ✅ **M2 – Markt** | Abfüllung, Direktvermarktung, Großhandel, Online-Shop, Bekanntheit, Marketing, Prämierungen, Kellermeister, Tankausbau, Kredit, Insolvenz |
-| **M3 – Gegner** | Hot-Seat, KI-Gegner, Versteigerung, Rangliste |
+| ✅ **M3 – Gegner** | KI-Gegner mit 4 Profilen, Weinbergversteigerung mit Investorengebot, Lagenqualität, Rangliste, Balancing-Report |
 | **M4 – Würze** | Krankheiten, Ereignisse, Panschen, Sabotage, Eiswein/Botrytis, Sekt, Export |
 | **M5 – Feinschliff** | alle 13 Gebiete und 11 Sorten, Lexikon, Klimawandel, Tages-Challenge, Grafik und Sound |
 
@@ -269,6 +286,14 @@ Eine Simulation mit einfacher, vernünftiger Strategie lief 12 Jahre lang in all
 - Aggressives Wachstum kann in die Insolvenz führen, besonders mit Müller-Thurgau als Startsorte: alles auf Kredit pflanzen, sofort einen Kellermeister einstellen, nichts verkaufen. Das ist gewollt.
 - Nach 12 Jahren stehen 290–430 Punkte. 600 Punkte („Normal“) wären erst nach etwa 16 Jahren erreicht. Das ist zu lang; M4 bringt zusätzliche Punktequellen (Sekt, Eiswein, Beerenauslese, Export).
 - Ab Jahr 7–8 häuft sich Geld ohne sinnvolle Verwendung an. Die Versteigerungen in M3 sollen das als Geldsenke auffangen.
+
+### Balancing-Stand nach M3 (`npm run sim`)
+
+- **Insolvenz:** Kein KI-Profil geht in 5 Partien × 3 Gebieten × 15 Jahren pleite. Ohne gestaffeltes Wachstum gerieten Traditionswinzer und Schlitzohr in eine Kreditspirale. Sie konnten das Abfüllen nicht mehr bezahlen und verkauften alles als Fasswein.
+- **Spieldauer:** Starke Profile haben nach 5 Jahren rund 60–150 Punkte, nach 10 Jahren 300–640 und nach 15 Jahren 430–1.040. „Normal“ (600) ist damit nach etwa 11–13 Jahren erreicht, „Kurz“ (300) nach 7–9.
+- **Kräfteverhältnis:** Im direkten Vergleich gewinnt meist der Traditionswinzer, an der Mosel teilen sich Biopionier, Schlitzohr und Traditionswinzer die Siege. Der Genossenschafts-Typ bleibt mit 50–260 Punkten bewusst der leichte Gegner.
+- **Gebiete:** Rheinhessen liegt bei Biopionier und Schlitzohr deutlich zurück, weil Müller-Thurgau als Startsorte wenig Potenzial hat. Das sollte M5 mit allen Gebieten neu bewertet werden.
+- **Offen:** Das Vermögen erreicht nach 15 Jahren 3–12 Mio. €. Die Versteigerungen allein schöpfen das nicht ab, weil Investoren viele Lagen wegschnappen und die KI bei 20–35 ha aufhört. Ideen für M4: Barrique und Sekt als Investitionen, mehr Personal ab einer bestimmten Fläche, Marktsättigung im Großhandel.
 
 ## 19. Rechtliches
 

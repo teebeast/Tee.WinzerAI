@@ -1,5 +1,6 @@
 import { render } from 'svelte/server'
 import { describe, expect, it } from 'vitest'
+import { runAiTurns } from '../engine/ai'
 import { applyAction, currentPlayer, newGame } from '../engine/game'
 import type { GameState } from '../engine/types'
 import Game from './Game.svelte'
@@ -37,7 +38,25 @@ describe('Oberfläche', () => {
   it('rendert ein fortgeschrittenes Spiel mit allen Bereichen', () => {
     const game = advancedGame()
     const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
-    for (const text of ['Weinberg', 'Keller', 'Flaschenlager', 'Betrieb', 'Logbuch', 'Großhandel', 'Zug beenden']) {
+    for (const text of ['Weinberg', 'Keller', 'Flaschenlager', 'Betrieb', 'Logbuch', 'Großhandel', 'Zug beenden', 'Rangliste']) {
+      expect(body).toContain(text)
+    }
+  })
+
+  it('rendert eine Partie gegen die KI mit laufender Versteigerung', () => {
+    let game = runAiTurns(
+      newGame({
+        seed: 3,
+        players: [
+          { name: 'Anna', regionId: 'mosel' },
+          { name: 'Steinbach', regionId: 'mosel', ai: 'tradition' },
+        ],
+      }),
+    )
+    game = runAiTurns(applyAction(game, { type: 'endTurn' })) // Februar
+    expect(game.auction.length).toBeGreaterThan(0)
+    const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
+    for (const text of ['Weinbergversteigerung', 'Mindestgebot', 'Rangliste', 'KI Traditionswinzer', 'Monat beenden']) {
       expect(body).toContain(text)
     }
   })
