@@ -155,6 +155,8 @@ function awardParcel(state: GameState, player: Player, parcel: AuctionParcel, pr
     health: 1,
     cropFactor: 1,
     harvestedThisYear: false,
+    botrytis: false,
+    iceWineGamble: false,
   })
 
   // Fehlbetrag automatisch über den Kredit decken – der neue Weinberg erhöht bereits den Rahmen.

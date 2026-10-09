@@ -5,17 +5,25 @@
     LOAN_INTEREST_RATE,
     MARKETING,
     ONLINE_SHOP_COST,
+    SABOTAGE,
+    SABOTAGE_DETECTION,
+    SABOTAGE_FINE,
     TANK_COST_PER_HL,
   } from '../engine/data/economy'
   import { formatEuro, validateAction } from '../engine/game'
-  import { availableCredit, creditLimit } from '../engine/market'
-  import type { Action, GameState, MarketingKind, Player } from '../engine/types'
+  import { availableCredit, creditLimit, monthlyCosts, workersNeeded } from '../engine/market'
+  import type { Action, GameState, MarketingKind, Player, SabotageKind } from '../engine/types'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
 
   const marketingKinds = Object.keys(MARKETING) as MarketingKind[]
   const TANK_STEP = 100
+  const sabotageKinds = Object.keys(SABOTAGE) as SabotageKind[]
   let creditAmount = $state(10_000)
+  let sabotageTarget = $state('')
+  const rivals = $derived(game.players.filter((p) => p.id !== player.id && !p.bankrupt))
+  const costs = $derived(monthlyCosts(player, game.month))
+  const target = $derived(rivals.find((p) => p.id === sabotageTarget) ?? rivals[0])
 
   function button(action: Action) {
     const problem = validateAction(game, action)
@@ -70,6 +78,41 @@
 
   <div class="item">
     <div class="item-head">
+      <strong>Laufende Kosten</strong>
+      <span class="muted">{formatEuro(costs.total)} diesen Monat</span>
+    </div>
+    <div class="muted small">
+      Personal {formatEuro(costs.salaries)} ({workersNeeded(player)} Festangestellte{player.hasCellarMaster ? ' + Kellermeister' : ''})
+      · Weinberge {formatEuro(costs.upkeep)}
+      {#if costs.protection > 0}· Pflanzenschutz {formatEuro(costs.protection)}{/if}
+      · Zinsen {formatEuro(costs.interest)}
+    </div>
+  </div>
+
+  {#if rivals.length > 0 && target}
+    <div class="item">
+      <div class="item-head">
+        <strong>Konkurrenz</strong>
+        <span class="muted small">{Math.round(SABOTAGE_DETECTION * 100)} % Risiko, erwischt zu werden ({formatEuro(SABOTAGE_FINE)} Strafe)</span>
+      </div>
+      <div class="row">
+        <select bind:value={() => target.id, (v) => (sabotageTarget = v)} aria-label="Ziel">
+          {#each rivals as rival (rival.id)}
+            <option value={rival.id}>{rival.name}</option>
+          {/each}
+        </select>
+        {#each sabotageKinds as kind (kind)}
+          {@const action = { type: 'sabotage', targetId: target.id, kind } as const}
+          <button class="danger" {...button(action)} onclick={() => run(action)}>
+            {SABOTAGE[kind].name} ({formatEuro(SABOTAGE[kind].cost)})
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
+
+  <div class="item">
+    <div class="item-head">
       <strong>Kredit</strong>
       <span class="muted">{formatEuro(player.loan)} von {formatEuro(creditLimit(player))}</span>
     </div>
@@ -114,6 +157,10 @@
   .danger {
     color: var(--danger);
     font-weight: 600;
+  }
+  button.danger {
+    border-color: var(--danger);
+    font-weight: normal;
   }
   input[type='number'] {
     width: 8em;

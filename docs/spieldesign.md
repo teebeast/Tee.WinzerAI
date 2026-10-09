@@ -82,7 +82,7 @@ Jeder Monat zeigt eine **Aufgabenliste** mit dem, was jetzt sinnvoll ist. Pflich
 | Feb | Rebschnitt, **Versteigerung von Weinbergen** | Abfüllen, Verkauf |
 | Mär | Pflanzen möglich | Messe (Reputation) |
 | Apr | Pflanzen möglich, **Spätfrostrisiko** | |
-| Mai | Pflanzenschutz-Strategie festlegen, Spätfrostrisiko | |
+| Mai | Pflanzenschutz läuft (Kosten Mai–August), Spätfrostrisiko | |
 | Jun | Laubarbeit | **Regionale Weinprämierung** |
 | Jul | **Grüne Lese** (−30 % Menge, +1 Stufe Qualität), Hagelrisiko | Hoffest/Weinprobe |
 | Aug | Reifebeginn, Lese für Sekt-Grundwein möglich | Flaschen/Etiketten bestellen |
@@ -105,8 +105,10 @@ Wenn die Aufgabenliste leer ist, kann der Spieler „Bis zum nächsten Ereignis 
 
 - Ab August steigt das Mostgewicht jeden Monat abhängig von Sonne, Gebietswärme und Reifebedarf der Sorte.
 - Die **Menge** erreicht im Oktober ihr Maximum. Ab November sinkt sie durch Fäulnis und Vogelfraß.
-- Ist der Herbst feucht, kann **Edelfäule (Botrytis)** entstehen. Dann sinkt die Menge stark, das Mostgewicht steigt aber sprunghaft (Voraussetzung für die Trockenbeerenauslese).
-- Lässt man die Trauben bis Dezember oder Januar hängen, wird es eine **Eiswein-Wette**: Fällt die Temperatur auf −7 °C oder weniger, gibt es Eiswein; sonst ist die Ernte größtenteils verloren.
+- **Edelfäule (Botrytis):** Bei wechselhaftem Wetter im Oktober oder November (Morgennebel, Nachmittagssonne) kann sie ab 80 °Oe einsetzen. Die Chance liegt bei 35 % × (0,5 + Fäulnisanfälligkeit). Dann halbiert sich die Menge, das Mostgewicht steigt aber um 30 °Oe, auch über das Sortenmaximum hinaus. Ein zweiter Schub („Rosinen“) macht die Trockenbeerenauslese ab 150 °Oe möglich. Nasses Wetter bringt dagegen Graufäule.
+- **Eiswein-Wette:** Im November oder Dezember lässt man eine Parzelle ab 80 °Oe ausdrücklich für Eiswein hängen; eine normale Lese hebt die Wette wieder auf.
+  - Frost von −7 °C im Dezember tritt mit 20 % + 4 % × Frostrisiko ein (Mosel 44 %, Rheinhessen 32 %, Pfalz 28 %). Die Chance wird je Gebiet einmal ausgewürfelt und im November und Dezember angezeigt.
+  - Bei Frost gibt es Eiswein mit mindestens 125 °Oe, aber nur 15 % der normalen Menge, zu 1,5-fachen Lesekosten. Ohne Frost ist die Ernte verloren.
 
 ### Qualitätsstufen (vereinfacht)
 
@@ -117,9 +119,9 @@ Wenn die Aufgabenliste leer ist, kann der Spieler „Bis zum nächsten Ereignis 
 | Kabinett | ≥ 73 | | 2 |
 | Spätlese | ≥ 80 | Lese ab Oktober | 4 |
 | Auslese | ≥ 90 | Selektion per Hand | 8 |
-| Beerenauslese | ≥ 110 | Botrytis | 15 |
-| Trockenbeerenauslese | ≥ 150 | Botrytis, sehr kleine Menge | 30 |
-| Eiswein | ≥ 110 | gefroren gelesen | 25 |
+| Beerenauslese | ≥ 110 | meist nur mit Botrytis | 15 |
+| Trockenbeerenauslese | ≥ 150 | nur mit doppelter Botrytis, sehr kleine Menge | 30 |
+| Eiswein | ≥ 125 | nur über die Eiswein-Wette | 25 |
 
 Jeder Wein hat neben der Stufe eine **Güte von 0–100**. Sie ergibt sich aus Qualitätspotenzial, Eignung von Gebiet und Sorte, Gesundheit des Leseguts, Leseart, Kellermeister und Ausbau. Die Güte entscheidet bei Prämierungen und über den Preis.
 
@@ -138,7 +140,7 @@ Jeder Wein hat neben der Stufe eine **Güte von 0–100**. Sie ergibt sich aus Q
 - **Ausbauzeit bis zur Abfüllreife:** einfache Weine 3 Monate, Prädikate 6 Monate, Barrique 12 Monate.
 - **Fassweinverkauf** an die Großkellerei geht **jederzeit** und sofort, aber billig (1,0–3,0 € pro Liter je nach Stufe und Güte). Das ist der Liquiditätsanker: Beim Start-Weingut deckt reiner Fassweinverkauf ungefähr die laufenden Kosten, Gewinn bringt erst die Flasche.
 - **Abfüllung:** 1 hl ergibt 133 Flaschen à 0,75 l. Flaschen, Korken und Etiketten kosten 0,60 € pro Flasche (Mengenrabatt ab 10.000).
-- **Sekt** (ab Jahr 2): Grundwein in Flaschengärung, 9 Monate. Gibt 10 Punkte bei Güte ≥ 80.
+- **Sekt:** Aus ausgebautem Grundwein entsteht in Flaschengärung Sekt; das kostet 1,60 € pro Flasche (Flasche plus Gärung). Er reift 9 Monate auf der Hefe, ist bis dahin unverkäuflich und bekommt +3 Güte. Die Prüfung bringt 10 Punkte bei Güte ≥ 80, sonst 3. Ab Hof liegt der Grundpreis bei 12 €, bei Prämierungen gibt es +6 auf die Wertung. Ungeprüfter Sekt geht nur als einfacher Schaumwein zum halben Preis weg.
 - **Kellermeister:** einstellbar, +5 Güte, 4.000 € pro Monat.
 
 ## 9. Weinprüfung (AP-Nummer)
@@ -153,11 +155,16 @@ Der abgefüllte Wein wird angemeldet (Gebühr 150 € pro Posten, mindestens 5 h
 | Großhandel | AP-Nummer | niedrig | groß |
 | Hofladen/Direktvermarktung | – | hoch, abzüglich 20 % Vertriebskosten | 150 + 30 × Bekanntheit Flaschen/Monat, automatisch |
 | Online-Shop | 15.000 € Einrichtung | wie Hofladen | zusätzlich 40 × Bekanntheit Flaschen/Monat |
-| Exportvertrag | Angebot (Ereignis) | fest vereinbart | feste Menge über 12 Monate, Vertragsstrafe bei Lieferausfall |
+| Exportvertrag | Anfrage (ab Bekanntheit 20, 8 % pro Monat) | fest vereinbart, etwa 75 % des Ab-Hof-Grundpreises | 300–1.500 Flaschen/Monat über 12 Monate |
 
 **Flaschenpreis** = Basispreis der Stufe (3 € Deutscher Wein bis 25 € Beerenauslese) × (0,5 + Güte/100) × (0,8 + Bekanntheit/250). Der Großhandel zahlt 45 % davon. Eine Marktsättigung ist für später vorgesehen.
 
-Der Hofladen verkauft zuerst geprüfte Weine und Deutschen Wein, ältere Posten zuerst. Ungeprüfte Prädikatsweine dürfen nur als „Deutscher Wein“ verkauft werden und kommen zuletzt dran. Zur Prämierung angemeldete Weine bleiben im Lager.
+Der Hofladen verkauft geprüfte Weine und Deutschen Wein, ältere Posten zuerst. Ungeprüfte Prädikatsweine und ungeprüfter Sekt warten auf die Prüfung. Nur Restposten, die für eine Prüfung zu klein sind (unter 665 Flaschen), gehen als einfacher Wein weg. Zur Prämierung angemeldete Weine und reifender Sekt bleiben im Lager.
+
+**Export:**
+- Eine Anfrage gilt einen Monat. Wer annimmt, liefert 12 Monate lang automatisch am Monatsende, noch vor dem Hofverkauf.
+- Geliefert werden geprüfte Weine ab der geforderten Stufe und Güte, die schwächsten passenden zuerst.
+- Fehlende Flaschen kosten 2 € Strafe pro Flasche. Wer alle 12 Monate vollständig liefert, bekommt +15 Punkte und +5 Bekanntheit.
 
 **Bekanntheit** (0–100, Start 10) steigt durch Prämierungen und Marketing. Zuwächse schrumpfen mit dem Faktor (1 − Bekanntheit/120), und jeden Monat gehen 3 % verloren. Dauerhaft hohe Bekanntheit braucht deshalb Medaillen, nicht nur Werbung. Skandale (ab M4) senken sie zusätzlich.
 
@@ -174,25 +181,33 @@ Der Hofladen verkauft zuerst geprüfte Weine und Deutschen Wein, ältere Posten 
 
 ## 12. Weinberg, Pflanzenschutz & Ereignisse
 
-**Pflanzenschutz-Strategie** (einmal im Mai festgelegt):
+**Pflanzenschutz-Strategie** (jederzeit änderbar, Start: konventionell). Die Kosten je bestocktem ha werden auf Mai bis August verteilt:
 
-| Strategie | Kosten/ha | Krankheitsschutz | Effekt |
+| Strategie | Kosten/ha und Saison | Schutz | Effekt |
 |---|---|---|---|
 | Keiner | 0 | 0 % | |
 | Konventionell | 600 € | 90 % | |
-| Bio | 900 € | 70 % | +10 % Preis bei Direktvermarktung, Bekanntheit +, nach 3 Jahren Umstellung |
+| Bio | 900 € | 70 % | nach 3 Jahren zertifiziert: +10 % im Direktverkauf; wer wechselt, beginnt die Umstellung neu |
 
-**Krankheiten & Schädlinge:**
-- Peronospora (nasser Sommer)
-- Oidium (warm und trocken)
-- Kirschessigfliege (September, vor allem rote Sorten)
-- Botrytis (Fluch oder Segen, siehe §6)
+**Krankheiten & Schädlinge.** Sie treffen nur tragende Parzellen. Der Schutz senkt die Chance um seinen Prozentsatz:
 
-**Zufallsereignisse** (Beispiele):
-- Spätfrost, Hagel, Hitzewelle
-- Exportanfrage, Medienbericht über das Weingut
-- Kellerei-Insolvenz (Fassweinpreis halbiert)
-- Erbschaft eines Weinbergs, Kontrolle der Weinaufsicht
+| Krankheit | Wann | Chance (ohne Schutz) | Folge |
+|---|---|---|---|
+| Peronospora | Mai–Aug, nasser Monat | 40 % × Sortenanfälligkeit × (0,5 + Nässe/10) | −30 % Menge |
+| Oidium | Jun–Aug, sonniger Monat | 25 % × Sortenanfälligkeit | −20 % Gesundheit |
+| Kirschessigfliege | September, rote Sorten | 30 % | −15 % Menge, −10 % Gesundheit |
+| Botrytis | Okt/Nov | siehe §6 | Fluch oder Segen |
+
+**Zufallsereignisse:**
+
+| Ereignis | Wann | Chance | Folge |
+|---|---|---|---|
+| Spätfrost | April, Mai | 1 % × Frostrisiko pro Monat | −40 % Menge aller tragenden Parzellen |
+| Hagel | Juni–August | 4 % pro Monat | eine Parzelle −50 % Menge, −10 % Gesundheit |
+| Hitzewelle | Juli, August bei Sonne | 15 % | −10 % Menge, +4 °Oe |
+| Medienbericht | jederzeit | 2 % pro Monat | +5 Bekanntheit |
+| Erbschaft | jederzeit | 0,4 % pro Monat | 1–2 ha, bestockt oder Brache |
+| Kellerei-Insolvenz | jederzeit, für alle | 1,5 % pro Monat | 6 Monate halber Fassweinpreis |
 
 **Weinbergversteigerung (Februar):**
 - Je Anbaugebiet, in dem noch jemand wirtschaftet, kommen 1–2 Weinberge à 1–5 ha unter den Hammer. Rund 60 % davon sind bereits bestockt (3–27 Jahre alt) und tragen sofort, der Rest ist Brache.
@@ -211,17 +226,19 @@ Der Hofladen verkauft zuerst geprüfte Weine und Deutschen Wein, ältere Posten 
 | Unerlaubte Aufzuckerung | +1 Stufe | 25 % bei AP-Prüfung |
 | „Frostschutz-Süße“ (Anspielung auf den Glykolskandal von 1985) | +2 Stufen | 40 %, außerdem zufällige Kontrollen |
 
-Wird Panschen entdeckt, wird die Charge vernichtet. Dazu kommen eine Strafe von 20.000 €, −50 Punkte und −40 Bekanntheit.
+Gepanscht wird höchstens einmal pro Monat und nie zweimal am selben Wein. Der Wein trägt die Markierung in die Flasche weiter.
+
+Solange gepanschter Wein im Betrieb lagert, kontrolliert die Weinaufsicht zusätzlich mit 3 % pro Monat. Wird Panschen entdeckt (öffentlicher **Weinskandal**), wird **aller** gepanschte Wein in Tank und Flasche beschlagnahmt. Dazu kommen eine Strafe von 20.000 €, −50 Punkte und −40 Bekanntheit.
 
 **Sabotage** gegen einen Mitspieler:
 - Gerüchte streuen: 3.000 €, −10 Bekanntheit beim Ziel
 - Weinberg beschädigen: 8.000 €, −30 % Ertrag auf einer Parzelle
 
-Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe und verliert −30 Bekanntheit.
+Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe, verliert −30 Bekanntheit, und die Sabotage misslingt. Das Ganze ist öffentlich. Panschen und Sabotage teilen sich das Limit von einer Intrige pro Monat. Weinberg-Sabotage wirkt nur bis zur nächsten Lese.
 
 ## 14. Finanzen
 
-- **Laufende Kosten pro Monat:** Festangestellte 2.500 €, Kellermeister 4.000 €. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
+- **Laufende Kosten pro Monat:** 2.500 € je Festangestelltem, wobei je angefangene 10 ha einer nötig ist; Kellermeister 4.000 €; Pflanzenschutz siehe §12. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
 - **Kredit:** bis 50 % des Betriebswerts (Land 25.000 €/ha, Reben +15.000 €/ha, Tank 150 €/hl), 6 % Zinsen p. a., monatlich belastet. Aufnahme und Tilgung jederzeit in ganzen Euro.
 - **Dispo:** Ein negatives Konto kostet 12 % Zinsen p. a. Die Lese darf ins Minus führen.
 - **Jahresabschluss im Dezember:** Bilanz, Gewinn- und Verlustrechnung, Rangliste.
@@ -243,7 +260,12 @@ Gemeinsame Grundregeln aller KI-Gegner:
 - **Betriebsnotwendiges hat Vorrang:** Abfüllen, Tankausbau und Liquidität dürfen den vollen Kreditrahmen nutzen. Lieber Kredit aufnehmen als jungen Wein verramschen.
 - **Prämierungen:** Angemeldet wird erst im Monat der Prämierung, damit der Wein nicht lange im Lager blockiert.
 
-Panschen und Sabotage für das Schlitzohr folgen mit M4.
+Ab M4 kommen hinzu:
+- **Pflanzenschutz:** Der Biopionier stellt auf Bio um, alle anderen schützen konventionell.
+- **Export:** Angenommen wird nur, wenn der passende Vorrat für mindestens vier Monate reicht.
+- **Eiswein:** Traditionswinzer und Schlitzohr wetten nur in Gebieten mit mindestens 35 % Frostchance, und höchstens mit einer Nebenfläche bis 25 % der tragenden Fläche.
+- **Sekt:** Traditionswinzer und Biopionier setzen jeden April 15 hl an.
+- **Schlitzohr:** Es zuckert alle drei Jahre eine kleine Charge (bis 120 hl) auf, aber nur mit mindestens 150.000 € freiem Kreditrahmen. Außerdem streut es im Mai Gerüchte über den Spitzenreiter.
 
 ## 16. Bedienung
 
@@ -275,7 +297,7 @@ Panschen und Sabotage für das Schlitzohr folgen mit M4.
 | ✅ **M1 – Kernzyklus** | 1 Spieler, 3 Gebiete, 5 Sorten. Wetter, Reife, Lese, Keller, Fassweinverkauf, AP-Prüfung, Punkte |
 | ✅ **M2 – Markt** | Abfüllung, Direktvermarktung, Großhandel, Online-Shop, Bekanntheit, Marketing, Prämierungen, Kellermeister, Tankausbau, Kredit, Insolvenz |
 | ✅ **M3 – Gegner** | KI-Gegner mit 4 Profilen, Weinbergversteigerung mit Investorengebot, Lagenqualität, Rangliste, Balancing-Report |
-| **M4 – Würze** | Krankheiten, Ereignisse, Panschen, Sabotage, Eiswein/Botrytis, Sekt, Export |
+| ✅ **M4 – Würze** | Pflanzenschutz und Krankheiten, Wetter- und Glücksereignisse, Botrytis/BA/TBA, Eiswein-Wette, Sekt, Export, Panschen mit Weinskandal, Sabotage, Personal nach Fläche |
 | **M5 – Feinschliff** | alle 13 Gebiete und 11 Sorten, Lexikon, Klimawandel, Tages-Challenge, Grafik und Sound |
 
 ### Balancing-Stand nach M2
@@ -294,6 +316,16 @@ Eine Simulation mit einfacher, vernünftiger Strategie lief 12 Jahre lang in all
 - **Kräfteverhältnis:** Im direkten Vergleich gewinnt meist der Traditionswinzer, an der Mosel teilen sich Biopionier, Schlitzohr und Traditionswinzer die Siege. Der Genossenschafts-Typ bleibt mit 50–260 Punkten bewusst der leichte Gegner.
 - **Gebiete:** Rheinhessen liegt bei Biopionier und Schlitzohr deutlich zurück, weil Müller-Thurgau als Startsorte wenig Potenzial hat. Das sollte M5 mit allen Gebieten neu bewertet werden.
 - **Offen:** Das Vermögen erreicht nach 15 Jahren 3–12 Mio. €. Die Versteigerungen allein schöpfen das nicht ab, weil Investoren viele Lagen wegschnappen und die KI bei 20–35 ha aufhört. Ideen für M4: Barrique und Sekt als Investitionen, mehr Personal ab einer bestimmten Fläche, Marktsättigung im Großhandel.
+
+### Balancing-Stand nach M4 (`npm run sim`)
+
+- **Insolvenz:** Weiterhin geht kein KI-Profil in 5 × 3 Partien über 15 Jahre pleite. Dafür waren drei Korrekturen nötig:
+  - Spätfrost halbiert: Vorher traf er die Mosel in rund 23 % der Jahre.
+  - Personal je 10 ha statt je 8 ha, sonst bräuchte schon das Startweingut zwei Kräfte.
+  - Das Schlitzohr panscht nur noch kleine Chargen mit Rücklage. Vorher konnte ein Skandal den ganzen Jahrgang beschlagnahmen und es in die Insolvenz treiben.
+- **Spieldauer:** Starke Profile stehen nach 10 Jahren bei 390–780 Punkten, nach 15 Jahren bei 760–1.330. „Normal“ (600) ist nach etwa 9–12 Jahren erreicht.
+- **Kräfteverhältnis:** Biopionier (seit M4 mit Kellermeister) und Traditionswinzer teilen sich die Siege. Das Schlitzohr bleibt durch Skandale und Strafen schwankend, der Genossenschafts-Typ ist der leichte Gegner.
+- **Offen:** Das Vermögen erreicht nach 15 Jahren weiterhin 2–9 Mio. €. M5 sollte eine echte Geldsenke bringen, zum Beispiel Barrique-Ausbau, Kellerneubau oder eine Marktsättigung im Großhandel.
 
 ## 19. Rechtliches
 

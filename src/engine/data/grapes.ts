@@ -14,6 +14,8 @@ export interface Grape {
   qualityPotential: number
   /** 0–1: Anfälligkeit für Fäulnis bei nassem Herbst */
   rotSusceptibility: number
+  /** 0–1: Anfälligkeit für Pilzkrankheiten (Peronospora, Oidium) */
+  diseaseSusceptibility: number
   plantCostPerHa: number
 }
 
@@ -21,26 +23,26 @@ export const GRAPES: Record<GrapeId, Grape> = {
   'mueller-thurgau': {
     id: 'mueller-thurgau', name: 'Müller-Thurgau', color: 'weiss',
     yieldPerHa: 110, ripeningNeed: 0.85, maxOechsle: 90, qualityPotential: 4,
-    rotSusceptibility: 0.8, plantCostPerHa: 18_000,
+    rotSusceptibility: 0.8, diseaseSusceptibility: 0.5, plantCostPerHa: 18_000,
   },
   silvaner: {
     id: 'silvaner', name: 'Silvaner', color: 'weiss',
     yieldPerHa: 95, ripeningNeed: 1.0, maxOechsle: 105, qualityPotential: 6,
-    rotSusceptibility: 0.5, plantCostPerHa: 20_000,
+    rotSusceptibility: 0.5, diseaseSusceptibility: 0.5, plantCostPerHa: 20_000,
   },
   riesling: {
     id: 'riesling', name: 'Riesling', color: 'weiss',
     yieldPerHa: 80, ripeningNeed: 1.15, maxOechsle: 125, qualityPotential: 9,
-    rotSusceptibility: 0.3, plantCostPerHa: 22_000,
+    rotSusceptibility: 0.3, diseaseSusceptibility: 0.5, plantCostPerHa: 22_000,
   },
   spaetburgunder: {
     id: 'spaetburgunder', name: 'Spätburgunder', color: 'rot',
     yieldPerHa: 70, ripeningNeed: 1.15, maxOechsle: 115, qualityPotential: 9,
-    rotSusceptibility: 0.8, plantCostPerHa: 25_000,
+    rotSusceptibility: 0.8, diseaseSusceptibility: 0.8, plantCostPerHa: 25_000,
   },
   dornfelder: {
     id: 'dornfelder', name: 'Dornfelder', color: 'rot',
     yieldPerHa: 120, ripeningNeed: 0.85, maxOechsle: 92, qualityPotential: 4,
-    rotSusceptibility: 0.5, plantCostPerHa: 18_000,
+    rotSusceptibility: 0.5, diseaseSusceptibility: 0.5, plantCostPerHa: 18_000,
   },
 }

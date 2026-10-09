@@ -1,6 +1,6 @@
+import { generateAuction, placeBid, resolveAuction, validateBid } from './auction'
+import { bottle, makeSekt, matureCellar, validateBottle, validateSekt } from './cellar'
 import {
-  BOTTLE_COST,
-  CELLAR_MASTER_QUALITY_BONUS,
   AUCTION_MONTH,
   COMPETITIONS,
   DIRECT_SALES_COST_SHARE,
@@ -9,12 +9,9 @@ import {
   MARKETING,
   MEDAL_NAMES,
   ONLINE_SHOP_COST,
-  OVERFLOW_PRICE_PER_LITER,
   REGISTER_FEE,
   REGISTER_MIN_BOTTLES,
   REPUTATION_DECAY_RATE,
-  REPUTATION_SATURATION,
-  SITE_QUALITY_BONUS,
   START_MONEY,
   START_REPUTATION,
   START_TANK_HL,
@@ -23,37 +20,63 @@ import {
 } from './data/economy'
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
-import { REGIONS } from './data/regions'
+import { REGIONS, type RegionId } from './data/regions'
+import { estateEvents, marketEvents } from './events'
+import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
+import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
 import {
   availableCredit,
   bottlePrice,
   bulkPricePerHl,
   competitionBaseScore,
   creditLimit,
-  hlToBottles,
   monthlyCosts,
   monthlyDemand,
+  registrationPoints,
   upcomingCompetition,
   wholesalePrice,
 } from './market'
-import { generateAuction, placeBid, resolveAuction, validateBid } from './auction'
-import { nextRange } from './rng'
-import type { Action, BottleLot, GameState, Medal, NewGameOptions, Player, Plot, WineInfo } from './types'
+import { nextFloat, nextRange } from './rng'
+import {
+  changeReputation,
+  computeQuality,
+  currentPlayer,
+  HARVEST_MONTHS,
+  PLANT_MONTHS,
+  plotAgeFactor,
+  removeBatchVolume,
+  removeBottles,
+  storeWine,
+  usedTankHl,
+  wineLabel,
+} from './rules'
+import type { Action, BottleLot, GameState, Medal, NewGameOptions, Player, Plot } from './types'
 import { addLog, formatEuro, newId } from './util'
-import { drawWeather, makeForecast, SUN_FACTOR, WEATHER_LABELS, type WeatherKind } from './weather'
+import {
+  growPlot,
+  iceWineChance,
+  resolveIceWine,
+  setProtection,
+  validateIceWineGamble,
+  validateProtection,
+  vineyardEvents,
+} from './vineyard'
+import { drawWeather, makeForecast, WEATHER_LABELS } from './weather'
 
-export { formatEuro }
+// Bewährte Exporte für Oberfläche und KI
+export {
+  computeQuality,
+  currentPlayer,
+  formatEuro,
+  HARVEST_MONTHS,
+  PLANT_MONTHS,
+  plotAgeFactor,
+  usedTankHl,
+  wineLabel,
+}
 
-export const PLANT_MONTHS = [3, 4]
-export const HARVEST_MONTHS = [8, 9, 10, 11, 12]
-
-/** Basis-Reifezuwachs in °Oe am Ende des jeweiligen Monats */
-const RIPENING_BASE: Record<number, number> = { 8: 20, 9: 18, 10: 12, 11: 5 }
-const RIPENING_START_OECHSLE = 45
 /** Anteil der möglichen Menge je nach Lesemonat */
 const HARVEST_TIMING: Record<number, number> = { 8: 0.7, 9: 0.9, 10: 1, 11: 1, 12: 1 }
-/** Mengenverlust durch Fäulnis am Ende des Monats */
-const ROT_LOSS: Record<number, number> = { 10: 0.05, 11: 0.25 }
 
 export const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -64,7 +87,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 3,
+    version: 4,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -76,6 +99,7 @@ export function newGame(options: NewGameOptions): GameState {
     winnerId: null,
     finished: false,
     auction: [],
+    bulkCrisisMonths: 0,
     nextId: 1,
     log: [],
   }
@@ -93,7 +117,6 @@ export function newGame(options: NewGameOptions): GameState {
       tankCapacityHl: START_TANK_HL,
       hasOnlineShop: false,
       hasCellarMaster: false,
-      workers: 1,
       plots: [
         makePlot(state, 'Hauslage', 4, region.startGrape, -10, 0),
         makePlot(state, 'Südhang', 3, null, null, 1),
@@ -103,6 +126,11 @@ export function newGame(options: NewGameOptions): GameState {
       bottles: [],
       marketingThisMonth: [],
       competitionEntries: [],
+      protection: 'conventional',
+      bioSinceYear: null,
+      intrigueThisMonth: false,
+      exportOffer: null,
+      exportContract: null,
       monthsInsolvent: 0,
       bankrupt: false,
     }
@@ -131,33 +159,9 @@ function makePlot(
     health: 1,
     cropFactor: 1,
     harvestedThisYear: false,
+    botrytis: false,
+    iceWineGamble: false,
   }
-}
-
-export function currentPlayer(state: GameState): Player {
-  return state.players[state.currentPlayer]
-}
-
-/** Ertragsfähigkeit nach Alter: Pflanzjahr und Folgejahr 0, 3. Jahr 50 %, danach voll. */
-export function plotAgeFactor(plot: Plot, year: number): number {
-  if (plot.grape === null || plot.plantedYear === null) return 0
-  const age = year - plot.plantedYear
-  if (age <= 1) return 0
-  if (age === 2) return 0.5
-  return 1
-}
-
-export function usedTankHl(player: Player): number {
-  return player.cellar.reduce((sum, b) => sum + b.hectoliters, 0)
-}
-
-export function computeQuality(player: Player, plot: Plot): number {
-  const grape = GRAPES[plot.grape!]
-  const suitability = REGIONS[player.regionId].suitability[grape.id]
-  const bonus = (player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0) + plot.site * SITE_QUALITY_BONUS
-  const raw =
-    20 + grape.qualityPotential * 4 + suitability * 6 + (plot.oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 + bonus
-  return Math.max(0, Math.min(100, Math.round(raw)))
 }
 
 export interface HarvestPreview {
@@ -217,20 +221,16 @@ export function validateAction(state: GameState, action: Action): string | null 
       if (!(action.hectoliters > 0) || action.hectoliters > batch.hectoliters) return 'Ungültige Menge.'
       return null
     }
-    case 'bottle': {
-      const batch = findBatch(action.batchId)
-      if (!batch) return 'Unbekannte Charge.'
-      if (batch.monthsUntilReady > 0) return 'Der Wein ist noch nicht ausgebaut.'
-      if (!(action.hectoliters > 0) || action.hectoliters > batch.hectoliters) return 'Ungültige Menge.'
-      const cost = hlToBottles(action.hectoliters) * BOTTLE_COST
-      if (player.money < cost) return `Nicht genug Geld für Flaschen (benötigt ${formatEuro(cost)}).`
-      return null
-    }
+    case 'bottle':
+      return validateBottle(player, action.batchId, action.hectoliters)
+    case 'makeSekt':
+      return validateSekt(player, action.batchId, action.hectoliters)
     case 'register': {
       const lot = findLot(action.lotId)
       if (!lot) return 'Unbekannter Flaschenposten.'
       if (lot.registered) return 'Der Wein ist bereits geprüft.'
-      if (lot.level === 'deutscher-wein') return 'Deutscher Wein braucht keine Prüfung.'
+      if (lot.monthsUntilReady > 0) return 'Der Sekt reift noch.'
+      if (lot.level === 'deutscher-wein' && !lot.sparkling) return 'Deutscher Wein braucht keine Prüfung.'
       if (lot.bottles < REGISTER_MIN_BOTTLES) return `Mindestens ${REGISTER_MIN_BOTTLES} Flaschen (5 hl) für eine Prüfung.`
       if (player.money < REGISTER_FEE) return 'Nicht genug Geld für die Prüfgebühr.'
       return null
@@ -289,6 +289,16 @@ export function validateAction(state: GameState, action: Action): string | null 
       return null
     case 'bid':
       return validateBid(state, player, action.parcelId, action.amount)
+    case 'setProtection':
+      return validateProtection(player, action.strategy)
+    case 'gambleIceWine':
+      return validateIceWineGamble(state, player, action.plotId, action.gamble)
+    case 'adulterate':
+      return validateAdulterate(player, action.batchId, action.method)
+    case 'sabotage':
+      return validateSabotage(state, player, action.targetId, action.kind)
+    case 'answerExport':
+      return validateAnswerExport(player)
     case 'endTurn':
       return null
   }
@@ -319,20 +329,23 @@ export function applyAction(state: GameState, action: Action): GameState {
       break
     case 'sellBulk': {
       const batch = batchOf(action.batchId)
-      const revenue = Math.round(bulkPricePerHl(batch) * action.hectoliters)
+      const revenue = Math.round(bulkPricePerHl(batch, next) * action.hectoliters)
       player.money += revenue
-      batch.hectoliters -= action.hectoliters
-      if (batch.hectoliters <= 0.001) player.cellar = player.cellar.filter((b) => b.id !== batch.id)
+      removeBatchVolume(player, batch, action.hectoliters)
       addLog(next, player.id, `${action.hectoliters} hl ${wineLabel(batch)} als Fasswein verkauft: +${formatEuro(revenue)}.`)
       break
     }
     case 'bottle':
       bottle(next, player, action.batchId, action.hectoliters)
       break
+    case 'makeSekt':
+      makeSekt(next, player, action.batchId, action.hectoliters)
+      break
     case 'register': {
       const lot = lotOf(action.lotId)
-      const points = qualityInfo(lot.level).apPoints
       player.money -= REGISTER_FEE
+      if (inspectAtRegistration(next, player, lot)) break
+      const points = registrationPoints(lot)
       player.points += points
       lot.registered = true
       addLog(next, player.id, `${wineLabel(lot)} hat die amtliche Prüfung bestanden: +${points} Punkte.`)
@@ -341,7 +354,7 @@ export function applyAction(state: GameState, action: Action): GameState {
     }
     case 'sellWholesale': {
       const lot = lotOf(action.lotId)
-      const revenue = Math.round(wholesalePrice(lot, player) * action.bottles)
+      const revenue = Math.round(wholesalePrice(lot, player, next.year) * action.bottles)
       player.money += revenue
       removeBottles(player, lot, action.bottles)
       addLog(next, player.id, `${action.bottles} Fl. ${wineLabel(lot)} an den Großhandel: +${formatEuro(revenue)}.`)
@@ -389,6 +402,30 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'bid':
       placeBid(next, player, action.parcelId, action.amount)
       break
+    case 'setProtection':
+      setProtection(next, player, action.strategy)
+      break
+    case 'gambleIceWine': {
+      const plot = player.plots.find((p) => p.id === action.plotId)!
+      plot.iceWineGamble = action.gamble
+      addLog(
+        next,
+        player.id,
+        action.gamble
+          ? `${plot.name}: Die Trauben bleiben für Eiswein hängen. Jetzt braucht es Frost.`
+          : `${plot.name}: Doch kein Eiswein – die Trauben können normal gelesen werden.`,
+      )
+      break
+    }
+    case 'adulterate':
+      adulterate(next, player, action.batchId, action.method)
+      break
+    case 'sabotage':
+      sabotage(next, player, action.targetId, action.kind)
+      break
+    case 'answerExport':
+      answerExport(next, player, action.accept)
+      break
     case 'endTurn':
       endTurn(next)
       break
@@ -400,82 +437,21 @@ function harvest(state: GameState, player: Player, plot: Plot) {
   const preview = harvestPreview(state, player, plot)
   player.money -= preview.cost
   plot.harvestedThisYear = true
-
-  const freeHl = Math.max(0, player.tankCapacityHl - usedTankHl(player))
-  const storedHl = Math.min(preview.hectoliters, freeHl)
-  const overflowHl = preview.hectoliters - storedHl
-
-  if (storedHl > 0) {
-    player.cellar.push({
-      id: newId(state, 'wine'),
-      grape: plot.grape!,
-      vintage: state.year,
-      hectoliters: storedHl,
-      oechsle: Math.round(plot.oechsle),
-      level: preview.level,
-      quality: preview.quality,
-      monthsUntilReady: qualityInfo(preview.level).maturingMonths,
-    })
-  }
-  const grapeName = GRAPES[plot.grape!].name
+  plot.iceWineGamble = false
   addLog(
     state,
     player.id,
-    `${plot.name}: ${preview.hectoliters} hl ${grapeName} gelesen, ${Math.round(plot.oechsle)} °Oe, ` +
+    `${plot.name}: ${preview.hectoliters} hl ${GRAPES[plot.grape!].name} gelesen, ${Math.round(plot.oechsle)} °Oe, ` +
       `${qualityInfo(preview.level).name}, Güte ${preview.quality}.`,
   )
-  if (overflowHl > 0) {
-    const revenue = Math.round(overflowHl * 100 * OVERFLOW_PRICE_PER_LITER)
-    player.money += revenue
-    addLog(state, player.id, `Tanks voll! ${overflowHl} hl Most billig abgegeben: +${formatEuro(revenue)}.`)
-  }
-}
-
-function bottle(state: GameState, player: Player, batchId: string, hectoliters: number) {
-  const batch = player.cellar.find((b) => b.id === batchId)!
-  const bottles = hlToBottles(hectoliters)
-  player.money -= bottles * BOTTLE_COST
-  batch.hectoliters -= hectoliters
-  if (batch.hectoliters <= 0.001) player.cellar = player.cellar.filter((b) => b.id !== batch.id)
-
-  // Nachfüllen in einen noch ungeprüften Posten desselben Weins, damit kleine Abfüllungen prüfbar bleiben.
-  const existing = player.bottles.find((l) => !l.registered && sameWine(l, batch))
-  if (existing) {
-    existing.bottles += bottles
-  } else {
-    player.bottles.push({
-      id: newId(state, 'lot'),
-      grape: batch.grape,
-      vintage: batch.vintage,
-      oechsle: batch.oechsle,
-      level: batch.level,
-      quality: batch.quality,
-      bottles,
-      registered: false,
-      awards: [],
-    })
-  }
-  addLog(state, player.id, `${bottles} Flaschen ${wineLabel(batch)} abgefüllt: −${formatEuro(bottles * BOTTLE_COST)}.`)
-}
-
-function sameWine(a: WineInfo, b: WineInfo): boolean {
-  return a.grape === b.grape && a.vintage === b.vintage && a.level === b.level && a.quality === b.quality
-}
-
-function removeBottles(player: Player, lot: BottleLot, bottles: number) {
-  lot.bottles -= bottles
-  if (lot.bottles <= 0) {
-    player.bottles = player.bottles.filter((l) => l.id !== lot.id)
-    player.competitionEntries = player.competitionEntries.filter((id) => id !== lot.id)
-  }
-}
-
-/** Ändert die Bekanntheit; Zuwächse schrumpfen, je bekannter das Weingut schon ist. Liefert die tatsächliche Änderung. */
-function changeReputation(player: Player, delta: number): number {
-  const effective = delta > 0 ? delta * Math.max(0, 1 - player.reputation / REPUTATION_SATURATION) : delta
-  const before = player.reputation
-  player.reputation = Math.max(0, Math.min(100, player.reputation + effective))
-  return player.reputation - before
+  storeWine(state, player, {
+    grape: plot.grape!,
+    vintage: state.year,
+    hectoliters: preview.hectoliters,
+    oechsle: Math.round(plot.oechsle),
+    level: preview.level,
+    quality: preview.quality,
+  })
 }
 
 function activeIndices(state: GameState): number[] {
@@ -505,21 +481,32 @@ function resolveMonth(state: GameState) {
 
   const competition = Object.values(COMPETITIONS).find((c) => c.month === state.month)
   if (state.month === AUCTION_MONTH) resolveAuction(state)
+  marketEvents(state)
+
+  // Eiswein-Frost wird je Anbaugebiet einmal ausgewürfelt
+  const frost = new Map<RegionId, boolean>()
+  if (state.month === 12) {
+    for (const regionId of new Set(state.players.map((p) => p.regionId))) {
+      frost.set(regionId, nextFloat(state.rng) < iceWineChance(regionId))
+    }
+  }
 
   for (const player of state.players) {
     if (player.bankrupt) continue
     for (const plot of player.plots) growPlot(state, player, plot, weather)
-    for (const batch of player.cellar) {
-      if (batch.monthsUntilReady > 0) {
-        batch.monthsUntilReady--
-        if (batch.monthsUntilReady === 0) addLog(state, player.id, `${wineLabel(batch)} ist ausgebaut.`)
-      }
-    }
+    vineyardEvents(state, player, weather)
+    if (state.month === 12) resolveIceWine(state, player, frost.get(player.regionId) ?? false)
+    matureCellar(state, player)
+    deliverExport(state, player)
     sellDirect(state, player)
     if (competition) judgeCompetition(state, player, competition)
+    randomControl(state, player)
+    estateEvents(state, player)
     payMonthlyCosts(state, player)
     changeReputation(player, -player.reputation * REPUTATION_DECAY_RATE)
     player.marketingThisMonth = []
+    player.intrigueThisMonth = false
+    maybeOfferExport(state, player)
     checkInsolvency(state, player)
   }
   checkWinner(state)
@@ -536,47 +523,24 @@ function resolveMonth(state: GameState) {
   state.forecast = makeForecast(state.rng, state.month, 0.8)
 }
 
-function growPlot(state: GameState, player: Player, plot: Plot, weather: WeatherKind) {
-  if (plot.grape === null || plot.harvestedThisYear || plotAgeFactor(plot, state.year) === 0) return
-  const grape = GRAPES[plot.grape]
-  const region = REGIONS[player.regionId]
-
-  if (state.month === 7) plot.oechsle = RIPENING_START_OECHSLE
-
-  const base = RIPENING_BASE[state.month]
-  if (base) {
-    const headroom = Math.max(0, (grape.maxOechsle - plot.oechsle) / (grape.maxOechsle - RIPENING_START_OECHSLE))
-    const gain = (base * SUN_FACTOR[weather] * (0.8 + region.warmth * 0.04) * headroom) / grape.ripeningNeed
-    plot.oechsle = Math.min(grape.maxOechsle, plot.oechsle + gain)
-  }
-
-  if (state.month >= 9 && weather === 'nass') {
-    plot.health = Math.max(0, plot.health - 0.15 * grape.rotSusceptibility)
-  }
-  const rotLoss = ROT_LOSS[state.month]
-  if (rotLoss) {
-    const wetBonus = weather === 'nass' ? 0.1 * grape.rotSusceptibility : 0
-    plot.cropFactor *= 1 - rotLoss - wetBonus
-  }
-}
-
 /**
- * Hofladen und Online-Shop verkaufen automatisch: zuerst geprüfte Weine und Deutschen Wein,
- * ungeprüfte Prädikatsweine (die nur als Deutscher Wein durchgehen) zuletzt; jeweils älteste zuerst.
- * Zur Prämierung angemeldete Weine bleiben im Lager.
+ * Hofladen und Online-Shop verkaufen automatisch geprüfte Weine und Deutschen Wein, älteste zuerst.
+ * Ungeprüfte Prädikatsweine und ungeprüfter Sekt warten auf die Prüfung – nur Restposten, die für eine
+ * Prüfung zu klein sind, gehen als einfacher Wein weg. Reifender Sekt und Prämierungsweine bleiben im Lager.
  */
 function sellDirect(state: GameState, player: Player) {
-  const waitsForTest = (lot: BottleLot) => !lot.registered && lot.level !== 'deutscher-wein'
-  const forSale = player.bottles
-    .filter((lot) => !player.competitionEntries.includes(lot.id))
-    .sort((a, b) => Number(waitsForTest(a)) - Number(waitsForTest(b)))
+  const waitsForTest = (lot: BottleLot) =>
+    !lot.registered && (lot.sparkling || lot.level !== 'deutscher-wein') && lot.bottles >= REGISTER_MIN_BOTTLES
+  const forSale = player.bottles.filter(
+    (lot) => !player.competitionEntries.includes(lot.id) && lot.monthsUntilReady === 0 && !waitsForTest(lot),
+  )
   let demand = monthlyDemand(player)
   let sold = 0
   let revenue = 0
   for (const lot of forSale) {
     if (demand <= 0) break
     const count = Math.min(demand, lot.bottles)
-    revenue += count * bottlePrice(lot, player)
+    revenue += count * bottlePrice(lot, player, state.year)
     sold += count
     demand -= count
     removeBottles(player, lot, count)
@@ -611,7 +575,7 @@ function judgeCompetition(state: GameState, player: Player, competition: Competi
 }
 
 function payMonthlyCosts(state: GameState, player: Player) {
-  player.money -= monthlyCosts(player).total
+  player.money -= monthlyCosts(player, state.month).total
   if (player.money < 0) addLog(state, player.id, `Konto im Minus: ${formatEuro(player.money)}!`)
 }
 
@@ -622,6 +586,8 @@ function checkInsolvency(state: GameState, player: Player) {
     if (player.monthsInsolvent >= INSOLVENCY_MONTHS) {
       player.bankrupt = true
       player.competitionEntries = []
+      player.exportContract = null
+      player.exportOffer = null
       addLog(state, null, `${player.name} ist insolvent und scheidet aus.`)
     } else {
       const left = INSOLVENCY_MONTHS - player.monthsInsolvent
@@ -643,6 +609,8 @@ function endOfYear(state: GameState) {
       plot.health = 1
       plot.cropFactor = 1
       plot.harvestedThisYear = false
+      plot.botrytis = false
+      plot.iceWineGamble = false
     }
   }
 }
@@ -658,8 +626,3 @@ function checkWinner(state: GameState) {
     addLog(state, null, `${best.name} erreicht ${best.points} Punkte und gewinnt!`)
   }
 }
-
-export function wineLabel(wine: WineInfo): string {
-  return `${GRAPES[wine.grape].name} ${qualityInfo(wine.level).name} (Jg. ${wine.vintage})`
-}
-
