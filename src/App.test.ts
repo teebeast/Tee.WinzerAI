@@ -10,6 +10,7 @@ describe('Bedienung', () => {
 
   beforeEach(() => {
     localStorage.clear()
+    history.replaceState(null, '', location.pathname) // Unterseite aus der Adresse zurücksetzen
     target = document.createElement('div')
     document.body.append(target)
     app = mount(App, { target })
@@ -31,6 +32,14 @@ describe('Bedienung', () => {
     flushSync()
   }
 
+  /** Wechselt auf eine Unterseite (Hof, Weinberg, Keller, Betrieb, Rangliste) */
+  function tab(name: string) {
+    const found = [...target.querySelectorAll('[role="tab"]')].find((t) => t.textContent?.includes(name))
+    if (!found) throw new Error(`Kein Reiter „${name}“ gefunden`)
+    ;(found as HTMLButtonElement).click()
+    flushSync()
+  }
+
   it('startet ein Spiel und beendet Monate per Klick', () => {
     click('Spiel starten')
     expect(target.textContent).toContain('Januar · Jahr 1')
@@ -44,7 +53,9 @@ describe('Bedienung', () => {
 
   it('Aktionen im Spiel verändern den Spielstand', () => {
     click('Spiel starten')
+    tab('Betrieb')
     click('Social Media')
+    tab('Hof')
     expect(target.textContent).toContain('Social Media: Bekanntheit +')
   })
 
@@ -52,10 +63,14 @@ describe('Bedienung', () => {
     click('Spiel starten')
     click('Monat beenden')
     click('Monat beenden') // März
+    tab('Weinberg')
     click('Pflanzen')
-    expect(target.textContent).toContain('gepflanzt')
+    expect(target.textContent).toContain('Junganlage')
 
+    tab('Betrieb')
     click('Aufnehmen')
+    tab('Hof')
+    expect(target.textContent).toContain('gepflanzt')
     expect(target.textContent).toContain('Kredit über')
   })
 
@@ -82,11 +97,10 @@ describe('Bedienung', () => {
 
   it('Pflanzenschutz lässt sich umstellen', () => {
     click('Spiel starten')
-    const select = [...target.querySelectorAll('select')].find((s) => s.querySelector('option[value="bio"]'))!
-    select.value = 'bio'
-    select.dispatchEvent(new Event('change', { bubbles: true }))
-    flushSync()
+    tab('Weinberg')
+    click('Bio')
     expect(target.textContent).toContain('In Umstellung')
+    expect(button('Bio').getAttribute('aria-pressed')).toBe('true')
   })
 
   it('das Lexikon lässt sich öffnen und durchsuchen', () => {
@@ -106,7 +120,7 @@ describe('Bedienung', () => {
     click('Spiel starten')
     click('Vorspulen')
     expect(target.textContent).not.toContain('Januar · Jahr 1')
-    expect(target.textContent).toContain('Diesen')
+    expect(target.textContent).toContain('Jetzt zu tun')
   })
 
   it('die Tages-Challenge startet mit Zeitlimit', () => {
@@ -122,6 +136,26 @@ describe('Bedienung', () => {
     flushSync()
     expect(localStorage.getItem('winzer.muted')).toBe('1')
     expect(target.querySelector('button[aria-label="Ton einschalten"]')).not.toBeNull()
+  })
+
+  it('Aufgaben auf der Hof-Seite führen zur passenden Unterseite', () => {
+    click('Spiel starten')
+    click('Monat beenden')
+    click('Monat beenden') // März: Pflanzzeit
+    expect(target.textContent).toContain('Pflanzzeit')
+    click('Weinberg →')
+    expect(target.querySelector('[role="tab"][aria-selected="true"]')!.textContent).toContain('Weinberg')
+    expect(target.textContent).toContain('Pflanzenschutz')
+    expect(location.hash).toBe('#weinberg')
+  })
+
+  it('der Keller ist eine eigene Unterseite', () => {
+    click('Spiel starten')
+    expect(target.textContent).not.toContain('Flaschenlager')
+    tab('Keller')
+    expect(target.textContent).toContain('Im Tank und im Fass')
+    expect(target.textContent).toContain('Flaschenlager')
+    expect(target.textContent).not.toContain('Logbuch')
   })
 
   it('speichert den Spielstand nach jedem Zug', () => {

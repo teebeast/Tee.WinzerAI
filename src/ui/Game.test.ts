@@ -5,6 +5,7 @@ import { applyAction, currentPlayer, newGame } from '../engine/game'
 import type { GameState } from '../engine/types'
 import Game from './Game.svelte'
 import NewGame from './NewGame.svelte'
+import type { Page } from './pages'
 
 function endMonths(state: GameState, count: number): GameState {
   for (let i = 0; i < count; i++) state = applyAction(state, { type: 'endTurn' })
@@ -35,11 +36,18 @@ describe('Oberfläche', () => {
     expect(body).toContain('Spiel starten')
   })
 
-  it('rendert ein fortgeschrittenes Spiel mit allen Bereichen', () => {
+  it('rendert ein fortgeschrittenes Spiel auf allen Unterseiten', () => {
     const game = advancedGame()
-    const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
-    for (const text of ['Weinberg', 'Keller', 'Flaschenlager', 'Betrieb', 'Logbuch', 'Großhandel', 'Zug beenden', 'Rangliste']) {
-      expect(body).toContain(text)
+    const expected: Record<Page, string[]> = {
+      hof: ['Jetzt zu tun', 'Logbuch', 'Siegpunkte', 'Zug beenden', 'Rangliste'],
+      weinberg: ['Pflanzenschutz', 'Lagenqualität', 'Riesling'],
+      keller: ['Im Tank und im Fass', 'Flaschenlager', 'Großhandel', 'Abfüllen'],
+      betrieb: ['Laufende Kosten', 'Aufnehmen', 'Vinothek', 'Konkurrenz'],
+      rangliste: ['Weingüter im Vergleich', 'Anna', 'Ben'],
+    }
+    for (const [page, texts] of Object.entries(expected)) {
+      const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage: page as Page } })
+      for (const text of texts) expect(body, `${page}: ${text}`).toContain(text)
     }
   })
 
@@ -50,10 +58,11 @@ describe('Oberfläche', () => {
       id: 'x', country: 'Japan', bottlesPerMonth: 500, pricePerBottle: 6,
       minLevel: 'qualitaetswein', minQuality: 60, months: 12,
     }
-    const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
-    for (const text of ['Sekt', 'reift noch', 'Anfrage aus Japan', 'Kellertricks', 'Konkurrenz', 'Pflanzenschutz', 'Laufende Kosten']) {
-      expect(body).toContain(text)
-    }
+    const page = (initialPage: Page) =>
+      render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage } }).body
+    expect(page('hof')).toContain('Anfrage aus Japan')
+    for (const text of ['SEKT', 'reift noch', 'Kellertricks']) expect(page('keller')).toContain(text)
+    expect(page('betrieb')).toContain('Konkurrenz')
   })
 
   it('rendert eine Partie gegen die KI mit laufender Versteigerung', () => {
@@ -69,8 +78,10 @@ describe('Oberfläche', () => {
     game = runAiTurns(applyAction(game, { type: 'endTurn' })) // Februar
     expect(game.auction.length).toBeGreaterThan(0)
     const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
-    for (const text of ['Weinbergversteigerung', 'Mindestgebot', 'Rangliste', 'KI Traditionswinzer', 'Monat beenden']) {
+    for (const text of ['Weinbergversteigerung', 'Mindestgebot', 'Rangliste', 'Monat beenden']) {
       expect(body).toContain(text)
     }
+    const ranking = render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage: 'rangliste' } })
+    expect(ranking.body).toContain('KI Traditionswinzer')
   })
 })

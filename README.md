@@ -23,5 +23,5 @@ npm run build    # Produktions-Build inkl. Service Worker
 - `src/engine/advisor.ts` liefert die Aufgabenliste „Diesen Monat“ und das Vorspulen, `src/engine/challenge.ts` die Tages-Challenge.
 - `src/engine/market.ts` enthält reine Berechnungen: Preise, Nachfrage, Kreditrahmen, Prämierungswertung.
 - `src/engine/data/` enthält Anbaugebiete, Rebsorten, Qualitätsstufen und in `economy.ts` alle Kosten- und Balancing-Werte.
-- `src/ui/` enthält die Svelte-5-Komponenten, je Bereich eine Karte, außerdem Lexikon (`lexicon.ts`), Landschaftsgrafik (`SeasonScene.svelte`) und Klänge per Web Audio (`sound.ts`).
+- `src/ui/` enthält die Svelte-5-Oberfläche: `Game.svelte` mit Reitern, je Unterseite eine Datei in `pages/` (Hof, Weinberg, Keller, Betrieb, Rangliste; erreichbar auch per Adresse wie `#keller`), SVG-Grafiken in `gfx/` (Parzelle, Tank/Fass, Flasche, Wetter, Fortschrittsring), dazu Lexikon (`lexicon.ts`), Gutspanorama (`SeasonScene.svelte`) und Klänge per Web Audio (`sound.ts`). Die Hof-Seite zeigt, was diesen Monat zu tun ist, und verlinkt auf die passende Unterseite.
 - `src/save.ts` speichert den Spielstand (aktuell localStorage).

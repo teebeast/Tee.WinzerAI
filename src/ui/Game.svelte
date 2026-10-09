@@ -1,25 +1,40 @@
 <script lang="ts">
-  import { fastForward } from '../engine/advisor'
+  import { fastForward, monthHints } from '../engine/advisor'
   import { activeHumans, runAiTurns } from '../engine/ai'
   import { REGIONS } from '../engine/data/regions'
   import { applyAction, currentPlayer, formatEuro, MONTH_NAMES, RuleError } from '../engine/game'
   import type { Action, GameState } from '../engine/types'
   import { loadChallengeBest, recordChallengeResult } from '../save'
-  import AuctionCard from './AuctionCard.svelte'
-  import BottlesCard from './BottlesCard.svelte'
-  import CellarCard from './CellarCard.svelte'
-  import EstateCard from './EstateCard.svelte'
-  import ExportCard from './ExportCard.svelte'
   import LexiconDialog from './LexiconDialog.svelte'
-  import RankingCard from './RankingCard.svelte'
-  import SeasonScene from './SeasonScene.svelte'
+  import { PAGES, type Page } from './pages'
+  import CellarPage from './pages/CellarPage.svelte'
+  import EstatePage from './pages/EstatePage.svelte'
+  import HofPage from './pages/HofPage.svelte'
+  import RankingPage from './pages/RankingPage.svelte'
+  import VineyardPage from './pages/VineyardPage.svelte'
   import { isMuted, play, setMuted, soundForChange } from './sound'
-  import TasksCard from './TasksCard.svelte'
-  import VineyardCard from './VineyardCard.svelte'
-  import WeatherCard from './WeatherCard.svelte'
 
-  let { game, onChange, onQuit }: { game: GameState; onChange: (g: GameState) => void; onQuit: () => void } =
-    $props()
+  let {
+    game,
+    onChange,
+    onQuit,
+    initialPage = 'hof',
+  }: { game: GameState; onChange: (g: GameState) => void; onQuit: () => void; initialPage?: Page } = $props()
+
+  /** Unterseite aus der Adresse (#keller …), damit Zurück-Taste und Lesezeichen funktionieren */
+  function pageFromHash(): Page | null {
+    const id = typeof location === 'undefined' ? '' : location.hash.slice(1)
+    return PAGES.some((p) => p.id === id) ? (id as Page) : null
+  }
+
+  // svelte-ignore state_referenced_locally
+  let page = $state<Page>(pageFromHash() ?? initialPage)
+
+  $effect(() => {
+    const onHash = () => (page = pageFromHash() ?? 'hof')
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  })
 
   let error = $state('')
   /** Bei Hot-Seat wird der Bildschirm verdeckt, bis der nächste Spieler bereit ist. */
@@ -37,16 +52,30 @@
   const humansLeft = $derived(activeHumans(game).length > 0)
   const over = $derived(!!winner || game.finished || !humansLeft)
   const hasPointTarget = $derived(game.targetPoints < Number.MAX_SAFE_INTEGER)
-  const recentLog = $derived(
-    game.log
-      .filter((e) => e.playerId === null || e.playerId === player.id)
-      .slice(-15)
-      .reverse(),
-  )
+  const tabs = $derived(PAGES.filter((p) => p.id !== 'rangliste' || multiplayer))
+  /** Offene wichtige Aufgaben je Unterseite – als Zähler an den Reitern */
+  const badges = $derived.by(() => {
+    const counts: Partial<Record<Page, number>> = {}
+    if (!over) {
+      for (const hint of monthHints(game, player)) {
+        if (hint.important) counts[hint.area] = (counts[hint.area] ?? 0) + 1
+      }
+    }
+    return counts
+  })
+
+  function go(target: Page) {
+    page = target
+    if (location.hash !== '#' + target) history.pushState(null, '', '#' + target)
+    window.scrollTo?.({ top: 0 })
+  }
 
   function commit(next: GameState, endedTurn: boolean) {
     error = ''
-    if (endedTurn && hotSeat && currentPlayer(next).id !== player.id) handover = true
+    if (endedTurn && hotSeat && currentPlayer(next).id !== player.id) {
+      handover = true
+      go('hof')
+    }
     if (next.finished && next.challenge && !game.finished) {
       const me = next.players.find((p) => p.ai === null)!
       const best = loadChallengeBest(next.challenge)
@@ -103,7 +132,6 @@
   </div>
 {:else}
   <header class="topbar">
-    <div class="scene"><SeasonScene month={game.month} weather={game.lastWeather} /></div>
     <div class="title">
       <strong>
         {MONTH_NAMES[game.month - 1]} · Jahr {game.year}{game.yearLimit ? ` von ${game.yearLimit}` : ''}
@@ -118,7 +146,7 @@
       <span title="Bekanntheit">⭐ {Math.round(player.reputation)}</span>
     </div>
     <div class="tools">
-      <button class="ghost" onclick={() => (lexiconOpen = true)} title="Lexikon">📖 Lexikon</button>
+      <button class="ghost" onclick={() => (lexiconOpen = true)} title="Lexikon">📖 <span class="wide-only">Lexikon</span></button>
       <button class="ghost" onclick={toggleSound} aria-label={muted ? 'Ton einschalten' : 'Ton ausschalten'}>
         {muted ? '🔇' : '🔊'}
       </button>
@@ -146,40 +174,47 @@
     <div class="card error" role="alert">{error}</div>
   {/if}
 
-  <main class="grid">
-    {#if !over}
-      <TasksCard {game} {player} />
+  <nav class="tabs" aria-label="Bereiche">
+    {#each tabs as tab (tab.id)}
+      <button
+        class="tab"
+        role="tab"
+        aria-selected={page === tab.id}
+        class:active={page === tab.id}
+        onclick={() => go(tab.id)}
+      >
+        <span class="tab-icon" aria-hidden="true">{tab.icon}</span>
+        <span>{tab.label}</span>
+        {#if badges[tab.id]}<span class="badge" aria-label="{badges[tab.id]} offene Aufgaben">{badges[tab.id]}</span>{/if}
+      </button>
+    {/each}
+  </nav>
+
+  <main>
+    {#if page === 'hof'}
+      <HofPage {game} {player} {over} {run} {go} />
+    {:else if page === 'weinberg'}
+      <VineyardPage {game} {player} {run} />
+    {:else if page === 'keller'}
+      <CellarPage {game} {player} {run} />
+    {:else if page === 'betrieb'}
+      <EstatePage {game} {player} {run} />
+    {:else}
+      <RankingPage {game} {player} />
     {/if}
-    <AuctionCard {game} {player} {run} />
-    <ExportCard {player} {run} />
-    <WeatherCard {game} {player} />
-    <VineyardCard {game} {player} {run} />
-    <CellarCard {game} {player} {run} />
-    <BottlesCard {game} {player} {run} />
-    <EstateCard {game} {player} {run} />
-    {#if multiplayer}
-      <RankingCard {game} {player} />
-    {/if}
-    <section class="card">
-      <h2>Logbuch</h2>
-      <ul class="log">
-        {#each recentLog as entry, i (i)}
-          <li><span class="muted">{entry.month}/{entry.year}</span> {entry.text}</li>
-        {/each}
-      </ul>
-    </section>
   </main>
 
   <footer class="bottombar">
-    <button class="ghost" onclick={onQuit}>Spiel beenden</button>
+    <button class="ghost" onclick={onQuit}><span class="wide-only">Spiel</span> beenden</button>
     <div class="row">
       {#if !hotSeat}
         <button
           disabled={over}
           onclick={skipAhead}
+          aria-label="Vorspulen"
           title="Monate beenden, bis eine wichtige Entscheidung ansteht (höchstens ein Jahr)"
         >
-          ⏩ Vorspulen
+          ⏩ <span class="wide-only">Vorspulen</span>
         </button>
       {/if}
       <button class="primary" disabled={over} onclick={() => run({ type: 'endTurn' })}>
@@ -200,10 +235,6 @@
     padding: 12px 16px;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-  }
-  .scene {
-    flex: 0 1 180px;
-    min-width: 120px;
   }
   .title {
     display: flex;
@@ -229,22 +260,87 @@
   .negative {
     color: var(--danger);
   }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr));
-    gap: 16px;
-    padding: 16px;
-    max-width: 1200px;
-    margin: 0 auto;
+  .topbar {
+    border-bottom: none;
   }
-  .log {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    font-size: 0.9rem;
+  .tabs {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    gap: 2px;
+    padding: 0 8px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    justify-content: center;
   }
-  .log li {
-    padding: 3px 0;
+  .tab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    border-radius: 0;
+    color: var(--muted);
+    background: none;
+    white-space: nowrap;
+  }
+  .tab.active {
+    color: var(--wine);
+    border-bottom-color: var(--wine);
+    font-weight: 600;
+  }
+  .tab-icon {
+    font-size: 1.15rem;
+  }
+  .badge {
+    min-width: 1.3em;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--wine);
+    color: var(--wine-contrast);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+  }
+  @media (max-width: 560px) {
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas: 'title tools' 'stats stats';
+      padding: 8px 12px;
+    }
+    .title {
+      grid-area: title;
+    }
+    .tools {
+      grid-area: tools;
+    }
+    .stats {
+      grid-area: stats;
+    }
+    .bottombar {
+      flex-wrap: nowrap;
+      padding: 8px 12px;
+    }
+    .wide-only {
+      display: none;
+    }
+    .tab {
+      flex-direction: column;
+      gap: 0;
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      flex: 1;
+    }
+    .badge {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+    }
   }
   .handover {
     max-width: 420px;
