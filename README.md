@@ -20,7 +20,8 @@ npm run build    # Produktions-Build inkl. Service Worker
 - `src/engine/` enthält die Spiellogik ohne UI-Abhängigkeit. `applyAction(state, action)` ist eine reine Funktion, der Zufall ist Seed-basiert.
 - `src/engine/ai.ts` enthält die KI-Gegner (vier Profile), `src/engine/auction.ts` die Weinbergversteigerung, `src/engine/simulate.ts` reine KI-Partien für Tests und Balancing.
 - `src/engine/rules.ts` enthält gemeinsame Regeln (Güte, Tanks, Bekanntheit). `vineyard.ts` regelt Reife, Krankheiten, Wetterereignisse, Botrytis und Eiswein. `cellar.ts` regelt Abfüllung und Sekt, `intrigue.ts` Panschen und Sabotage, `exports.ts` die Exportverträge und `events.ts` die übrigen Zufallsereignisse.
+- `src/engine/advisor.ts` liefert die Aufgabenliste „Diesen Monat“ und das Vorspulen, `src/engine/challenge.ts` die Tages-Challenge.
 - `src/engine/market.ts` enthält reine Berechnungen: Preise, Nachfrage, Kreditrahmen, Prämierungswertung.
 - `src/engine/data/` enthält Anbaugebiete, Rebsorten, Qualitätsstufen und in `economy.ts` alle Kosten- und Balancing-Werte.
-- `src/ui/` enthält die Svelte-5-Komponenten, je Bereich eine Karte. Ein Smoke-Test rendert die Oberfläche serverseitig.
+- `src/ui/` enthält die Svelte-5-Komponenten, je Bereich eine Karte, außerdem Lexikon (`lexicon.ts`), Landschaftsgrafik (`SeasonScene.svelte`) und Klänge per Web Audio (`sound.ts`).
 - `src/save.ts` speichert den Spielstand (aktuell localStorage).

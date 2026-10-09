@@ -109,7 +109,32 @@ export const AUCTION_OUTSIDE_BID_RANGE: [number, number] = [0.85, 1.35]
 /** Güte-Bonus je Stufe Lagenqualität */
 export const SITE_QUALITY_BONUS = 4
 
-/** Personal: ein Festangestellter je angefangene 10 ha – das Startweingut kommt mit einer Kraft aus */
+/** Barrique: kleine Eichenfässer – teurer Lagerraum, aber bessere Weine */
+export const BARRIQUE_COST_PER_HL = 600
+export const BARRIQUE_VALUE_PER_HL = 300
+export const BARRIQUE_MONTHS = 12
+export const BARRIQUE_QUALITY_RED = 6
+export const BARRIQUE_QUALITY_WHITE = 2
+
+/** Vinothek: Verkaufsraum mit Weinprobe – mehr Ab-Hof-Absatz */
+export const VINOTHEK_COST = 150_000
+export const VINOTHEK_MONTHLY_COST = 1_000
+export const VINOTHEK_DEMAND_FACTOR = 1.3
+export const VINOTHEK_REPUTATION = 5
+
+/** Marktsättigung: je 20.000 Flaschen im Jahr zahlt der Großhandel 10 % weniger, höchstens 50 % */
+export const WHOLESALE_SATURATION_BOTTLES = 200_000
+export const WHOLESALE_MIN_FACTOR = 0.5
+
+/** Pilzwiderstandsfähige Sorten gelten als weniger edel */
+export const PIWI_PRICE_FACTOR = 0.9
+
+/** Klimawandel: Wärmezuwachs je Spieljahr (Skala 0–10) und Rückgang der Eiswein-Chance */
+export const CLIMATE_WARMTH_PER_YEAR = 0.1
+export const CLIMATE_ICE_WINE_LOSS_PER_YEAR = 0.01
+export const CLIMATE_HEAT_PER_YEAR = 0.005
+
+/** Personal: eine Vollzeitkraft je 10 ha, mindestens eine, dazwischen anteilig */
 export const HECTARES_PER_WORKER = 10
 
 /** Pflanzenschutz: Kosten je bestocktem ha und Saison (verteilt auf Mai–August) und Schutzwirkung */

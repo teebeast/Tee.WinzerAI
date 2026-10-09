@@ -1,7 +1,9 @@
 <script lang="ts">
   import { AI_PROFILES } from '../engine/ai'
+  import { CHALLENGE_YEARS, dailyChallenge, todayKey } from '../engine/challenge'
   import { REGIONS, type RegionId } from '../engine/data/regions'
   import type { AiProfileId, NewGameOptions } from '../engine/types'
+  import { loadChallengeBest } from '../save'
 
   let { onStart }: { onStart: (options: NewGameOptions) => void } = $props()
 
@@ -26,6 +28,10 @@
     { name: AI_NAMES.tradition, regionId: 'mosel', kind: 'tradition' },
   ])
   let targetPoints = $state(600)
+  let climateChange = $state(true)
+  const today = todayKey()
+  const challenge = dailyChallenge(today)
+  const challengeBest = loadChallengeBest(today)
   let seed = $state(String(Math.floor(Math.random() * 1_000_000)))
   const hasHuman = $derived(seats.some((s) => s.kind === 'human'))
 
@@ -47,6 +53,7 @@
     onStart({
       seed: Number(seed) || 0,
       targetPoints,
+      climateChange,
       players: seats.map((s, i) => ({
         name: s.name.trim() || `Spieler ${i + 1}`,
         regionId: s.regionId,
@@ -59,6 +66,19 @@
 <form class="card new-game" onsubmit={submit}>
   <h1>Winzer</h1>
   <p class="muted">Übernimm ein Weingut mit 10 ha, keltere die besten Weine und sammle Punkte. Wer zuerst das Ziel erreicht, gewinnt.</p>
+
+  <div class="challenge">
+    <div>
+      <strong>🎯 Tages-Challenge {today}</strong>
+      <p class="muted small">
+        {REGIONS[challenge.players[0].regionId].name} gegen zwei Computergegner, {CHALLENGE_YEARS} Jahre – heute spielen alle
+        dieselbe Partie.{challengeBest !== null ? ` Dein Bestwert: ${challengeBest} Punkte.` : ''}
+      </p>
+    </div>
+    <button type="button" onclick={() => onStart(challenge)}>Challenge starten</button>
+  </div>
+
+  <h2>Freies Spiel</h2>
 
   <h2>Weingüter</h2>
   {#each seats as seat, i (i)}
@@ -100,6 +120,11 @@
     <label><input type="radio" bind:group={targetPoints} value={1000} /> Klassisch (1000)</label>
   </div>
 
+  <label class="row">
+    <input type="checkbox" bind:checked={climateChange} />
+    Klimawandel: Es wird jedes Jahr etwas wärmer (frühere Reife, mehr Hitze, seltener Eiswein)
+  </label>
+
   <details>
     <summary>Erweitert</summary>
     <label class="row">Seed <input bind:value={seed} inputmode="numeric" /></label>
@@ -128,6 +153,20 @@
   h2 {
     font-size: 1rem;
     margin: 20px 0 8px;
+  }
+  .challenge {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px solid var(--wine);
+    border-radius: 8px;
+  }
+  .challenge p {
+    margin: 4px 0 0;
   }
   .seat {
     display: grid;

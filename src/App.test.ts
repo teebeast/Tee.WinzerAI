@@ -89,6 +89,41 @@ describe('Bedienung', () => {
     expect(target.textContent).toContain('In Umstellung')
   })
 
+  it('das Lexikon lässt sich öffnen und durchsuchen', () => {
+    click('Spiel starten')
+    click('Lexikon')
+    const dialog = target.querySelector('dialog')!
+    expect(dialog.textContent).toContain('Oechsle')
+    const search = dialog.querySelector('input')!
+    search.value = 'Kirschessig'
+    search.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    expect(dialog.querySelectorAll('dt')).toHaveLength(1)
+    expect(dialog.querySelector('dt')!.textContent).toBe('Kirschessigfliege')
+  })
+
+  it('Vorspulen überspringt ruhige Monate bis zur nächsten Entscheidung', () => {
+    click('Spiel starten')
+    click('Vorspulen')
+    expect(target.textContent).not.toContain('Januar · Jahr 1')
+    expect(target.textContent).toContain('Diesen')
+  })
+
+  it('die Tages-Challenge startet mit Zeitlimit', () => {
+    click('Challenge starten')
+    expect(target.textContent).toContain('Jahr 1 von 10')
+    expect(target.textContent).toContain('Tages-Challenge')
+  })
+
+  it('der Ton lässt sich stummschalten und bleibt gemerkt', () => {
+    click('Spiel starten')
+    const sound = target.querySelector<HTMLButtonElement>('button[aria-label="Ton ausschalten"]')!
+    sound.click()
+    flushSync()
+    expect(localStorage.getItem('winzer.muted')).toBe('1')
+    expect(target.querySelector('button[aria-label="Ton einschalten"]')).not.toBeNull()
+  })
+
   it('speichert den Spielstand nach jedem Zug', () => {
     click('Spiel starten')
     click('Monat beenden')

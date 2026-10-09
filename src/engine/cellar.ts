@@ -1,6 +1,16 @@
-import { BOTTLE_COST, SEKT_EXTRA_COST_PER_BOTTLE, SEKT_MONTHS, SEKT_QUALITY_BONUS } from './data/economy'
+import {
+  BARRIQUE_COST_PER_HL,
+  BARRIQUE_MONTHS,
+  BARRIQUE_QUALITY_RED,
+  BARRIQUE_QUALITY_WHITE,
+  BOTTLE_COST,
+  SEKT_EXTRA_COST_PER_BOTTLE,
+  SEKT_MONTHS,
+  SEKT_QUALITY_BONUS,
+} from './data/economy'
+import { GRAPES } from './data/grapes'
 import { hlToBottles } from './market'
-import { removeBatchVolume, wineLabel } from './rules'
+import { removeBatchVolume, usedBarriqueHl, wineLabel } from './rules'
 import type { BottleLot, GameState, Player, WineBatch } from './types'
 import { addLog, formatEuro, newId } from './util'
 
@@ -64,6 +74,43 @@ export function makeSekt(state: GameState, player: Player, batchId: string, hect
     player.id,
     `${bottles} Flaschen Sekt aus ${wineLabel(batch)} angesetzt – fertig in ${SEKT_MONTHS} Monaten (−${formatEuro(bottles * SEKT_COST_PER_BOTTLE)}).`,
   )
+}
+
+export function barriqueBonus(batch: WineBatch): number {
+  return GRAPES[batch.grape].color === 'rot' ? BARRIQUE_QUALITY_RED : BARRIQUE_QUALITY_WHITE
+}
+
+export function validateExpandBarrique(player: Player, hectoliters: number): string | null {
+  if (!Number.isInteger(hectoliters) || hectoliters <= 0) return 'Ungültige Menge.'
+  const cost = hectoliters * BARRIQUE_COST_PER_HL
+  if (player.money < cost) return `Nicht genug Geld (benötigt ${formatEuro(cost)}).`
+  return null
+}
+
+export function expandBarrique(state: GameState, player: Player, hectoliters: number) {
+  player.money -= hectoliters * BARRIQUE_COST_PER_HL
+  player.barriqueCapacityHl += hectoliters
+  addLog(state, player.id, `${hectoliters} hl Barriquefässer gekauft.`)
+}
+
+export function validateToBarrique(player: Player, batchId: string): string | null {
+  const batch = player.cellar.find((b) => b.id === batchId)
+  if (!batch) return 'Unbekannte Charge.'
+  if (batch.barrique) return 'Der Wein liegt bereits im Barrique.'
+  if (batch.level === 'eiswein' || batch.level === 'trockenbeerenauslese') return 'Edelsüße Weine gehören nicht ins Barrique.'
+  const free = player.barriqueCapacityHl - usedBarriqueHl(player)
+  if (batch.hectoliters > free) return `Im Barrique ist nur Platz für ${free} hl.`
+  return null
+}
+
+/** Umlagern ins Eichenfass: längere Reife, dafür mehr Güte (vor allem bei Rotwein) – und Platz im Tank. */
+export function toBarrique(state: GameState, player: Player, batchId: string) {
+  const batch = player.cellar.find((b) => b.id === batchId)!
+  const bonus = barriqueBonus(batch)
+  batch.barrique = true
+  batch.quality = Math.min(100, batch.quality + bonus)
+  batch.monthsUntilReady = Math.max(batch.monthsUntilReady, BARRIQUE_MONTHS)
+  addLog(state, player.id, `${wineLabel(batch)} reift jetzt ${BARRIQUE_MONTHS} Monate im Barrique (+${bonus} Güte).`)
 }
 
 function newLot(state: GameState, batch: WineBatch, bottles: number, sparkling: boolean): BottleLot {

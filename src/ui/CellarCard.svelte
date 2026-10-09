@@ -1,8 +1,10 @@
 <script lang="ts">
   import { SEKT_COST_PER_BOTTLE } from '../engine/cellar'
-  import { ADULTERATION, BOTTLE_COST, SEKT_MONTHS } from '../engine/data/economy'
+  import { barriqueBonus } from '../engine/cellar'
+  import { ADULTERATION, BARRIQUE_MONTHS, BOTTLE_COST, SEKT_MONTHS } from '../engine/data/economy'
   import { formatEuro, usedTankHl, validateAction, wineLabel } from '../engine/game'
   import { bulkPricePerHl, hlToBottles } from '../engine/market'
+  import { usedBarriqueHl } from '../engine/rules'
   import type { Action, AdulterationMethod, GameState, Player } from '../engine/types'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -18,7 +20,14 @@
 </script>
 
 <section class="card">
-  <h2>Keller <span class="muted small">({usedTankHl(player)} / {player.tankCapacityHl} hl)</span></h2>
+  <h2>
+    Keller
+    <span class="muted small">
+      (Tank {usedTankHl(player)} / {player.tankCapacityHl} hl{player.barriqueCapacityHl > 0
+        ? ` · Barrique ${usedBarriqueHl(player)} / ${player.barriqueCapacityHl} hl`
+        : ''})
+    </span>
+  </h2>
   {#if game.bulkCrisisMonths > 0}
     <p class="warning small">Krise der Großkellereien: Fasswein bringt noch {game.bulkCrisisMonths} Monate nur den halben Preis.</p>
   {/if}
@@ -31,15 +40,17 @@
     {@const sektAction = { type: 'makeSekt', batchId: batch.id, hectoliters: amount } as const}
     {@const method = methodChoice[batch.id] ?? 'zucker'}
     {@const fakeAction = { type: 'adulterate', batchId: batch.id, method } as const}
+    {@const barriqueAction = { type: 'toBarrique', batchId: batch.id } as const}
     <div class="item">
       <div class="item-head">
-        <strong>{wineLabel(batch)}{batch.adulterated ? ' 🧪' : ''}</strong>
+        <strong>{wineLabel(batch)}{batch.barrique ? ' 🛢️' : ''}{batch.adulterated ? ' 🧪' : ''}</strong>
         <span class="muted">{batch.hectoliters} hl · Güte {batch.quality}</span>
       </div>
       <div class="muted small">
         {batch.monthsUntilReady > 0
           ? `reift noch ${batch.monthsUntilReady} Monat${batch.monthsUntilReady === 1 ? '' : 'e'}`
           : 'ausgebaut – bereit zum Abfüllen'}
+        {#if batch.barrique}· im Barrique{/if}
         {#if batch.adulterated}· gepanscht ({ADULTERATION[batch.adulterated].name}){/if}
       </div>
       <div class="row">
@@ -62,6 +73,15 @@
         >
           Sekt ({formatEuro(hlToBottles(amount) * SEKT_COST_PER_BOTTLE)})
         </button>
+        {#if player.barriqueCapacityHl > 0 && !batch.barrique}
+          <button
+            {...button(barriqueAction)}
+            onclick={() => run(barriqueAction)}
+            title={validateAction(game, barriqueAction) ?? `${BARRIQUE_MONTHS} Monate im Eichenfass, +${barriqueBonus(batch)} Güte`}
+          >
+            🛢️ Ins Barrique (+{barriqueBonus(batch)} Güte)
+          </button>
+        {/if}
         <button onclick={() => run({ type: 'sellBulk', batchId: batch.id, hectoliters: amount })}>
           Fasswein (+{formatEuro(bulkPricePerHl(batch, game) * amount)})
         </button>
