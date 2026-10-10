@@ -11,8 +11,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Winzer',
-        short_name: 'Winzer',
+        name: 'WinzerAI',
+        short_name: 'WinzerAI',
         description: 'Rundenbasierte Weingut-Simulation',
         lang: 'de',
         theme_color: '#5b1a33',

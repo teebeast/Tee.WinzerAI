@@ -158,6 +158,19 @@ describe('Bedienung', () => {
     expect(target.textContent).not.toContain('Logbuch')
   })
 
+  it('das Endlosspiel startet ohne Punkteziel', () => {
+    expect(target.textContent).toContain('WinzerAI')
+    const endless = target.querySelector<HTMLInputElement>('input[name="length"][value="endless"]')!
+    endless.click()
+    flushSync()
+    click('Spiel starten')
+    expect(target.textContent).toContain('∞ Endlosspiel')
+    expect(target.textContent).not.toContain('/ 600')
+    const saved = JSON.parse(localStorage.getItem('winzer.save.v1')!)
+    expect(saved.yearLimit).toBeNull()
+    expect(saved.targetPoints).toBe(Number.MAX_SAFE_INTEGER)
+  })
+
   it('speichert den Spielstand nach jedem Zug', () => {
     click('Spiel starten')
     click('Monat beenden')

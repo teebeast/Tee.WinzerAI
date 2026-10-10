@@ -54,6 +54,9 @@ import {
   computeQuality,
   currentPlayer,
   HARVEST_MONTHS,
+  hasPointTarget,
+  isEndless,
+  NO_POINT_TARGET,
   PLANT_MONTHS,
   plotAgeFactor,
   removeBatchVolume,
@@ -81,6 +84,9 @@ export {
   currentPlayer,
   formatEuro,
   HARVEST_MONTHS,
+  hasPointTarget,
+  isEndless,
+  NO_POINT_TARGET,
   PLANT_MONTHS,
   plotAgeFactor,
   usedTankHl,
@@ -159,7 +165,9 @@ export function newGame(options: NewGameOptions): GameState {
     null,
     state.yearLimit
       ? `Jahr 1 beginnt. Wer nach ${state.yearLimit} Jahren die meisten Punkte hat, gewinnt.`
-      : `Jahr 1 beginnt. Ziel: ${state.targetPoints} Punkte.`,
+      : isEndless(state)
+        ? 'Jahr 1 beginnt. Endlosspiel: kein Punkteziel, kein Zeitlimit – baue dein Weingut in Ruhe aus.'
+        : `Jahr 1 beginnt. Ziel: ${state.targetPoints} Punkte.`,
   )
   return state
 }

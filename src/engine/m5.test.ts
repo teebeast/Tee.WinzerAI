@@ -4,9 +4,10 @@ import { CHALLENGE_YEARS, dailyChallenge } from './challenge'
 import { VINOTHEK_COST } from './data/economy'
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
-import { applyAction, currentPlayer, newGame } from './game'
+import { applyAction, currentPlayer, isEndless, newGame } from './game'
 import { bottlePrice, monthlyDemand, wholesalePrice } from './market'
 import type { BottleLot, GameState } from './types'
+import { simulate } from './simulate'
 import { iceWineChance } from './vineyard'
 
 function start(options: { climateChange?: boolean; regionId?: keyof typeof REGIONS } = {}): GameState {
@@ -137,5 +138,19 @@ describe('Ratgeber und Vorspulen', () => {
 
   it('spult höchstens ein Jahr', () => {
     expect(fastForward(start(), 3).months).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('Endlosspiel', () => {
+  it('kennt kein Siegziel und läuft über viele Jahre weiter', () => {
+    const { state } = simulate({
+      seed: 4,
+      players: [{ regionId: 'pfalz', ai: 'tradition' }],
+      years: 20,
+    })
+    expect(isEndless(state)).toBe(true)
+    expect(state.winnerId).toBeNull()
+    expect(state.finished).toBe(false)
+    expect(state.year).toBeGreaterThan(20)
   })
 })

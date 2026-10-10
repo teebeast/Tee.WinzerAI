@@ -22,6 +22,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Runde | 1 Monat; alle Spieler ziehen nacheinander, danach wird der Monat aufgelöst |
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
+| Endlosspiel | Ohne Punkteziel und Zeitlimit. Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Gebiet, gleiches Wetter, zwei feste KI-Gegner. Gewertet werden die Punkte nach 10 Jahren, der Bestwert wird auf dem Gerät gespeichert. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
