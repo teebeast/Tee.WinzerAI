@@ -1,4 +1,5 @@
 import { REGIONS, type RegionId } from './data/regions'
+import { NO_POINT_TARGET } from './rules'
 import { seedFromString } from './rng'
 import type { NewGameOptions } from './types'
 
@@ -20,7 +21,7 @@ export function dailyChallenge(date: string, playerName = 'Du'): NewGameOptions 
   const regionId = regionIds[Math.abs(seed) % regionIds.length]
   return {
     seed,
-    targetPoints: Number.MAX_SAFE_INTEGER,
+    targetPoints: NO_POINT_TARGET,
     yearLimit: CHALLENGE_YEARS,
     climateChange: true,
     challenge: date,

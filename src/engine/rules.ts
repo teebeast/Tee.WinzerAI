@@ -18,6 +18,18 @@ import { addLog, formatEuro, newId } from './util'
 export const PLANT_MONTHS = [3, 4]
 export const HARVEST_MONTHS = [8, 9, 10, 11, 12]
 
+/** Punkteziel, das nie erreicht wird – für Endlosspiel und Partien mit Jahreslimit */
+export const NO_POINT_TARGET = Number.MAX_SAFE_INTEGER
+
+export function hasPointTarget(state: GameState): boolean {
+  return state.targetPoints < NO_POINT_TARGET
+}
+
+/** Endlosspiel: weder Punkteziel noch Jahreslimit – es endet nur durch Insolvenz oder auf Wunsch */
+export function isEndless(state: GameState): boolean {
+  return !hasPointTarget(state) && !state.yearLimit
+}
+
 export function currentPlayer(state: GameState): Player {
   return state.players[state.currentPlayer]
 }

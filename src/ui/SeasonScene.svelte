@@ -10,7 +10,8 @@
     weather,
     vinothek = false,
     barrique = false,
-  }: { month: number; weather: WeatherKind | null; vinothek?: boolean; barrique?: boolean } = $props()
+    height = 150,
+  }: { month: number; weather: WeatherKind | null; vinothek?: boolean; barrique?: boolean; height?: number } = $props()
 
   const season = $derived(
     month <= 2 || month === 12 ? 'winter' : month <= 5 ? 'spring' : month <= 8 ? 'summer' : 'autumn',
@@ -34,7 +35,7 @@
   const stocks = Array.from({ length: 16 }, (_, i) => i)
 </script>
 
-<svg viewBox="0 0 600 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Weingut im {seasonName}">
+<svg style:height="{height}px" viewBox="0 0 600 150" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Weingut im {seasonName}">
   <rect width="600" height="150" fill={sky} />
   {#if weather === 'sonnig' || weather === null}
     <circle cx="520" cy="34" r="16" fill="#f4c542" />
@@ -106,7 +107,6 @@
   svg {
     display: block;
     width: 100%;
-    height: 150px;
     border-radius: 12px;
   }
 </style>

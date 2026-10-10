@@ -1,14 +1,14 @@
 <script lang="ts">
   import { AI_PROFILES } from '../../engine/ai'
   import { REGIONS } from '../../engine/data/regions'
-  import { formatEuro } from '../../engine/game'
+  import { formatEuro, hasPointTarget as pointTarget, isEndless } from '../../engine/game'
   import { netWorth, totalHectares } from '../../engine/market'
   import type { GameState, Player } from '../../engine/types'
 
   let { game, player }: { game: GameState; player: Player } = $props()
 
   const ranking = $derived([...game.players].sort((a, b) => b.points - a.points || netWorth(b) - netWorth(a)))
-  const hasPointTarget = $derived(game.targetPoints < Number.MAX_SAFE_INTEGER)
+  const hasPointTarget = $derived(pointTarget(game))
   /** Balkenlänge: bis zum Punkteziel, bei offenem Ende relativ zum Besten */
   const scale = $derived(Math.max(hasPointTarget ? game.targetPoints : 0, ...game.players.map((p) => p.points), 1))
   const MEDALS = ['🥇', '🥈', '🥉']
@@ -19,7 +19,11 @@
     <div>
       <h1>🏆 Rangliste</h1>
       <span class="muted small">
-        {hasPointTarget ? `Gewonnen hat, wer zuerst ${game.targetPoints} Punkte erreicht.` : 'Punkte entscheiden am Ende der Partie.'}
+        {hasPointTarget
+          ? `Gewonnen hat, wer zuerst ${game.targetPoints} Punkte erreicht.`
+          : isEndless(game)
+            ? 'Endlosspiel: Die Rangliste zeigt den aktuellen Stand.'
+            : 'Punkte entscheiden am Ende der Partie.'}
         Vermögen = Betriebswert + Konto − Kredit.
       </span>
     </div>

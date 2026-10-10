@@ -1,7 +1,7 @@
 <script lang="ts">
   import { monthHints } from '../../engine/advisor'
   import { REGIONS } from '../../engine/data/regions'
-  import { formatEuro, MONTH_NAMES, usedTankHl } from '../../engine/game'
+  import { formatEuro, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, usedTankHl } from '../../engine/game'
   import { creditLimit, netWorth } from '../../engine/market'
   import { climateWarming } from '../../engine/rules'
   import type { Action, GameState, Player } from '../../engine/types'
@@ -24,7 +24,7 @@
   }: { game: GameState; player: Player; over: boolean; run: (a: Action) => void; go: (p: Page) => void } = $props()
 
   const hints = $derived(over ? [] : monthHints(game, player))
-  const hasPointTarget = $derived(game.targetPoints < Number.MAX_SAFE_INTEGER)
+  const hasPointTarget = $derived(pointTarget(game))
   const ranking = $derived([...game.players].sort((a, b) => b.points - a.points || netWorth(b) - netWorth(a)))
   const place = $derived(ranking.findIndex((p) => p.id === player.id) + 1)
   const bottles = $derived(player.bottles.reduce((sum, l) => sum + l.bottles, 0))
@@ -59,7 +59,7 @@
       <Ring value={player.points} max={hasPointTarget ? game.targetPoints : player.points || 1} text={String(player.points)} />
       <span class="kpi-text">
         <span class="muted small">Siegpunkte</span>
-        <strong>{hasPointTarget ? `Ziel ${game.targetPoints}` : 'kein Punkteziel'}</strong>
+        <strong>{hasPointTarget ? `Ziel ${game.targetPoints}` : isEndless(game) ? '∞ Endlosspiel' : `${game.yearLimit} Jahre`}</strong>
         <span class="muted small">
           {game.players.length > 1 ? `Platz ${place} von ${game.players.length}` : 'Solo-Partie'}
         </span>

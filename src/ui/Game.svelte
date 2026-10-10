@@ -2,7 +2,7 @@
   import { fastForward, monthHints } from '../engine/advisor'
   import { activeHumans, runAiTurns } from '../engine/ai'
   import { REGIONS } from '../engine/data/regions'
-  import { applyAction, currentPlayer, formatEuro, MONTH_NAMES, RuleError } from '../engine/game'
+  import { applyAction, currentPlayer, formatEuro, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, RuleError } from '../engine/game'
   import type { Action, GameState } from '../engine/types'
   import { loadChallengeBest, recordChallengeResult } from '../save'
   import LexiconDialog from './LexiconDialog.svelte'
@@ -51,7 +51,7 @@
   const winner = $derived(game.players.find((p) => p.id === game.winnerId))
   const humansLeft = $derived(activeHumans(game).length > 0)
   const over = $derived(!!winner || game.finished || !humansLeft)
-  const hasPointTarget = $derived(game.targetPoints < Number.MAX_SAFE_INTEGER)
+  const hasPointTarget = $derived(pointTarget(game))
   const tabs = $derived(PAGES.filter((p) => p.id !== 'rangliste' || multiplayer))
   /** Offene wichtige Aufgaben je Unterseite – als Zähler an den Reitern */
   const badges = $derived.by(() => {
@@ -137,7 +137,7 @@
         {MONTH_NAMES[game.month - 1]} · Jahr {game.year}{game.yearLimit ? ` von ${game.yearLimit}` : ''}
       </strong>
       <span class="muted">
-        {player.name} · {region.name}{game.challenge ? ` · 🎯 Tages-Challenge ${game.challenge}` : ''}
+        {player.name} · {region.name}{game.challenge ? ` · 🎯 Tages-Challenge ${game.challenge}` : ''}{isEndless(game) ? ' · ∞ Endlosspiel' : ''}
       </span>
     </div>
     <div class="stats">

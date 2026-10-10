@@ -1,4 +1,4 @@
-# Winzer (Arbeitstitel)
+# WinzerAI
 
 Rundenbasierte Weingut-Simulation als Browsergame (PWA), nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92).
 
