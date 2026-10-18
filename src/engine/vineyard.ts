@@ -161,7 +161,7 @@ export function resolveIceWine(state: GameState, player: Player, frost: boolean)
       hectoliters,
       oechsle: Math.round(oechsle),
       level: 'eiswein',
-      quality: computeQuality(player, plot, oechsle),
+      quality: computeQuality(player, plot, state.year, oechsle),
     })
     addLog(
       state,

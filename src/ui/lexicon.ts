@@ -47,7 +47,7 @@ export const LEXICON: LexiconEntry[] = [
   },
   {
     term: 'Kellermeister',
-    text: 'Verantwortlich für Gärung, Ausbau und Abfüllung. Ein guter Kellermeister holt mehr aus jedem Jahrgang heraus (+5 Güte), kostet aber ein festes Gehalt.',
+    text: 'Verantwortlich für Gärung, Ausbau und Abfüllung. Je nach Talent holt er +1 bis +5 Güte aus jedem Jahrgang, mit den Dienstjahren bis zu +2 mehr. Fähigkeiten entscheiden, was im Keller möglich ist: Sekt und Barrique nur mit dem passenden Können, Spezialisten für Rot-, Weiß- oder edelsüße Weine holen zusätzlich Güte heraus.',
   },
   {
     term: 'Kirschessigfliege',

@@ -67,8 +67,14 @@ export const REPUTATION_DECAY_RATE = 0.03
 /** Zuwächse schrumpfen mit steigender Bekanntheit: Faktor (1 − Bekanntheit / Wert) */
 export const REPUTATION_SATURATION = 120
 
-export const CELLAR_MASTER_SALARY = 4_000
-export const CELLAR_MASTER_QUALITY_BONUS = 5
+/** Kellermeister: Gehalt aus Grundbetrag, Talent und Fähigkeiten */
+export const CELLAR_MASTER_BASE_SALARY = 2_500
+export const CELLAR_MASTER_SALARY_PER_TALENT = 350
+export const CELLAR_MASTER_SALARY_PER_SKILL = 600
+/** Alle so viele Dienstjahre +1 Güte, höchstens bis zum Erfahrungsdeckel */
+export const CELLAR_MASTER_YEARS_PER_EXPERIENCE = 4
+export const CELLAR_MASTER_MAX_EXPERIENCE = 2
+export const CELLAR_MASTER_CANDIDATES = 3
 
 export interface MarketingInfo {
   kind: MarketingKind

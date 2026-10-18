@@ -92,7 +92,11 @@ describe('Eiswein', () => {
 describe('Sekt', () => {
   it('reift neun Monate und bringt bei hoher Güte 10 Punkte', () => {
     let state = withReadyWine()
-    state = applyAction(state, { type: 'makeSekt', batchId: currentPlayer(state).cellar[0].id, hectoliters: 10 })
+    const sekt = { type: 'makeSekt', batchId: currentPlayer(state).cellar[0].id, hectoliters: 10 } as const
+    expect(() => applyAction(state, sekt)).toThrow('Flaschengärung')
+    currentPlayer(state).cellarMaster = { name: 'Test', talent: 5, skills: ['sekt', 'barrique'], salary: 4000, hiredYear: 1 }
+    currentPlayer(state).money += 100_000 // Gehalt für die neun Monate Reife
+    state = applyAction(state, sekt)
     const lot = currentPlayer(state).bottles[0]
     expect(lot.sparkling).toBe(true)
     expect(lot.monthsUntilReady).toBe(SEKT_MONTHS)

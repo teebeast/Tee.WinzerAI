@@ -86,6 +86,19 @@ export interface ExportContract extends ExportOffer {
   missedMonths: number
 }
 
+export type CellarSkill = 'sekt' | 'barrique' | 'rotwein' | 'weisswein' | 'edelsuess' | 'sparsam'
+
+export interface CellarMaster {
+  name: string
+  /** Grundtalent: Güte-Zuschlag für jede Lese */
+  talent: number
+  skills: CellarSkill[]
+  /** Monatsgehalt */
+  salary: number
+  /** Jahr der Einstellung – Erfahrung wächst mit den Dienstjahren (null = Bewerber) */
+  hiredYear: number | null
+}
+
 export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
 export type Difficulty = 'leicht' | 'normal' | 'schwierig'
@@ -184,7 +197,7 @@ export interface Player {
   hasVinothek: boolean
   /** Im laufenden Jahr an den Großhandel verkaufte Flaschen – drückt den Preis */
   wholesaleThisYear: number
-  hasCellarMaster: boolean
+  cellarMaster: CellarMaster | null
   plots: Plot[]
   cellar: WineBatch[]
   bottles: BottleLot[]
@@ -218,7 +231,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 8
+  version: 9
   rng: Rng
   year: number
   month: number
@@ -239,6 +252,8 @@ export interface GameState {
   monthsToAuction: number
   /** Zufallsereignisse für die Weingüter (Glücksfälle und Rückschläge) */
   randomEvents: boolean
+  /** Kellermeister, die sich in diesem Jahr bewerben – neu jedes Jahr im Januar */
+  cellarMasterCandidates: CellarMaster[]
   /** Restmonate einer Krise der Großkellereien (Fassweinpreis halbiert) */
   bulkCrisisMonths: number
   /** Jedes Jahr wird es etwas wärmer: frühere Reife, mehr Hitze, weniger Eiswein */
@@ -263,7 +278,8 @@ export type Action =
   | { type: 'marketing'; kind: MarketingKind }
   | { type: 'expandTank'; hectoliters: number }
   | { type: 'buyOnlineShop' }
-  | { type: 'cellarMaster'; hire: boolean }
+  | { type: 'hireCellarMaster'; candidate: number }
+  | { type: 'fireCellarMaster' }
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
   | { type: 'auctionLimit'; lotId: string; amount: number }

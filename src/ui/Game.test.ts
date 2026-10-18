@@ -53,6 +53,7 @@ describe('Oberfläche', () => {
 
   it('rendert Sekt, Exportanfrage, Panschen und Konkurrenz', () => {
     let game = advancedGame()
+    currentPlayer(game).cellarMaster = { name: 'Test', talent: 5, skills: ['sekt', 'barrique'], salary: 4000, hiredYear: 1 }
     game = applyAction(game, { type: 'makeSekt', batchId: currentPlayer(game).cellar[0].id, hectoliters: 5 })
     currentPlayer(game).exportOffer = {
       id: 'x', country: 'Japan', bottlesPerMonth: 500, pricePerBottle: 6,

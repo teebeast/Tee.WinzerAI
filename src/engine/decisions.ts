@@ -3,7 +3,7 @@
  * oder Preis. Die Entscheidung gilt bis Monatsende, danach greift die vorsichtige Wahl. Computergegner entscheiden sofort.
  */
 import { parcelValue, SITE_LABELS } from './auction'
-import { CELLAR_MASTER_QUALITY_BONUS, TANK_COST_PER_HL } from './data/economy'
+import { TANK_COST_PER_HL } from './data/economy'
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
 import {
@@ -290,15 +290,16 @@ export const DECISION_EVENTS: DecisionDef[] = [
     },
   },
   {
-    id: 'kellermeister-abwerbung', rarity: 'selten', when: (c) => c.player.hasCellarMaster,
+    id: 'kellermeister-abwerbung', rarity: 'selten', when: (c) => c.player.cellarMaster !== null,
     offer: (c) => {
-      const bonus = c.between(5000, 8000, 500)
+      const master = c.player.cellarMaster!
+      const bonus = Math.round((master.salary * c.between(12, 20)) / 10 / 500) * 500
       return {
         title: '🧑‍🔬 Dein Kellermeister wird abgeworben',
-        text: `Ein Großweingut will deinen Kellermeister abwerben. Mit einer Prämie von ${formatEuro(bonus)} würde er bleiben.`,
+        text: `Ein Großweingut will ${master.name} abwerben. Mit einer Prämie von ${formatEuro(bonus)} würde ${master.name.split(' ')[0]} bleiben.`,
         options: [
-          option('Prämie zahlen', 'Er bleibt.', bonus),
-          option('Ziehen lassen', `Er geht: kein Gehalt mehr, aber −${CELLAR_MASTER_QUALITY_BONUS} Güte bei künftigen Lesen`),
+          option('Prämie zahlen', 'Bleibt – mit allen Fähigkeiten und der Erfahrung.', bonus),
+          option('Ziehen lassen', 'Geht: kein Gehalt mehr, aber auch kein Güte-Zuschlag und keine Spezialweine mehr'),
         ],
         fallback: 1,
         params: { bonus },
@@ -306,9 +307,10 @@ export const DECISION_EVENTS: DecisionDef[] = [
     },
     ai: (c, d) => (affordable(c.player, d.params.bonus) ? 0 : 1),
     resolve: (c, choice, d) => {
-      if (choice === 0) return { text: `Dein Kellermeister bleibt (Prämie ${pay(c, d.params.bonus)}).` }
-      c.player.hasCellarMaster = false
-      return { text: 'Dein Kellermeister wechselt zur Konkurrenz.', tone: 'bad' }
+      const name = c.player.cellarMaster?.name ?? 'Dein Kellermeister'
+      if (choice === 0) return { text: `${name} bleibt (Prämie ${pay(c, d.params.bonus)}).` }
+      c.player.cellarMaster = null
+      return { text: `${name} wechselt zur Konkurrenz.`, tone: 'bad' }
     },
   },
   {

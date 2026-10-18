@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { barriqueBonus, SEKT_COST_PER_BOTTLE } from '../../engine/cellar'
+  import { barriqueBonus, bottleCost, sektCost } from '../../engine/cellar'
+  import { hasSkill } from '../../engine/cellarmaster'
   import {
     ADULTERATION,
     BARRIQUE_MONTHS,
-    BOTTLE_COST,
     COMPETITIONS,
     MEDAL_NAMES,
     REGISTER_FEE,
@@ -29,6 +29,13 @@
   import Vessel from '../gfx/Vessel.svelte'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
+
+  /** Warum Sekt oder Barrique gesperrt sind – sichtbar auch ohne Tooltip */
+  const masterHint = $derived.by(() => {
+    if (!player.cellarMaster) return 'Ohne Kellermeister gibt es weder Sekt noch Barriqueweine.'
+    const missing = [!hasSkill(player, 'sekt') && 'Sekt', !hasSkill(player, 'barrique') && 'den Barrique-Ausbau'].filter(Boolean)
+    return missing.length > 0 ? `${player.cellarMaster.name} beherrscht ${missing.join(' und ')} nicht.` : null
+  })
 
   const methods = Object.keys(ADULTERATION) as AdulterationMethod[]
   let batchAmounts = $state<Record<string, number>>({})
@@ -109,6 +116,9 @@
   {/if}
 
   <h2 class="section">Im Tank und im Fass</h2>
+  {#if player.cellar.length > 0 && masterHint}
+    <p class="muted small">👨‍🔬 {masterHint} Passende Bewerber findest du unter Betrieb.</p>
+  {/if}
   <div class="tiles">
     {#each player.cellar as batch (batch.id)}
       {@const amount = Math.max(1, Math.min(batchAmounts[batch.id] ?? batch.hectoliters, batch.hectoliters))}
@@ -148,14 +158,14 @@
             </label>
             <div class="action-grid">
               <button {...button(bottleAction)} onclick={() => run(bottleAction)}>
-                🍾 Abfüllen <span class="muted small">{formatEuro(hlToBottles(amount) * BOTTLE_COST)}</span>
+                🍾 Abfüllen <span class="muted small">{formatEuro(hlToBottles(amount) * bottleCost(player))}</span>
               </button>
               <button
                 {...button(sektAction)}
                 onclick={() => run(sektAction)}
                 title={validateAction(game, sektAction) ?? `Flaschengärung, ${SEKT_MONTHS} Monate Reife`}
               >
-                🥂 Sekt <span class="muted small">{formatEuro(hlToBottles(amount) * SEKT_COST_PER_BOTTLE)}</span>
+                🥂 Sekt <span class="muted small">{formatEuro(hlToBottles(amount) * sektCost(player))}</span>
               </button>
               <button onclick={() => run({ type: 'sellBulk', batchId: batch.id, hectoliters: amount })}>
                 🚚 Fasswein <span class="muted small">+{formatEuro(bulkPricePerHl(batch, game, player) * amount)}</span>

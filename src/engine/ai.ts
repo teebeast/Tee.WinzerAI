@@ -1,5 +1,6 @@
 import { maxAffordableBid } from './auction'
-import { barriqueBonus, SEKT_COST_PER_BOTTLE } from './cellar'
+import { barriqueBonus, bottleCost, sektCost } from './cellar'
+import { hasSkill } from './cellarmaster'
 import {
   BOTTLE_COST,
   COMPETITIONS,
@@ -241,20 +242,20 @@ export function playAiTurn(state: GameState): GameState {
   if (HARVEST_MONTHS.includes(s.month) && s.month >= profile.harvestMonth) harvestAll(iceWinePlot?.id)
 
   // Sekt: im Frühjahr aus einem einfachen, ausgebauten Grundwein
-  if (profile.sekt && s.month === 4 && !me().bottles.some((l) => l.sparkling && l.monthsUntilReady > 0)) {
+  if (profile.sekt && hasSkill(me(), 'sekt') && s.month === 4 && !me().bottles.some((l) => l.sparkling && l.monthsUntilReady > 0)) {
     const base = me()
       .cellar.filter((b) => b.monthsUntilReady === 0 && (b.level === 'qualitaetswein' || b.level === 'kabinett'))
       .sort((a, b) => b.quality - a.quality)[0]
     if (base) {
       const hectoliters = Math.min(SEKT_HECTOLITERS, base.hectoliters)
-      if (ensureCash(hlToBottles(hectoliters) * SEKT_COST_PER_BOTTLE, 0, true)) {
+      if (ensureCash(hlToBottles(hectoliters) * sektCost(me()), 0, true)) {
         act({ type: 'makeSekt', batchId: base.id, hectoliters })
       }
     }
   }
 
-  // Barrique: den besten frischen Rotwein ins Eichenfass legen
-  if (profile.barrique) {
+  // Barrique: den besten frischen Rotwein ins Eichenfass legen – nur mit einem Kellermeister, der das kann
+  if (profile.barrique && hasSkill(me(), 'barrique')) {
     const hasRedVines = me().plots.some((p) => p.grape && GRAPES[p.grape].color === 'rot')
     if (hasRedVines && s.year >= 3 && me().barriqueCapacityHl < BARRIQUE_TARGET_HL && !strained()) {
       if (me().money >= profile.cashReserve + 80_000) act({ type: 'expandBarrique', hectoliters: 100 })
@@ -268,7 +269,7 @@ export function playAiTurn(state: GameState): GameState {
 
   // 5. Ausgebauten Wein abfüllen, sonst als Fasswein verkaufen
   for (const batch of me().cellar.filter((b) => b.monthsUntilReady === 0)) {
-    const cost = hlToBottles(batch.hectoliters) * BOTTLE_COST
+    const cost = hlToBottles(batch.hectoliters) * bottleCost(me())
     if (!(ensureCash(cost, 0, true) && act({ type: 'bottle', batchId: batch.id, hectoliters: batch.hectoliters }))) {
       act({ type: 'sellBulk', batchId: batch.id, hectoliters: batch.hectoliters })
     }
@@ -301,13 +302,13 @@ export function playAiTurn(state: GameState): GameState {
   // 9. Investitionen und Marketing
   const productiveHa = me().plots.filter((p) => plotAgeFactor(p, s.year) > 0).reduce((sum, p) => sum + p.hectares, 0)
   if (strained()) {
-    if (me().hasCellarMaster) act({ type: 'cellarMaster', hire: false })
+    if (me().cellarMaster) act({ type: 'fireCellarMaster' })
     if (profile.marketing.includes('social') && me().money - MARKETING.social.cost >= profile.cashReserve) {
       act({ type: 'marketing', kind: 'social' })
     }
   } else {
-    if (profile.cellarMaster && !me().hasCellarMaster && s.year >= 2 && productiveHa >= 6) {
-      if (me().money >= profile.cashReserve + 30_000) act({ type: 'cellarMaster', hire: true })
+    if (profile.cellarMaster && s.year >= 2 && productiveHa >= 6 && me().money >= profile.cashReserve + 30_000) {
+      chooseCellarMaster()
     }
     if (profile.onlineShop && !me().hasOnlineShop && me().reputation >= 25) {
       if (me().money >= profile.cashReserve + ONLINE_SHOP_COST + 20_000) act({ type: 'buyOnlineShop' })
@@ -325,6 +326,21 @@ export function playAiTurn(state: GameState): GameState {
   }
 
   return applyAction(s, { type: 'endTurn' })
+
+  /**
+   * Bewerber nach Profil bewerten: Talent zählt, benötigte Fähigkeiten (Sekt, Barrique) noch mehr, das Gehalt dagegen.
+   * Gewechselt wird nur im Januar, wenn ein Bewerber deutlich besser passt.
+   */
+  function chooseCellarMaster() {
+    const needs = [...(profile.sekt ? ['sekt'] : []), ...(profile.barrique ? ['barrique'] : [])]
+    const score = (m: { talent: number; skills: string[]; salary: number }) =>
+      m.talent * 2 + needs.filter((n) => m.skills.includes(n)).length * 6 - m.salary / 1000
+    const ranked = s.cellarMasterCandidates.map((m, i) => ({ i, score: score(m) })).sort((a, b) => b.score - a.score)
+    const best = ranked[0]
+    const current = me().cellarMaster
+    if (!best) return
+    if (!current || (s.month === 1 && best.score > score(current) + 4)) act({ type: 'hireCellarMaster', candidate: best.i })
+  }
 
   function harvestAll(reservedPlotId?: string) {
     const plots = me()
