@@ -179,6 +179,8 @@ export function deliverOrder(state: GameState, player: Player, orderId: string) 
   const revenue = orderValue(order)
   player.money += revenue
   player.points += order.points
+  player.stats.ordersDelivered++
+  player.stats.bottlesSold += order.bottles
   const gain = changeReputation(player, order.reputation)
   player.orders = player.orders.filter((o) => o.id !== orderId)
   addLog(

@@ -39,12 +39,12 @@ describe('Oberfläche', () => {
   it('rendert ein fortgeschrittenes Spiel auf allen Unterseiten', () => {
     const game = advancedGame()
     const expected: Record<Page, string[]> = {
-      hof: ['Jetzt zu tun', 'Logbuch', 'Siegpunkte', 'Zug beenden', 'Rangliste'],
+      hof: ['Jetzt zu tun', 'Logbuch', 'Siegpunkte', 'Zug beenden', 'Erfolge'],
       weinberg: ['Pflanzenschutz', 'Lagenqualität', 'Riesling'],
       keller: ['Im Tank und im Fass', 'Flaschenlager', 'Großhandel', 'Abfüllen'],
       auftraege: ['Angenommene Aufträge', 'Anfragen', 'Vertragsstrafe'],
       betrieb: ['Laufende Kosten', 'Aufnehmen', 'Vinothek', 'Konkurrenz'],
-      rangliste: ['Weingüter im Vergleich', 'Anna', 'Ben'],
+      rangliste: ['Meilensteine', 'Nächste Ziele', 'Weingüter im Vergleich', 'Anna', 'Ben'],
     }
     for (const [page, texts] of Object.entries(expected)) {
       const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage: page as Page } })
@@ -92,7 +92,7 @@ describe('Oberfläche', () => {
     )
     while (game.auction?.phase !== 'announced') game = runAiTurns(applyAction(game, { type: 'endTurn' }))
     const announced = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } }).body
-    for (const text of ['Weinbergversteigerung im', 'Ausruf', 'Rangliste', 'Monat beenden']) {
+    for (const text of ['Weinbergversteigerung im', 'Ausruf', 'Erfolge', 'Monat beenden']) {
       expect(announced).toContain(text)
     }
 

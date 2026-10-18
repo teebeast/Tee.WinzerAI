@@ -313,6 +313,7 @@ function closeLot(state: GameState, lot: AuctionLot) {
 }
 
 function awardParcel(state: GameState, player: Player, lot: AuctionLot) {
+  player.stats.auctionsWon++
   const taken = new Set(player.plots.map((p) => p.name))
   let name = lot.name
   for (let n = 2; taken.has(name); n++) name = `${lot.name} ${n}`

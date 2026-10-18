@@ -100,6 +100,7 @@ export function deliverExport(state: GameState, player: Player) {
   player.exportContract = null
   if (contract.missedMonths === 0) {
     player.points += EXPORT_COMPLETION_POINTS
+    player.stats.exportsCompleted++
     changeReputation(player, EXPORT_COMPLETION_REPUTATION)
     addLog(state, null, `${player.name} hat den Exportvertrag mit ${contract.country} vollständig erfüllt: +${EXPORT_COMPLETION_POINTS} Punkte.`)
   } else {

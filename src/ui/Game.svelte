@@ -51,7 +51,6 @@
 
   const player = $derived(currentPlayer(game))
   const region = $derived(REGIONS[player.regionId])
-  const multiplayer = $derived(game.players.length > 1)
   /** Mehrere Menschen am selben Gerät: Bildschirm bei jedem Wechsel verdecken */
   const hotSeat = $derived(game.players.filter((p) => p.ai === null).length > 1)
   const winner = $derived(game.players.find((p) => p.id === game.winnerId))
@@ -60,7 +59,7 @@
   /** Live-Versteigerung, bei der gerade ein Mensch bieten muss */
   const liveLot = $derived(over ? undefined : awaitingLot(game))
   const hasPointTarget = $derived(pointTarget(game))
-  const tabs = $derived(PAGES.filter((p) => p.id !== 'rangliste' || multiplayer))
+  const tabs = PAGES
   /** Offene wichtige Aufgaben je Unterseite – als Zähler an den Reitern */
   const badges = $derived.by(() => {
     const counts: Partial<Record<Page, number>> = {}

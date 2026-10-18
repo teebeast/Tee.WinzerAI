@@ -86,6 +86,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Wie gefragt eine Rebsorte oder Sekt gerade ist – als Preisfaktor zwischen 80 % und 130 % auf alle Verkaufspreise. Trends wandern über viele Monate; weil neue Reben erst im dritten Jahr tragen, ist jede Pflanzung eine Wette auf den Markt von übermorgen.',
   },
   {
+    term: 'Meilenstein',
+    text: 'Zwischenziel wie die erste Goldmedaille, 50 Hektar oder das Lunaris-Siegel. Bronze, Silber und Gold bringen ein paar Punkte und etwas Bekanntheit; erreichte Meilensteine stehen mit Datum in der Chronik unter „Erfolge“.',
+  },
+  {
     term: 'Nachbarschaft',
     text: 'Die Computergegner merken sich, wie du mit ihnen umgehst. Freundliche Nachbarn bieten gemeinsame Messestände, Weinkäufe oder Erntehilfe an; wer sie sabotiert oder ihnen Weinberge wegschnappt, muss mit Rabattaktionen, öffentlicher Kritik oder – beim Schlitzohr – mit Rache rechnen.',
   },
