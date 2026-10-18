@@ -32,7 +32,7 @@ function advancedGame(): GameState {
 
 describe('Oberfläche', () => {
   it('rendert den Startbildschirm', () => {
-    const { body } = render(NewGame, { props: { onStart: () => {} } })
+    const { body } = render(NewGame, { props: { onStart: () => {}, onLoad: () => {} } })
     expect(body).toContain('Spiel starten')
   })
 

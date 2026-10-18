@@ -223,7 +223,7 @@ describe('Betrieb', () => {
   it('eine Kellerei-Krise halbiert den Fassweinpreis', () => {
     const state = withReadyWine()
     const batch = currentPlayer(state).cellar[0]
-    const normal = bulkPricePerHl(batch, state)
-    expect(bulkPricePerHl(batch, { ...state, bulkCrisisMonths: 3 })).toBeCloseTo(normal / 2)
+    const normal = bulkPricePerHl(batch, state, currentPlayer(state))
+    expect(bulkPricePerHl(batch, { ...state, bulkCrisisMonths: 3 }, currentPlayer(state))).toBeCloseTo(normal / 2)
   })
 })

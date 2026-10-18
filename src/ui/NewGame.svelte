@@ -1,13 +1,15 @@
 <script lang="ts">
-  import { AI_PROFILES } from '../engine/ai'
-  import { CHALLENGE_YEARS, dailyChallenge, todayKey } from '../engine/challenge'
+  import { onMount } from 'svelte'
+  import { AI_ESTATE_NAMES, AI_PROFILES } from '../engine/ai'
+  import { dailyChallenge, todayKey } from '../engine/challenge'
+  import { DIFFICULTIES } from '../engine/data/economy'
   import { REGIONS, type RegionId } from '../engine/data/regions'
-  import { NO_POINT_TARGET } from '../engine/game'
-  import type { AiProfileId, NewGameOptions } from '../engine/types'
-  import { loadChallengeBest } from '../save'
+  import { MONTH_NAMES, NO_POINT_TARGET } from '../engine/game'
+  import type { AiProfileId, Difficulty, NewGameOptions } from '../engine/types'
+  import { deleteSave, listSaves, loadChallengeBest, saveLocation, type SaveSlot } from '../save'
   import SeasonScene from './SeasonScene.svelte'
 
-  let { onStart }: { onStart: (options: NewGameOptions) => void } = $props()
+  let { onStart, onLoad }: { onStart: (options: NewGameOptions) => void; onLoad: (slot: SaveSlot) => void } = $props()
 
   type Kind = 'human' | AiProfileId
   interface Seat {
@@ -19,41 +21,50 @@
 
   const regionIds = Object.keys(REGIONS) as RegionId[]
   const profileIds = Object.keys(AI_PROFILES) as AiProfileId[]
-  const AI_NAMES: Record<AiProfileId, string> = {
-    tradition: 'Weingut Steinbach',
-    genossenschaft: 'Winzergenossenschaft',
-    bio: 'Biohof Lindner',
-    schlitzohr: 'Weinhaus Fuchs',
-  }
+  const difficultyIds = Object.keys(DIFFICULTIES) as Difficulty[]
   const LENGTHS: { value: Length; icon: string; name: string; text: string }[] = [
     { value: 300, icon: '⏱️', name: 'Kurz', text: '300 Punkte' },
     { value: 600, icon: '🍷', name: 'Normal', text: '600 Punkte' },
     { value: 1000, icon: '🏆', name: 'Klassisch', text: '1000 Punkte' },
-    { value: 'endless', icon: '∞', name: 'Endlos', text: 'ohne Ziel und Zeitlimit' },
+    { value: 'endless', icon: '∞', name: 'Endlos', text: 'ohne Punkteziel' },
   ]
+  /** Stufen des Schiebereglers fürs Endlosspiel; null = ohne Zeitlimit */
+  const ENDLESS_YEARS = [5, 10, 25, 50, null]
 
   let seats = $state<Seat[]>([
     { name: 'Spieler 1', regionId: 'mosel', kind: 'human' },
-    { name: AI_NAMES.tradition, regionId: 'mosel', kind: 'tradition' },
+    { name: AI_ESTATE_NAMES.tradition, regionId: 'mosel', kind: 'tradition' },
   ])
   let length = $state<Length>(600)
+  let endlessStep = $state(ENDLESS_YEARS.length - 1)
+  let difficulty = $state<Difficulty>('normal')
   let climateChange = $state(true)
   const today = todayKey()
-  const challenge = dailyChallenge(today)
+  const daily = dailyChallenge(today)
   const challengeBest = loadChallengeBest(today)
   let seed = $state(String(Math.floor(Math.random() * 1_000_000)))
   const hasHuman = $derived(seats.some((s) => s.kind === 'human'))
+  const endlessYears = $derived(ENDLESS_YEARS[endlessStep])
+
+  // raw: Die geladenen Spielstände gehen unverändert an die Engine, die sie per structuredClone kopiert.
+  let saves = $state.raw<SaveSlot[] | null>(null)
+  let saveDir = $state<string | null>(null)
+
+  onMount(() => {
+    listSaves().then((list) => (saves = list))
+    saveLocation().then((path) => (saveDir = path))
+  })
 
   function addSeat() {
     const used = new Set(seats.map((s) => s.kind))
     const kind = profileIds.find((p) => !used.has(p)) ?? 'tradition'
-    seats.push({ name: AI_NAMES[kind], regionId: seats[0].regionId, kind })
+    seats.push({ name: AI_ESTATE_NAMES[kind], regionId: seats[0].regionId, kind })
   }
 
   function changeKind(seat: Seat, kind: Kind) {
-    const wasDefaultName = seat.kind === 'human' ? /^Spieler \d+$/.test(seat.name) : seat.name === AI_NAMES[seat.kind]
+    const wasDefaultName = seat.kind === 'human' ? /^Spieler \d+$/.test(seat.name) : seat.name === AI_ESTATE_NAMES[seat.kind]
     seat.kind = kind
-    if (wasDefaultName) seat.name = kind === 'human' ? `Spieler ${seats.indexOf(seat) + 1}` : AI_NAMES[kind]
+    if (wasDefaultName) seat.name = kind === 'human' ? `Spieler ${seats.indexOf(seat) + 1}` : AI_ESTATE_NAMES[kind]
   }
 
   function submit(event: SubmitEvent) {
@@ -62,13 +73,48 @@
     onStart({
       seed: Number(seed) || 0,
       targetPoints: length === 'endless' ? NO_POINT_TARGET : length,
+      yearLimit: length === 'endless' ? endlessYears : null,
       climateChange,
+      difficulty,
       players: seats.map((s, i) => ({
         name: s.name.trim() || `Spieler ${i + 1}`,
         regionId: s.regionId,
         ai: s.kind === 'human' ? null : s.kind,
       })),
     })
+  }
+
+  async function remove(slot: SaveSlot) {
+    if (!confirm(`Spielstand „${slotTitle(slot)}“ wirklich löschen?`)) return
+    await deleteSave(slot.id)
+    saves = saves!.filter((s) => s.id !== slot.id)
+  }
+
+  function slotTitle(slot: SaveSlot): string {
+    return slot.state.players
+      .filter((p) => p.ai === null)
+      .map((p) => p.name)
+      .join(' & ')
+  }
+
+  function slotIcon(slot: SaveSlot): string {
+    if (slot.state.challenge) return '🎯'
+    return slot.state.targetPoints === NO_POINT_TARGET ? '∞' : '🍇'
+  }
+
+  function slotDetail(slot: SaveSlot): string {
+    const { state } = slot
+    const human = state.players.find((p) => p.ai === null)!
+    const when = `${MONTH_NAMES[state.month - 1]}, Jahr ${state.year}${state.yearLimit ? ` von ${state.yearLimit}` : ''}`
+    const mode = state.challenge ? `Tages-Challenge ${state.challenge}` : DIFFICULTIES[state.difficulty].name
+    const over = state.finished || state.winnerId ? ' · beendet' : ''
+    return `${REGIONS[human.regionId].name} · ${when} · 🏆 ${human.points} · ${mode}${over}`
+  }
+
+  function savedAtText(savedAt: number): string {
+    const date = new Date(savedAt)
+    const time = date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+    return todayKey(date) === today ? `heute, ${time}` : `${date.toLocaleDateString('de-DE')}, ${time}`
   }
 </script>
 
@@ -81,25 +127,64 @@
     </div>
   </header>
 
-  <form class="layout" onsubmit={submit}>
+  <div class="top">
     <section class="card variant challenge">
       <div class="variant-head">
         <span class="variant-icon" aria-hidden="true">🎯</span>
         <div>
           <h2>Tages-Challenge</h2>
-          <span class="muted small">{today}</span>
+          <span class="muted small">{today} · für alle dieselbe Partie</span>
         </div>
       </div>
-      <p>
-        {REGIONS[challenge.players[0].regionId].name} gegen zwei Computergegner, {CHALLENGE_YEARS} Jahre. Heute spielen alle
-        dieselbe Partie – mit demselben Wetter und denselben Ereignissen.
-      </p>
+      <h3 class="scenario">{daily.scenario.icon} {daily.scenario.name}</h3>
+      <p>{daily.scenario.description}</p>
+      <div class="chips">
+        <span class="chip">📍 {REGIONS[daily.options.players[0].regionId].name}</span>
+        <span class="chip">📅 {daily.scenario.years} Jahre</span>
+        <span class="chip">🤖 {daily.options.players.slice(1).map((p) => p.name).join(', ')}</span>
+        {#if !daily.scenario.climateChange}<span class="chip">🌡️ ohne Klimawandel</span>{/if}
+      </div>
       <div class="variant-foot">
         <span class="chip">{challengeBest !== null ? `🏅 Dein Bestwert heute: ${challengeBest} Punkte` : 'Noch nicht gespielt'}</span>
-        <button type="button" onclick={() => onStart(challenge)}>Challenge starten</button>
+        <button type="button" onclick={() => onStart(daily.options)}>Challenge starten</button>
       </div>
     </section>
 
+    <section class="card variant saves" aria-label="Spielstand laden">
+      <div class="variant-head">
+        <span class="variant-icon" aria-hidden="true">💾</span>
+        <div>
+          <h2>Spielstand laden</h2>
+          <span class="muted small">Jede Partie wird nach jedem Zug automatisch gespeichert</span>
+        </div>
+      </div>
+      {#if saves === null}
+        <p class="muted small">Spielstände werden gelesen …</p>
+      {:else if saves.length === 0}
+        <p class="muted">Noch keine Spielstände vorhanden. Starte ein Spiel – es erscheint dann hier.</p>
+      {:else}
+        <ul class="slots">
+          {#each saves as slot (slot.id)}
+            <li class="slot">
+              <span class="slot-icon" aria-hidden="true">{slotIcon(slot)}</span>
+              <span class="slot-text">
+                <strong>{slotTitle(slot)}</strong>
+                <span class="muted small">{slotDetail(slot)}</span>
+                <span class="muted small">Gespeichert {savedAtText(slot.savedAt)}</span>
+              </span>
+              <button type="button" onclick={() => onLoad(slot)}>Laden</button>
+              <button type="button" class="ghost remove" onclick={() => remove(slot)} aria-label="Spielstand löschen">🗑</button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if saveDir}
+        <p class="muted small location" title={saveDir}>Ablage: {saveDir}</p>
+      {/if}
+    </section>
+  </div>
+
+  <form class="layout" onsubmit={submit}>
     <section class="card variant free">
       <div class="variant-head">
         <span class="variant-icon" aria-hidden="true">🍇</span>
@@ -153,13 +238,25 @@
       <h2>⚙️ Einstellungen</h2>
       <p class="muted small">Gelten für das freie Spiel.</p>
 
+      <h3>Schwierigkeitsgrad</h3>
+      <div class="options three" role="radiogroup" aria-label="Schwierigkeitsgrad">
+        {#each difficultyIds as id (id)}
+          <label class="option compact" class:active={difficulty === id}>
+            <input type="radio" name="difficulty" bind:group={difficulty} value={id} />
+            <span class="option-icon" aria-hidden="true">{DIFFICULTIES[id].icon}</span>
+            <strong>{DIFFICULTIES[id].name}</strong>
+          </label>
+        {/each}
+      </div>
+      <p class="muted small">{DIFFICULTIES[difficulty].description}. Die Computergegner spielen immer gleich stark.</p>
+
       <h3>Spiellänge</h3>
-      <div class="lengths" role="radiogroup" aria-label="Spiellänge">
+      <div class="options" role="radiogroup" aria-label="Spiellänge">
         {#each LENGTHS as option (option.value)}
-          <label class="length" class:active={length === option.value}>
+          <label class="option" class:active={length === option.value}>
             <input type="radio" name="length" bind:group={length} value={option.value} />
-            <span class="length-icon" aria-hidden="true">{option.icon}</span>
-            <span class="length-text">
+            <span class="option-icon" aria-hidden="true">{option.icon}</span>
+            <span class="option-text">
               <strong>{option.name}</strong>
               <span class="muted small">{option.text}</span>
             </span>
@@ -167,7 +264,28 @@
         {/each}
       </div>
       {#if length === 'endless'}
-        <p class="muted small">Das Endlosspiel läuft, bis du es beendest oder pleitegehst. Die Rangliste zeigt jederzeit den Stand.</p>
+        <label class="slider">
+          <span class="small">Spieldauer: <strong>{endlessYears ? `${endlessYears} Jahre` : 'endlos'}</strong></span>
+          <input
+            type="range"
+            min="0"
+            max={ENDLESS_YEARS.length - 1}
+            step="1"
+            bind:value={endlessStep}
+            aria-label="Spieljahre"
+            aria-valuetext={endlessYears ? `${endlessYears} Jahre` : 'endlos'}
+          />
+          <span class="ticks muted small" aria-hidden="true">
+            {#each ENDLESS_YEARS as years, i (i)}<span>{years ?? '∞'}</span>{/each}
+          </span>
+        </label>
+        <p class="muted small">
+          {#if endlessYears}
+            Nach {endlessYears} Jahren endet das Spiel, wer dann die meisten Punkte hat, gewinnt.
+          {:else}
+            Das Endlosspiel läuft, bis du es beendest oder pleitegehst. Die Rangliste zeigt jederzeit den Stand.
+          {/if}
+        </p>
       {/if}
 
       <h3>Welt</h3>
@@ -228,18 +346,18 @@
     font-size: 1rem;
     text-shadow: 0 1px 4px rgb(0 0 0 / 0.5);
   }
+  .top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+  }
   .layout {
     display: grid;
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-    grid-template-areas:
-      'challenge settings'
-      'free settings';
-    grid-template-rows: auto 1fr;
+    grid-template-areas: 'free settings';
     gap: 16px;
     align-items: start;
-  }
-  .challenge {
-    grid-area: challenge;
   }
   .free {
     grid-area: free;
@@ -250,10 +368,12 @@
     top: 16px;
   }
   @media (max-width: 800px) {
+    .top {
+      grid-template-columns: minmax(0, 1fr);
+    }
     .layout {
       grid-template-columns: minmax(0, 1fr);
-      grid-template-areas: 'challenge' 'settings' 'free';
-      grid-template-rows: none;
+      grid-template-areas: 'settings' 'free';
     }
     .settings {
       position: static;
@@ -279,6 +399,7 @@
     font-size: 2rem;
     width: 48px;
     height: 48px;
+    flex: none;
     display: grid;
     place-items: center;
     border-radius: 12px;
@@ -295,12 +416,62 @@
   .variant p {
     margin: 0;
   }
+  .scenario {
+    margin: 4px 0 0;
+    font-size: 1.05rem;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
   .variant-foot {
+    margin-top: auto;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     justify-content: space-between;
     align-items: center;
+  }
+  .slots {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .slot {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .slot-icon {
+    font-size: 1.3rem;
+    width: 1.6em;
+    text-align: center;
+  }
+  .slot-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+    min-width: 0;
+  }
+  .slot-text > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .location {
+    margin-top: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .seat {
     display: grid;
@@ -329,7 +500,7 @@
     .seat select:first-of-type {
       grid-column: 2;
     }
-    .remove {
+    .seat .remove {
       grid-column: 4;
       grid-row: 1;
     }
@@ -343,12 +514,15 @@
   .settings > p {
     margin: 2px 0 0;
   }
-  .lengths {
+  .options {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .length {
+  .options.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .option {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -357,28 +531,50 @@
     border-radius: 10px;
     cursor: pointer;
   }
-  .length.active {
+  .option.compact {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  .option.active {
     border-color: var(--wine);
     background: color-mix(in srgb, var(--wine) 10%, transparent);
   }
-  .length input {
+  .option input {
     position: absolute;
     opacity: 0;
     pointer-events: none;
   }
-  .length:has(input:focus-visible) {
+  .option:has(input:focus-visible) {
     outline: 2px solid var(--wine);
     outline-offset: 2px;
   }
-  .length-icon {
+  .option-icon {
     font-size: 1.4rem;
     width: 1.6em;
     text-align: center;
   }
-  .length-text {
+  .option-text {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
+  }
+  .slider {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 10px;
+  }
+  .slider input {
+    width: 100%;
+    accent-color: var(--wine);
+  }
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 2px;
   }
   .toggle {
     display: flex;

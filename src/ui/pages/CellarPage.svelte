@@ -158,7 +158,7 @@
                 🥂 Sekt <span class="muted small">{formatEuro(hlToBottles(amount) * SEKT_COST_PER_BOTTLE)}</span>
               </button>
               <button onclick={() => run({ type: 'sellBulk', batchId: batch.id, hectoliters: amount })}>
-                🚚 Fasswein <span class="muted small">+{formatEuro(bulkPricePerHl(batch, game) * amount)}</span>
+                🚚 Fasswein <span class="muted small">+{formatEuro(bulkPricePerHl(batch, game, player) * amount)}</span>
               </button>
               {#if player.barriqueCapacityHl > 0 && !batch.barrique}
                 <button

@@ -2,6 +2,21 @@
 import { flushSync, mount, unmount } from 'svelte'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App.svelte'
+import { dailyChallenge, todayKey } from './engine/challenge'
+import { newGame } from './engine/game'
+
+/** Alle Spielstände im localStorage (Browser-Ablage) */
+function savedGames() {
+  return Object.keys(localStorage)
+    .filter((k) => k.startsWith('winzer.slot.'))
+    .map((k) => JSON.parse(localStorage.getItem(k)!).state)
+}
+
+/** Wartet, bis asynchron geladene Spielstände angezeigt werden */
+async function settle() {
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  flushSync()
+}
 
 /** Klick-Tests im simulierten Browser: Bedienen die Knöpfe wirklich das Spiel? */
 describe('Bedienung', () => {
@@ -124,8 +139,10 @@ describe('Bedienung', () => {
   })
 
   it('die Tages-Challenge startet mit Zeitlimit', () => {
+    const { scenario } = dailyChallenge(todayKey())
+    expect(target.textContent).toContain(scenario.name)
     click('Challenge starten')
-    expect(target.textContent).toContain('Jahr 1 von 10')
+    expect(target.textContent).toContain(`Jahr 1 von ${scenario.years}`)
     expect(target.textContent).toContain('Tages-Challenge')
   })
 
@@ -166,15 +183,66 @@ describe('Bedienung', () => {
     click('Spiel starten')
     expect(target.textContent).toContain('∞ Endlosspiel')
     expect(target.textContent).not.toContain('/ 600')
-    const saved = JSON.parse(localStorage.getItem('winzer.save.v1')!)
+    const [saved] = savedGames()
     expect(saved.yearLimit).toBeNull()
     expect(saved.targetPoints).toBe(Number.MAX_SAFE_INTEGER)
+  })
+
+  it('das Endlosspiel lässt sich auf eine Anzahl Jahre begrenzen', () => {
+    target.querySelector<HTMLInputElement>('input[name="length"][value="endless"]')!.click()
+    flushSync()
+    const slider = target.querySelector<HTMLInputElement>('input[type="range"]')!
+    slider.value = '2'
+    slider.dispatchEvent(new Event('input', { bubbles: true }))
+    flushSync()
+    expect(target.textContent).toContain('25 Jahre')
+    click('Spiel starten')
+    expect(target.textContent).toContain('Jahr 1 von 25')
+    expect(savedGames()[0].yearLimit).toBe(25)
+  })
+
+  it('der Schwierigkeitsgrad bestimmt das Startkapital', () => {
+    target.querySelector<HTMLInputElement>('input[name="difficulty"][value="leicht"]')!.click()
+    flushSync()
+    click('Spiel starten')
+    expect(target.textContent).toContain('100.000')
+    expect(savedGames()[0].difficulty).toBe('leicht')
   })
 
   it('speichert den Spielstand nach jedem Zug', () => {
     click('Spiel starten')
     click('Monat beenden')
-    const saved = JSON.parse(localStorage.getItem('winzer.save.v1')!)
-    expect(saved.month).toBe(2)
+    expect(savedGames()).toHaveLength(1)
+    expect(savedGames()[0].month).toBe(2)
+  })
+
+  it('über das Hauptmenü lässt sich ein Spielstand wieder laden', async () => {
+    await settle()
+    expect(target.textContent).toContain('Noch keine Spielstände')
+    click('Spiel starten')
+    click('Monat beenden')
+    click('Hauptmenü')
+    await settle()
+    expect(target.textContent).toContain('Februar, Jahr 1')
+    click('Laden')
+    expect(target.textContent).toContain('Februar · Jahr 1')
+    click('Monat beenden')
+    expect(savedGames()).toHaveLength(1)
+    expect(savedGames()[0].month).toBe(3)
+  })
+
+  it('übernimmt den Spielstand aus älteren Versionen', async () => {
+    unmount(app)
+    const old = newGame({ seed: 1, players: [{ name: 'Alt', regionId: 'pfalz' }] }) as unknown as Record<string, unknown>
+    old.version = 5
+    delete old.difficulty
+    localStorage.setItem('winzer.save.v1', JSON.stringify(old))
+    app = mount(App, { target })
+    await settle()
+    expect(localStorage.getItem('winzer.save.v1')).toBeNull()
+    expect(target.textContent).toContain('Alt')
+    click('Laden')
+    expect(target.textContent).toContain('Januar · Jahr 1')
+    expect(savedGames()[0].difficulty).toBe('normal')
   })
 })

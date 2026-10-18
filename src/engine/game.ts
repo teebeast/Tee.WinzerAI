@@ -13,6 +13,7 @@ import {
 import {
   AUCTION_MONTH,
   COMPETITIONS,
+  DIFFICULTIES,
   DIRECT_SALES_COST_SHARE,
   HARVEST_COST_PER_HA,
   INSOLVENCY_MONTHS,
@@ -22,7 +23,6 @@ import {
   REGISTER_FEE,
   REGISTER_MIN_BOTTLES,
   REPUTATION_DECAY_RATE,
-  START_MONEY,
   START_REPUTATION,
   START_TANK_HL,
   TANK_COST_PER_HL,
@@ -105,7 +105,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 5,
+    version: 6,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -121,30 +121,39 @@ export function newGame(options: NewGameOptions): GameState {
     climateChange: options.climateChange ?? true,
     yearLimit: options.yearLimit ?? null,
     challenge: options.challenge ?? null,
+    difficulty: options.difficulty ?? 'normal',
     nextId: 1,
     log: [],
   }
+  const start = options.start ?? {}
   state.players = options.players.map((p, i) => {
     const region = REGIONS[p.regionId]
+    const ai = p.ai ?? null
+    const difficulty = ai ? null : state.difficulty
+    // Szenarien geben das Startkapital vor, sonst gilt das des Schwierigkeitsgrads
+    const money = start.money ?? DIFFICULTIES[difficulty ?? 'normal'].startMoney
+    const oldVines = start.plots === 'planted'
+    const fallow = start.plots === 'fallow'
     return {
       id: `p${i + 1}`,
       name: p.name,
       regionId: p.regionId,
-      ai: p.ai ?? null,
-      money: START_MONEY,
+      ai,
+      difficulty,
+      money,
       points: 0,
-      reputation: START_REPUTATION,
-      loan: 0,
-      tankCapacityHl: START_TANK_HL,
+      reputation: start.reputation ?? START_REPUTATION,
+      loan: start.loan ?? 0,
+      tankCapacityHl: start.tankHl ?? START_TANK_HL,
       barriqueCapacityHl: 0,
       hasOnlineShop: false,
       hasVinothek: false,
       wholesaleThisYear: 0,
       hasCellarMaster: false,
       plots: [
-        makePlot(state, 'Hauslage', 4, region.startGrape, -10, 0),
-        makePlot(state, 'Südhang', 3, null, null, 1),
-        makePlot(state, 'Talweg', 3, null, null, -1),
+        makePlot(state, 'Hauslage', 4, fallow ? null : region.startGrape, fallow ? null : -10, 0),
+        makePlot(state, 'Südhang', 3, oldVines ? region.startGrape : null, oldVines ? -10 : null, 1),
+        makePlot(state, 'Talweg', 3, oldVines ? region.startGrape : null, oldVines ? -10 : null, -1),
       ],
       cellar: [],
       bottles: [],
@@ -369,7 +378,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       break
     case 'sellBulk': {
       const batch = batchOf(action.batchId)
-      const revenue = Math.round(bulkPricePerHl(batch, next) * action.hectoliters)
+      const revenue = Math.round(bulkPricePerHl(batch, next, player) * action.hectoliters)
       player.money += revenue
       removeBatchVolume(player, batch, action.hectoliters)
       addLog(next, player.id, `${action.hectoliters} hl ${wineLabel(batch)} als Fasswein verkauft: +${formatEuro(revenue)}.`)

@@ -6,7 +6,8 @@ import { it } from 'vitest'
 import { AI_PROFILES } from '../src/engine/ai'
 import { REGIONS, type RegionId } from '../src/engine/data/regions'
 import { simulate } from '../src/engine/simulate'
-import type { AiProfileId } from '../src/engine/types'
+import { DIFFICULTIES } from '../src/engine/data/economy'
+import type { AiProfileId, Difficulty } from '../src/engine/types'
 
 const YEARS = 15
 const SEEDS = [1, 2, 3]
@@ -58,4 +59,34 @@ it('Alle Profile gegeneinander', () => {
         profiles.map((ai) => `${AI_PROFILES[ai].name} ${avg(points[ai])} P. (${wins[ai] ?? 0} Siege)`).join(' · '),
     )
   }
+})
+
+it('Schwierigkeitsgrade (KI unter den Bedingungen der Menschen)', () => {
+  const lines = [`${'Grad'.padEnd(12)}${pad('P. J10', 8)}${pad('P. J15', 8)}${pad('Vermögen', 12)}${pad('pleite', 8)}`]
+  const levels: (Difficulty | undefined)[] = [undefined, ...(Object.keys(DIFFICULTIES) as Difficulty[])]
+  for (const difficulty of levels) {
+    const finals: { j10: number; j15: number; worth: number; bankrupt: boolean }[] = []
+    for (const ai of ['tradition', 'bio'] as AiProfileId[]) {
+      for (const regionId of regions) {
+        for (const seed of SEEDS) {
+          const { snapshots } = simulate({ seed, years: YEARS, difficulty, players: [{ regionId, ai }] })
+          const at = (year: number) => snapshots[year - 1]?.players[0]
+          finals.push({
+            j10: at(10)?.points ?? 0,
+            j15: at(YEARS)?.points ?? 0,
+            worth: at(YEARS)?.netWorth ?? 0,
+            bankrupt: snapshots.length < YEARS || !!snapshots.at(-1)?.players[0].bankrupt,
+          })
+        }
+      }
+    }
+    lines.push(
+      (difficulty ? DIFFICULTIES[difficulty].name : 'ohne (KI)').padEnd(12) +
+        pad(avg(finals.map((f) => f.j10)), 8) +
+        pad(avg(finals.map((f) => f.j15)), 8) +
+        pad(avg(finals.map((f) => f.worth)).toLocaleString('de-DE'), 12) +
+        pad(`${finals.filter((f) => f.bankrupt).length}/${finals.length}`, 8),
+    )
+  }
+  console.log(lines.join('\n'))
 })

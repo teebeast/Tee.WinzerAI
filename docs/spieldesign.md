@@ -22,8 +22,9 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Runde | 1 Monat; alle Spieler ziehen nacheinander, danach wird der Monat aufgelöst |
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
-| Endlosspiel | Ohne Punkteziel und Zeitlimit. Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Gebiet, gleiches Wetter, zwei feste KI-Gegner. Gewertet werden die Punkte nach 10 Jahren, der Bestwert wird auf dem Gerät gespeichert. |
+| Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 60.000 €, Erlöse −15 %, Kosten +10 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report holt die KI unter diesen Bedingungen nach 15 Jahren rund +9 % / −7 % / −32 % Punkte. |
+| Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
 
@@ -300,7 +301,7 @@ Ab M5 kommen hinzu:
   - `GameState` ist ein serialisierbares Objekt
   - `applyAction(state, action)` ist eine reine Funktion; der Monatsabschluss läuft über die Aktion `endTurn` des letzten Spielers
   - Ein Seed-basierter Zufallsgenerator (Zustand liegt im GameState)
-- **Spielstände** liegen derzeit in localStorage (ein laufendes Spiel plus die Bestwerte der Tages-Challenge). IndexedDB sowie Export und Import als Datei sind für später vorgesehen.
+- **Spielstände:** Jede Partie hat einen eigenen Speicherplatz und wird nach jedem Zug gesichert; im Hauptmenü lassen sich alle Spielstände laden oder löschen. Die Desktop-App legt sie als JSON-Dateien unter `%LOCALAPPDATA%WinzerAISpielstände` ab (Tauri-Befehle in `src-tauri/src/lib.rs`), im Browser liegen sie in localStorage. Die Bestwerte der Tages-Challenge bleiben in localStorage.
 - **Tests** mit Vitest: Engine-Tests, ein serverseitiger Render-Smoke-Test und Klick-Tests im simulierten Browser (jsdom).
 - **Balancing-Report:** `npm run sim` lässt jedes KI-Profil in jedem der 13 Gebiete 3 Partien über 15 Jahre spielen und danach alle Profile gegeneinander antreten (`scripts/balance.sim.ts`).
 - **Später:** asynchroner Online-Mehrspieler. Durch die reine Engine reicht es, Aktionen zu synchronisieren.

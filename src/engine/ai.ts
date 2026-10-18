@@ -75,6 +75,14 @@ export interface AiProfile {
   barrique: boolean
 }
 
+/** Vorgeschlagene Namen der Computer-Weingüter */
+export const AI_ESTATE_NAMES: Record<AiProfileId, string> = {
+  tradition: 'Weingut Steinbach',
+  genossenschaft: 'Winzergenossenschaft',
+  bio: 'Biohof Lindner',
+  schlitzohr: 'Weinhaus Fuchs',
+}
+
 export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
   tradition: {
     id: 'tradition', name: 'Traditionswinzer',
@@ -390,7 +398,7 @@ export function playAiTurn(state: GameState): GameState {
     for (const batch of [...me().cellar].sort((a, b) => a.quality - b.quality)) {
       const missing = target - me().money
       if (missing <= 0) return
-      const hectoliters = Math.min(batch.hectoliters, Math.ceil(missing / Math.max(1, bulkPricePerHl(batch, s))))
+      const hectoliters = Math.min(batch.hectoliters, Math.ceil(missing / Math.max(1, bulkPricePerHl(batch, s, me()))))
       act({ type: 'sellBulk', batchId: batch.id, hectoliters })
     }
     for (const lot of [...me().bottles].sort((a, b) => a.quality - b.quality)) {
