@@ -14,6 +14,7 @@
   import { PAGES, type Page } from './pages'
   import CellarPage from './pages/CellarPage.svelte'
   import EstatePage from './pages/EstatePage.svelte'
+  import OrdersPage from './pages/OrdersPage.svelte'
   import HofPage from './pages/HofPage.svelte'
   import RankingPage from './pages/RankingPage.svelte'
   import VineyardPage from './pages/VineyardPage.svelte'
@@ -262,6 +263,8 @@
       <VineyardPage {game} {player} {run} />
     {:else if page === 'keller'}
       <CellarPage {game} {player} {run} />
+    {:else if page === 'auftraege'}
+      <OrdersPage {game} {player} {run} />
     {:else if page === 'betrieb'}
       <EstatePage {game} {player} {run} />
     {:else}

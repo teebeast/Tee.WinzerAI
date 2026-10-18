@@ -135,7 +135,7 @@ describe('Panschen & Sabotage', () => {
   it('bei der Prüfung fliegt Glykol-Wein manchmal auf – mit Skandal', () => {
     let caught = 0
     let passed = 0
-    for (let seed = 1; seed <= 30; seed++) {
+    for (let seed = 1; seed <= 80; seed++) {
       let state = withReadyWine(seed)
       const batchId = currentPlayer(state).cellar[0].id
       state = applyAction(state, { type: 'adulterate', batchId, method: 'glykol' })
@@ -153,8 +153,9 @@ describe('Panschen & Sabotage', () => {
         expect(after.points).toBeGreaterThan(before.points)
       }
     }
-    expect(caught).toBeGreaterThan(0)
-    expect(passed).toBeGreaterThan(caught)
+    // Entdeckungsrisiko 40 % – mit Spielraum für den Zufall
+    expect(caught / (caught + passed)).toBeGreaterThan(0.25)
+    expect(caught / (caught + passed)).toBeLessThan(0.55)
   })
 
   it('Sabotage trifft den Gegner oder kostet bei Entdeckung Strafe', () => {

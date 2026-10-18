@@ -7,6 +7,7 @@ export const PAGES: { id: Page; icon: string; label: string }[] = [
   { id: 'hof', icon: '🏡', label: 'Hof' },
   { id: 'weinberg', icon: '🍇', label: 'Weinberg' },
   { id: 'keller', icon: '🍷', label: 'Keller' },
+  { id: 'auftraege', icon: '📦', label: 'Aufträge' },
   { id: 'betrieb', icon: '🏛️', label: 'Betrieb' },
   { id: 'rangliste', icon: '🏆', label: 'Rangliste' },
 ]

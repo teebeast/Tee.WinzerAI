@@ -48,6 +48,16 @@ import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
 import { applyBioLabel, bioInfo, chargeBioFees, validateBioLabel } from './bio'
 import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
+import {
+  acceptOrder,
+  declineOrder,
+  deliverOrder,
+  expireOrders,
+  maybeOfferOrder,
+  validateAccept,
+  validateDecline,
+  validateDeliver,
+} from './orders'
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
 import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
 import { marketEvents, tickEffects } from './events'
@@ -123,7 +133,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 12,
+    version: 13,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -185,6 +195,8 @@ export function newGame(options: NewGameOptions): GameState {
       bioSince: null,
       bioLabel: null,
       bioLabelSince: null,
+      orderOffers: [],
+      orders: [],
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -382,6 +394,12 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateFrostCandles(state, player)
     case 'applyBioLabel':
       return validateBioLabel(state, player)
+    case 'acceptOrder':
+      return validateAccept(player, action.orderId)
+    case 'declineOrder':
+      return validateDecline(player, action.orderId)
+    case 'deliverOrder':
+      return validateDeliver(player, action.orderId)
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)
       if (!plot) return 'Unbekannte Parzelle.'
@@ -545,6 +563,16 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'applyBioLabel':
       applyBioLabel(next, player)
       break
+    case 'acceptOrder':
+      acceptOrder(next, player, action.orderId)
+      break
+    case 'declineOrder':
+      declineOrder(next, player, action.orderId)
+      break
+    case 'deliverOrder':
+      deliverOrder(next, player, action.orderId)
+      checkWinner(next)
+      break
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)!
       const price = plotSalePrice(plot, next.year)
@@ -686,6 +714,8 @@ function resolveMonth(state: GameState) {
     player.frostCandles = false
     player.intrigueThisMonth = false
     maybeOfferExport(state, player)
+    expireOrders(state, player)
+    maybeOfferOrder(state, player)
     checkInsolvency(state, player)
   }
   checkWinner(state)

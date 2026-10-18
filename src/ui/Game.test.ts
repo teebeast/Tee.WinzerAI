@@ -42,6 +42,7 @@ describe('Oberfläche', () => {
       hof: ['Jetzt zu tun', 'Logbuch', 'Siegpunkte', 'Zug beenden', 'Rangliste'],
       weinberg: ['Pflanzenschutz', 'Lagenqualität', 'Riesling'],
       keller: ['Im Tank und im Fass', 'Flaschenlager', 'Großhandel', 'Abfüllen'],
+      auftraege: ['Angenommene Aufträge', 'Anfragen', 'Vertragsstrafe'],
       betrieb: ['Laufende Kosten', 'Aufnehmen', 'Vinothek', 'Konkurrenz'],
       rangliste: ['Weingüter im Vergleich', 'Anna', 'Ben'],
     }

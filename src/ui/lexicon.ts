@@ -74,6 +74,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Es wird wärmer: Trauben reifen früher und zuckerreicher, Hitzewellen nehmen zu, strenge Dezemberfröste – und damit Eiswein – werden seltener. Rotwein gedeiht zunehmend auch in kühlen Gebieten.',
   },
   {
+    term: 'Kundenauftrag',
+    text: 'Hotels, Restaurants, Fluglinien oder Clubs bestellen einmalig eine größere Menge eines bestimmten Weins bis zu einem Termin. Sie zahlen gut und bringen Siegpunkte – wer nicht rechtzeitig liefert, zahlt Vertragsstrafe.',
+  },
+  {
     term: 'Lage',
     text: 'Die genaue Fläche eines Weinbergs mit ihrem Kleinklima, Boden und Hangneigung. Spitzenlagen bringen bessere Weine und kosten bei Versteigerungen entsprechend mehr.',
   },
