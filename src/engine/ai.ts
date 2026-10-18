@@ -3,9 +3,11 @@ import { barriqueBonus, bottleCost, sektCost } from './cellar'
 import { BIO_LABELS, monthsUntilEligible, nextBioLabel } from './bio'
 import { hasSkill } from './cellarmaster'
 import { eligibleBottles, MAX_ORDERS } from './orders'
+import { archEnemy } from './rivals'
 import { droughtChance, frostCandlesCost, frostChance, installCost, insurancePremium } from './defense'
 import {
   BOTTLE_COST,
+  CLEARING_COST_PER_HA,
   INSURANCE_MONTHS,
   COMPETITIONS,
   MARKETING,
@@ -243,6 +245,20 @@ export function playAiTurn(state: GameState): GameState {
     }
   }
 
+  // Marktgespür: Kommt die eigene Sorte aus der Mode und ist eine andere gefragt, wird im Januar eine Parzelle gerodet.
+  // Gepflanzt wird im Frühjahr wie gewohnt – nach Eignung und Marktrichtung.
+  if (s.month === 1 && !strained() && !hasYoungVines && !hasFallow) {
+    const region = REGIONS[me().regionId]
+    const rising = profile.grapes.some((g) => region.suitability[g] >= 0 && s.trends[g].target >= 1.1)
+    const fading = me()
+      .plots.filter((p) => p.grape && s.trends[p.grape].target <= 0.88 && plotAgeFactor(p, s.year) === 1)
+      .sort((a, b) => a.hectares - b.hectares)[0]
+    if (rising && fading) {
+      const cost = (GRAPES[profile.grapes[0]].plantCostPerHa + CLEARING_COST_PER_HA) * fading.hectares
+      if (me().money - cost >= profile.cashReserve + 30_000) act({ type: 'clearPlot', plotId: fading.id })
+    }
+  }
+
   // 3. Pflanzen: höchstens eine Parzelle pro Monat, beste Lage zuerst
   if (PLANT_MONTHS.includes(s.month) && !hasYoungVines) {
     const plot = me().plots.filter((p) => p.grape === null).sort((a, b) => b.site - a.site)[0]
@@ -435,6 +451,11 @@ export function playAiTurn(state: GameState): GameState {
         .filter((b) => b.hectoliters <= SCHEME_MAX_HL)
         .sort((a, b) => a.hectoliters - b.hectoliters)[0]
       if (target) act({ type: 'adulterate', batchId: target.id, method: 'zucker' })
+    }
+    // Rache: Wer das Schlitzohr bei einer Sabotage erwischt hat, bekommt im Sommer Besuch im Weinberg.
+    const enemy = archEnemy(s, me())
+    if (enemy && (s.month === 6 || s.month === 7) && me().money >= profile.cashReserve + SABOTAGE.weinberg.cost + SABOTAGE_FINE) {
+      act({ type: 'sabotage', targetId: enemy.id, kind: 'weinberg' })
     }
     if (s.month === 5) {
       const leader = s.players

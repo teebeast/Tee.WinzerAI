@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { runAiTurns } from './ai'
 import { DECISION_EVENTS, monthlyEvent, offerDecision, possibleDecisions } from './decisions'
 import { applyAction, currentPlayer, newGame } from './game'
 import { simulate } from './simulate'
@@ -19,6 +20,12 @@ function prepared(months?: number[]): GameState {
     id: 'lot-x', grape: 'riesling', vintage: s.year - 1, oechsle: 85, level: 'kabinett', quality: 75, adulterated: null,
     bottles: 3000, sparkling: false, monthsUntilReady: 0, registered: true, awards: [],
   })
+  // Fertiger Wein im Tank und ein befreundeter Computer-Nachbar für die Nachbarschaftsangebote
+  player.cellar.push({
+    id: 'wine-x', grape: 'riesling', vintage: s.year - 1, oechsle: 80, level: 'kabinett', quality: 70, adulterated: null,
+    hectoliters: 60, monthsUntilReady: 0, barrique: false,
+  })
+  s.players.push({ ...structuredClone(player), id: 'p2', name: 'Weingut Rebenhain', ai: 'tradition', relations: { [player.id]: 30 } })
   return s
 }
 
@@ -54,9 +61,9 @@ describe('Entscheidungsereignisse', () => {
     s.randomEvents = false
     offerDecision(s, currentPlayer(s), DECISION_EVENTS.find((d) => d.id === 'gebrauchte-tanks')!)
     const tanks = currentPlayer(s).tankCapacityHl
-    const after = applyAction(s, { type: 'endTurn' })
-    expect(currentPlayer(after).decision).toBeNull()
-    expect(currentPlayer(after).tankCapacityHl).toBe(tanks)
+    const after = runAiTurns(applyAction(s, { type: 'endTurn' })) // der Nachbar zieht mit, dann endet der Monat
+    expect(after.players[0].decision).toBeNull()
+    expect(after.players[0].tankCapacityHl).toBe(tanks)
     expect(after.log.some((e) => e.text.startsWith('Keine Antwort auf „Gebrauchte Tanks günstig“'))).toBe(true)
   })
 

@@ -264,7 +264,23 @@ Ein bestimmtes Alltagsereignis trifft ein Weingut etwa zweimal in zehn Jahren, e
 | Gelegentlich | Großauftrag vom Discounter (halber Preis, Ramsch-Image), Reportage im Weinmagazin (Chance auf Hymne oder Verriss), Erntehelfer wollen mehr Lohn, gebrauchte Tanks zum halben Preis |
 | Selten | Der Nachbar verkauft seine Lage privat, Kellermeister wird abgeworben, Auftritt in einer Kochsendung, Einladung zur internationalen Weinmesse |
 
-**Kundenaufträge** (`src/engine/orders.ts`, Unterseite „📦 Aufträge“): Ab Jahr 2 kommt mit 30 % Chance pro Monat eine Anfrage eines erfundenen Kunden (höchstens drei offen, jede zwei Monate gültig). Kunden verlangen eine Rebsorte (meist eine eigene), eine Farbe, beliebigen Wein oder Sekt, dazu Mindeststufe und Mindestgüte; der Bio-Weinclub nur bei Bio-Betrieben und mit Siegel. Die Menge richtet sich nach der bestockten Fläche (mindestens 200 Flaschen), der Preis nach Listenpreis der Stufe × Güte × Kundenaufschlag (0,85–1,45) – meist besser als der Hofladen nach Vertriebskosten. Höchstens drei angenommene Aufträge; geliefert wird jederzeit bis zum Termin (2–8 Monate nach Ablauf der Anfrage) aus geprüften Flaschen, die einfachsten zuerst. Lieferung bringt 3–25 Punkte und 2–4 Bekanntheit; ein verpasster Termin kostet 15 % des Auftragswerts und 4 Bekanntheit. Anfragen erscheinen unter „Neuigkeiten“ und als Zähler am Reiter. Computergegner nehmen nur an, was sie sofort liefern können (je nach Profil 15–45 % der Anfragen).
+**Lebendige Gegner** (`src/engine/rivals.ts`): Jeder Computergegner führt ein Verhältnis zu jedem anderen Weingut (−100 bis +100; 😊 befreundet ab 40, 🙂 freundlich ab 10, 😐 neutral, 😒 verstimmt, 😠 verfeindet ab −40). Es verblasst jeden Monat um 5 % Richtung neutral.
+
+| Anlass | Verhältnis |
+|---|---|
+| Bei einer Sabotage gegen ihn erwischt | −60 |
+| Weinberg bei der Versteigerung weggeschnappt (er hatte mitgeboten) | −10 |
+| Weinskandal im eigenen Gebiet (alle Nachbarn) | −10 |
+| Gemeinsamer Messestand / Wein verkauft / Erntehilfe angenommen | +15 / +10 / +5 |
+| Messestand oder Weinkauf abgelehnt | −5 / 0 |
+
+Freundliche und neutrale Nachbarn im selben Gebiet bieten Menschen Kooperationen als Entscheidung an: gemeinsamer Messestand (3.000–5.000 €, beide +5 Bekanntheit), Weinkauf, wenn ihnen Wein fehlt (20–40 hl zum 1,3-fachen Fassweinpreis, März–August), und ab „freundlich“ Erntehilfe im September/Oktober (+3 Güte für den Jahrgang). Verstimmte Nachbarn (ab −30) starten mit 5 % Chance pro Monat eine Rabattaktion (drei Monate −15 % Ab-Hof-Nachfrage), verfeindete (ab −60) beschweren sich mit 4 % Chance öffentlich (−3 Bekanntheit). Das Schlitzohr beschädigt im Juni oder Juli den Weinberg seines Erzfeinds (ab −40). Feindseligkeiten gehören zu den Zufallsereignissen und entfallen, wenn diese abgeschaltet sind.
+
+Computergegner reagieren außerdem auf Markttrends: Ist das Ziel einer ihrer tragenden Sorten auf 88 % oder weniger gefallen und eine ihrer Profilsorten auf 110 % oder mehr gestiegen, roden sie im Januar die kleinste betroffene Parzelle (öffentliche Meldung) und pflanzen im Frühjahr nach Eignung und Marktrichtung neu.
+
+Die Rangliste zeigt unter „Nachbarschaft“, wie jeder Computergegner zu dir steht.
+
+**Kundenaufträge** (`src/engine/orders.ts`, Unterseite „📦 Aufträge“): Ab Jahr 2 kommt mit 30 % Chance pro Monat eine Anfrage eines erfundenen Kunden (höchstens drei offen, jede zwei Monate gültig). Kunden verlangen eine Rebsorte (meist eine eigene), eine Farbe, beliebigen Wein oder Sekt, dazu Mindeststufe und Mindestgüte; der Bio-Weinclub nur bei Bio-Betrieben und mit Siegel. Die Menge richtet sich nach der bestockten Fläche (mindestens 200 Flaschen), der Preis nach Listenpreis der Stufe × Güte × Kundenaufschlag (0,85–1,45) – meist besser als der Hofladen nach Vertriebskosten. Höchstens drei angenommene Aufträge; geliefert wird jederzeit bis zum Termin (2–8 Monate nach Ablauf der Anfrage) aus geprüften Flaschen, die einfachsten zuerst. Lieferung bringt 2–12 Punkte (etwa eine Bronze- bis Silbermedaille) und 2–4 Bekanntheit; ein verpasster Termin kostet 15 % des Auftragswerts und 4 Bekanntheit. Anfragen erscheinen unter „Neuigkeiten“ und als Zähler am Reiter. Computergegner nehmen nur an, was sie sofort liefern können (je nach Profil 15–45 % der Anfragen).
 
 **Markttrends** (`src/engine/trends.ts`): Jede Rebsorte und Sekt haben eine Beliebtheit als Preisfaktor (80–130 %) auf Ab-Hof-, Großhandels- und Fassweinpreise. Zu Spielbeginn liegen alle bei 85–115 %. Je Sorte und Monat bekommt der Trend mit 3 % Chance ein neues Ziel (meist nahe 100 %, selten ein Boom oder Absturz); der Wert nähert sich ihm jeden Monat um 8 % des Abstands, braucht für einen Umschwung also gut ein Jahr. Ändert sich das Ziel um mindestens 15 Prozentpunkte, erscheint die Nachricht für alle. Die Keller-Seite zeigt den Weinmarkt mit Richtung, die Sortenauswahl beim Pflanzen den Trend je Sorte. Die KI wählt beim Pflanzen nach Eignung und Zielrichtung des Marktes.
 

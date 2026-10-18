@@ -10,7 +10,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 13
+const CURRENT_VERSION: GameState['version'] = 14
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -101,11 +101,16 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 12) {
     // Version 13: Kundenaufträge
-    state.version = 13
+    old.version = 13
     for (const p of state.players) {
       p.orderOffers = []
       p.orders = []
     }
+  }
+  if (old.version === 13) {
+    // Version 14: Verhältnis der Computergegner zu den anderen Weingütern
+    state.version = 14
+    for (const p of state.players) p.relations = {}
   }
   return state.version === CURRENT_VERSION ? state : null
 }

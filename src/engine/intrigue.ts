@@ -16,6 +16,7 @@ import { changeReputation, plotAgeFactor, raiseLevel, wineLabel } from './rules'
 import type { AdulterationMethod, BottleLot, GameState, Player, SabotageKind } from './types'
 import { addLog, formatEuro } from './util'
 import { loseBio } from './bio'
+import { adjustRegionRelations, adjustRelation } from './rivals'
 
 export function validateAdulterate(player: Player, batchId: string, method: AdulterationMethod): string | null {
   const batch = player.cellar.find((b) => b.id === batchId)
@@ -69,6 +70,8 @@ function scandal(state: GameState, player: Player, where: string) {
   player.points = Math.max(0, player.points - SCANDAL_POINTS)
   changeReputation(player, -SCANDAL_REPUTATION)
   loseBio(state, player, 'Weinskandal')
+  // Ein Skandal schadet dem Ruf des ganzen Gebiets – die Nachbarn sind sauer
+  adjustRegionRelations(state, player.regionId, player.id, -10)
   addLog(
     state,
     null,
@@ -100,6 +103,7 @@ export function sabotage(state: GameState, player: Player, targetId: string, kin
     player.money -= SABOTAGE_FINE
     changeReputation(player, -SABOTAGE_REPUTATION)
     addLog(state, null, `${player.name} wurde bei einer Sabotage gegen ${target.name} erwischt: ${formatEuro(SABOTAGE_FINE)} Strafe.`)
+    adjustRelation(target, player.id, -60) // das vergisst so schnell niemand
     return
   }
   if (kind === 'geruecht') {
