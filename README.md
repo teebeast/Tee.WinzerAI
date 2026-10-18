@@ -1,6 +1,6 @@
 # WinzerAI
 
-Rundenbasierte Weingut-Simulation als Browsergame (PWA), nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92).
+Rundenbasierte Weingut-Simulation als Browsergame (PWA) und Windows-App, angelehnt an die Weinbau-Simulationen der 1990er-Jahre.
 
 Spielregeln, Zahlenwerte und Meilensteine stehen in [docs/spieldesign.md](docs/spieldesign.md).
 
@@ -17,6 +17,7 @@ npm run build    # Produktions-Build inkl. Service Worker
 
 ## Lizenzen und Veröffentlichung
 
+- WinzerAI steht unter der [MIT-Lizenz](LICENSE).
 - `npm run licenses` erzeugt `public/third-party-licenses.txt` mit den Lizenztexten aller ausgelieferten Fremdpakete (JavaScript im Web-Bundle und Service Worker, Rust-Crates der Desktop-App; braucht Cargo im PATH). Die Startseite zeigt die Datei unter „Lizenzen“. Nach Updates der Abhängigkeiten neu erzeugen.
 - Weingüter, Personen, Bio-Siegel und Prämierungen im Spiel sind frei erfunden.
 - Die Desktop-App setzt eine strikte Content-Security-Policy (`src-tauri/tauri.conf.json`).
