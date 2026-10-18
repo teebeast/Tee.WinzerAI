@@ -2,6 +2,7 @@ import { maxAffordableBid } from './auction'
 import { barriqueBonus, bottleCost, sektCost } from './cellar'
 import { BIO_LABELS, monthsUntilEligible, nextBioLabel } from './bio'
 import { hasSkill } from './cellarmaster'
+import { eligibleBottles, MAX_ORDERS } from './orders'
 import { droughtChance, frostCandlesCost, frostChance, installCost, insurancePremium } from './defense'
 import {
   BOTTLE_COST,
@@ -320,6 +321,14 @@ export function playAiTurn(state: GameState): GameState {
     for (const lot of candidates) {
       if (me().money - competition.fee < profile.cashReserve / 2) break
       act({ type: 'enterCompetition', lotId: lot.id })
+    }
+  }
+
+  // Kundenaufträge: nur annehmen, was sofort geliefert werden kann – dann gleich liefern
+  for (const offer of [...me().orderOffers]) {
+    if (me().orders.length >= MAX_ORDERS) break
+    if (eligibleBottles(me(), offer) >= offer.bottles && act({ type: 'acceptOrder', orderId: offer.id })) {
+      act({ type: 'deliverOrder', orderId: offer.id })
     }
   }
 

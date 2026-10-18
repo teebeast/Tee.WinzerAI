@@ -10,7 +10,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 12
+const CURRENT_VERSION: GameState['version'] = 13
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -87,7 +87,7 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 11) {
     // Version 12: Bio-Siegel in Stufen. Wer bisher schon zertifiziert war (drei Jahre Bio), trägt jetzt Grünblatt.
-    state.version = 12
+    old.version = 12
     const now = (state.year - 1) * 12 + state.month
     for (const p of state.players) {
       const legacy = p as unknown as { bioSinceYear?: number | null }
@@ -97,6 +97,14 @@ function migrate(state: GameState): GameState | null {
       const certified = p.bioSince !== null && state.year - sinceYear! >= 3
       p.bioLabel = certified ? 'basis' : null
       p.bioLabelSince = certified ? now : null
+    }
+  }
+  if (old.version === 12) {
+    // Version 13: Kundenaufträge
+    state.version = 13
+    for (const p of state.players) {
+      p.orderOffers = []
+      p.orders = []
     }
   }
   return state.version === CURRENT_VERSION ? state : null

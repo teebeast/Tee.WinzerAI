@@ -115,6 +115,29 @@ export interface CellarMaster {
   hiredYear: number | null
 }
 
+/** Lieferauftrag eines Kunden: einmalige Lieferung bis zu einem Termin */
+export interface CustomerOrder {
+  id: string
+  customer: string
+  icon: string
+  /** Verlangte Rebsorte, sonst Farbe oder beliebig */
+  grape: GrapeId | null
+  color: 'rot' | 'weiss' | null
+  sparkling: boolean
+  minLevel: QualityLevel
+  minQuality: number
+  /** Mindestens dieses Bio-Siegel */
+  bioLabel: BioLabel | null
+  bottles: number
+  pricePerBottle: number
+  points: number
+  reputation: number
+  /** Liefertermin: Ende dieses fortlaufenden Spielmonats */
+  deadline: number
+  /** Die Anfrage gilt bis Ende dieses Spielmonats */
+  offerExpires: number
+}
+
 export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
 export type Difficulty = 'leicht' | 'normal' | 'schwierig'
@@ -229,6 +252,10 @@ export interface Player {
   bioLabel: BioLabel | null
   /** Spielmonat, seit dem das aktuelle Siegel gilt */
   bioLabelSince: number | null
+  /** Offene Auftragsanfragen */
+  orderOffers: CustomerOrder[]
+  /** Angenommene, noch nicht gelieferte Aufträge */
+  orders: CustomerOrder[]
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -256,7 +283,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 12
+  version: 13
   rng: Rng
   year: number
   month: number
@@ -320,6 +347,9 @@ export type Action =
   | { type: 'insureHarvest' }
   | { type: 'frostCandles' }
   | { type: 'applyBioLabel' }
+  | { type: 'acceptOrder'; orderId: string }
+  | { type: 'declineOrder'; orderId: string }
+  | { type: 'deliverOrder'; orderId: string }
   | { type: 'setProtection'; strategy: ProtectionStrategy }
   | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
   | { type: 'makeSekt'; batchId: string; hectoliters: number }
