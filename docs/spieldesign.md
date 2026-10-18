@@ -23,7 +23,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
 | Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufalls- und Entscheidungsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +12 % / −7 % / −22 % Punkte; pleite gehen 0, 4 bzw. 9 von 78 Partien (mit Markttrends). |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufalls- und Entscheidungsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +11 % / −10 % / −22 % Punkte; pleite gehen 0, 0 bzw. 6 von 78 Partien (mit Markttrends und Wetterabwehr der KI). |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
@@ -218,10 +218,22 @@ Der Hofladen verkauft geprüfte Weine und Deutschen Wein, ältere Posten zuerst.
 
 | Ereignis | Wann | Chance | Folge |
 |---|---|---|---|
-| Spätfrost | April, Mai | 1 % × Frostrisiko pro Monat | −40 % Menge aller tragenden Parzellen |
-| Hagel | Juni–August | 4 % pro Monat | eine Parzelle −50 % Menge, −10 % Gesundheit |
-| Hitzewelle | Juli, August bei Sonne | 15 % | −10 % Menge, +4 °Oe |
+| Spätfrost | April, Mai | 2 % × Frostrisiko pro Monat (4–16 %) | −40 % Menge aller tragenden Parzellen |
+| Hagel | Juni–August | 5 % pro Monat, +0,2 Prozentpunkte je Jahr Klimawandel | eine Parzelle (30 %: zwei) −50 % Menge, −10 % Gesundheit |
+| Hitzewelle | Juli, August bei Sonne | 15 % | −10 % Menge, −5 % Gesundheit, +4 °Oe |
+| Dürre | Juli, August bei Sonne | 8 %, +0,8 Prozentpunkte je Jahr Klimawandel, in nassen Gebieten seltener | −15 % Menge, −5 % Gesundheit |
 | Kellerei-Insolvenz | jederzeit, für alle | 1,5 % pro Monat | 6 Monate halber Fassweinpreis |
+
+**Wetterabwehr** (`src/engine/defense.ts`, Karte „Wetterschutz“ auf der Weinberg-Seite):
+
+| Maßnahme | Kosten | Wirkung |
+|---|---|---|
+| 🕯️ Frostkerzen | 400 €/ha tragender Fläche, für einen Monat (April/Mai) | kein Spätfrostschaden in diesem Monat |
+| 🕸️ Hagelnetz | einmalig 3.000 €/ha je Parzelle | hält 90 % des Hagelschadens ab |
+| 💧 Tröpfchenbewässerung | einmalig 2.500 €/ha je Parzelle | kein Schaden durch Hitzewelle und Dürre (die Süße legt trotzdem zu) |
+| 🛡️ Ernteversicherung | Abschluss Januar–April für das Jahr; Prämie je tragendem ha 210 € + 85 € je Stufe Frostrisiko | zahlt 80 % des verlorenen Werts (8.000 €/ha) bei Frost, Hagel, Dürre, Sturmböen und Jahrhundertunwetter |
+
+Die Versicherung ist knapp kalkuliert: In KI-Partien (Traditionswinzer, alle Gebiete, 12 Jahre) fließen rund 80 % der Prämien als Entschädigung zurück – sie lohnt sich als Schutz vor dem großen Schaden, nicht als Geschäft. Vorsichtige KI-Profile (alle außer dem Schlitzohr) versichern jedes Jahr, stellen ab 10 % Frostgefahr Kerzen auf und bewässern mit zunehmender Dürregefahr nach und nach ihre größte Lage.
 
 **Ereigniskatalog** (`src/engine/events.ts`, in den Einstellungen abschaltbar): Jedes Weingut erlebt in 35 % der Monate ein Ereignis. Welches, entscheidet das Gewicht der Seltenheitsstufe, eingeschränkt auf Ereignisse, die zu Monat und Betrieb passen (Ernteschäden nur mit tragenden Reben, Diebstahl nur mit vollem Lager usw.).
 
@@ -239,7 +251,7 @@ Ein bestimmtes Alltagsereignis trifft ein Weingut etwa zweimal in zehn Jahren, e
 | Stufe | Entscheidungen |
 |---|---|
 | Alltag | Stand auf dem Stadtweinfest, Spende fürs Vereinsfest, bezahlte Influencer-Werbung |
-| Gelegentlich | Großauftrag vom Discounter (halber Preis, Ramsch-Image), Reportage im Weinmagazin (Chance auf Hymne oder Verriss), Erntehelfer wollen mehr Lohn, Frostwarnung (Frostkerzen oder Risiko), gebrauchte Tanks zum halben Preis |
+| Gelegentlich | Großauftrag vom Discounter (halber Preis, Ramsch-Image), Reportage im Weinmagazin (Chance auf Hymne oder Verriss), Erntehelfer wollen mehr Lohn, gebrauchte Tanks zum halben Preis |
 | Selten | Der Nachbar verkauft seine Lage privat, Kellermeister wird abgeworben, Auftritt in einer Kochsendung, Einladung zur internationalen Weinmesse |
 
 **Markttrends** (`src/engine/trends.ts`): Jede Rebsorte und Sekt haben eine Beliebtheit als Preisfaktor (80–130 %) auf Ab-Hof-, Großhandels- und Fassweinpreise. Zu Spielbeginn liegen alle bei 85–115 %. Je Sorte und Monat bekommt der Trend mit 3 % Chance ein neues Ziel (meist nahe 100 %, selten ein Boom oder Absturz); der Wert nähert sich ihm jeden Monat um 8 % des Abstands, braucht für einen Umschwung also gut ein Jahr. Ändert sich das Ziel um mindestens 15 Prozentpunkte, erscheint die Nachricht für alle. Die Keller-Seite zeigt den Weinmarkt mit Richtung, die Sortenauswahl beim Pflanzen den Trend je Sorte. Die KI wählt beim Pflanzen nach Eignung und Zielrichtung des Marktes.

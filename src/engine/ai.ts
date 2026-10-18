@@ -1,8 +1,10 @@
 import { maxAffordableBid } from './auction'
 import { barriqueBonus, bottleCost, sektCost } from './cellar'
 import { hasSkill } from './cellarmaster'
+import { droughtChance, frostCandlesCost, frostChance, installCost, insurancePremium } from './defense'
 import {
   BOTTLE_COST,
+  INSURANCE_MONTHS,
   COMPETITIONS,
   MARKETING,
   ONLINE_SHOP_COST,
@@ -73,6 +75,8 @@ export interface AiProfile {
   intrigue: boolean
   /** Baut Rotwein im Barrique aus */
   barrique: boolean
+  /** Sichert sich gegen Wetter ab: Versicherung, Frostkerzen, Bewässerung */
+  cautious: boolean
 }
 
 /** Vorgeschlagene Namen der Computer-Weingüter */
@@ -90,7 +94,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['riesling', 'spaetburgunder', 'lemberger', 'weissburgunder'], harvestMonth: 10, minOechsle: 73, bulkShare: 0.1, cashReserve: 20_000,
     keepMonthsOfDemand: 12, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: false,
     marketing: ['social', 'messe'], auctionPremium: 1.3, maxHectares: 25, maxLoanShare: 0.6,
-    protection: 'conventional', iceWine: true, sekt: true, intrigue: false, barrique: true,
+    protection: 'conventional', iceWine: true, sekt: true, intrigue: false, barrique: true, cautious: true,
   },
   genossenschaft: {
     id: 'genossenschaft', name: 'Genossenschafts-Typ',
@@ -98,7 +102,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['mueller-thurgau', 'dornfelder', 'silvaner', 'trollinger'], harvestMonth: 9, minOechsle: 68, bulkShare: 0.3, cashReserve: 30_000,
     keepMonthsOfDemand: 6, competitions: ['regional', 'bund'], cellarMaster: false, onlineShop: false,
     marketing: ['social'], auctionPremium: 1.15, maxHectares: 40, maxLoanShare: 0.5,
-    protection: 'conventional', iceWine: false, sekt: false, intrigue: false, barrique: false,
+    protection: 'conventional', iceWine: false, sekt: false, intrigue: false, barrique: false, cautious: true,
   },
   bio: {
     id: 'bio', name: 'Biopionier',
@@ -106,7 +110,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['weissburgunder', 'silvaner', 'spaetburgunder', 'riesling', 'regent'], harvestMonth: 10, minOechsle: 70, bulkShare: 0, cashReserve: 15_000,
     keepMonthsOfDemand: 18, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
     marketing: ['social', 'hoffest'], auctionPremium: 1.1, maxHectares: 20, maxLoanShare: 0.5,
-    protection: 'bio', iceWine: false, sekt: true, intrigue: false, barrique: false,
+    protection: 'bio', iceWine: false, sekt: true, intrigue: false, barrique: false, cautious: true,
   },
   schlitzohr: {
     id: 'schlitzohr', name: 'Schlitzohr',
@@ -114,7 +118,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['dornfelder', 'riesling', 'grauburgunder', 'lemberger'], harvestMonth: 10, minOechsle: 65, bulkShare: 0.3, cashReserve: 15_000,
     keepMonthsOfDemand: 8, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
     marketing: ['social', 'hoffest', 'messe'], auctionPremium: 1.35, maxHectares: 35, maxLoanShare: 0.7,
-    protection: 'conventional', iceWine: true, sekt: false, intrigue: true, barrique: true,
+    protection: 'conventional', iceWine: true, sekt: false, intrigue: true, barrique: true, cautious: false,
   },
 }
 
@@ -210,6 +214,23 @@ export function playAiTurn(state: GameState): GameState {
       if (act({ type: 'auctionLimit', lotId: lot.id, amount: limit })) {
         committed += limit
         hectares += lot.hectares
+      }
+    }
+  }
+
+  // Wetterabwehr: vorsichtige Profile versichern die Ernte, stellen bei hoher Frostgefahr Kerzen auf
+  // und bewässern mit dem Klimawandel nach und nach ihre größte Lage.
+  if (profile.cautious && !strained()) {
+    if (INSURANCE_MONTHS.includes(s.month) && me().money - insurancePremium(s, me()) >= profile.cashReserve) {
+      act({ type: 'insureHarvest' })
+    }
+    if (frostChance(s, me()) >= 0.1 && me().money - frostCandlesCost(s, me()) >= profile.cashReserve) {
+      act({ type: 'frostCandles' })
+    }
+    if (s.month === 1 && droughtChance(s, me()) >= 0.08) {
+      const dry = me().plots.filter((p) => p.grape && !p.irrigation).sort((a, b) => b.hectares - a.hectares)[0]
+      if (dry && me().money - installCost(dry, 'irrigation') >= profile.cashReserve + 40_000) {
+        act({ type: 'installIrrigation', plotId: dry.id })
       }
     }
   }

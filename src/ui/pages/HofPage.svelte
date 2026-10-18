@@ -6,6 +6,7 @@
   import { climateWarming } from '../../engine/rules'
   import type { Action, Effect, GameState, Player } from '../../engine/types'
   import { iceWineChance } from '../../engine/vineyard'
+  import { frostChance } from '../../engine/defense'
   import { WEATHER_KINDS, WEATHER_LABELS } from '../../engine/weather'
   import AuctionCard from '../AuctionCard.svelte'
   import ExportCard from '../ExportCard.svelte'
@@ -136,6 +137,12 @@
             </div>
           {/each}
         </div>
+        {#if frostChance(game, player) > 0}
+          <p class="small">
+            🥶 Spätfrostgefahr diesen Monat: {Math.round(frostChance(game, player) * 100)} %
+            {player.frostCandles ? '· 🕯️ Frostkerzen stehen bereit' : ''}
+          </p>
+        {/if}
         {#if game.month === 11 || game.month === 12}
           <p class="small">❄️ Eiswein-Frost (−7 °C) im Dezember: {Math.round(iceWineChance(game, player.regionId) * 100)} %</p>
         {/if}

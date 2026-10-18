@@ -1,5 +1,11 @@
 import {
   CLIMATE_HEAT_PER_YEAR,
+  DROUGHT_LOSS,
+  DROUGHT_MONTHS,
+  FROST_LOSS,
+  HAIL_LOSS,
+  HAIL_MONTHS,
+  HAIL_NET_PROTECTION,
   CLIMATE_ICE_WINE_LOSS_PER_YEAR,
   HARVEST_COST_PER_HA,
   ICE_WINE_BASE_CHANCE,
@@ -15,6 +21,7 @@ import { climateWarming, computeQuality, plotAgeFactor, storeWine } from './rule
 import type { GameState, Player, Plot, ProtectionStrategy } from './types'
 import { addLog, formatEuro } from './util'
 import { SUN_FACTOR, type WeatherKind } from './weather'
+import { cropLoss, droughtChance, frostChance, hailChance } from './defense'
 
 /** Basis-Reifezuwachs in °Oe am Ende des jeweiligen Monats */
 const RIPENING_BASE: Record<number, number> = { 8: 20, 9: 18, 10: 12, 11: 5 }
@@ -92,30 +99,71 @@ export function growPlot(state: GameState, player: Player, plot: Plot, weather: 
   }
 }
 
-/** Wetterereignisse, die den ganzen Betrieb treffen: Spätfrost, Hagel, Hitzewelle */
+/** Wetterereignisse, die den ganzen Betrieb treffen: Spätfrost, Hagel, Hitzewelle, Dürre – samt Wetterabwehr */
 export function vineyardEvents(state: GameState, player: Player, weather: WeatherKind) {
   const plots = player.plots.filter((p) => bearing(state, p))
   if (plots.length === 0) return
-  const region = REGIONS[player.regionId]
+  const roll = () => nextFloat(state.rng)
 
-  if ((state.month === 4 || state.month === 5) && nextFloat(state.rng) < region.frostRisk * 0.01) {
-    for (const plot of plots) plot.cropFactor *= 0.6
-    addLog(state, player.id, 'Spätfrost! Die jungen Triebe sind erfroren – rund 40 % weniger Ertrag in diesem Jahr.')
+  if (roll() < frostChance(state, player)) {
+    if (player.frostCandles) {
+      addLog(state, player.id, '🕯️ Spätfrost in der Nacht – deine Frostkerzen haben die jungen Triebe gerettet.', 'good')
+    } else {
+      addLog(state, player.id, 'Spätfrost! Die jungen Triebe sind erfroren – rund 40 % weniger Ertrag in diesem Jahr.', 'bad')
+      cropLoss(state, player, plots, 1 - FROST_LOSS, 'Spätfrost')
+    }
   }
-  if (state.month >= 6 && state.month <= 8 && nextFloat(state.rng) < 0.04) {
-    const plot = plots[Math.floor(nextFloat(state.rng) * plots.length)]
-    plot.cropFactor *= 0.5
-    plot.health = Math.max(0, plot.health - 0.1)
-    addLog(state, player.id, `Hagelschlag über ${plot.name} – die Hälfte der Trauben ist zerstört.`)
+
+  if (HAIL_MONTHS.includes(state.month) && roll() < hailChance(state)) {
+    // Eine Parzelle, manchmal zwei – ohne Zurücklegen gezogen
+    const pool = [...plots]
+    const hit = Array.from({ length: Math.min(pool.length, roll() < 0.3 ? 2 : 1) }, () =>
+      pool.splice(Math.floor(roll() * pool.length), 1)[0],
+    )
+    for (const plot of hit) {
+      if (plot.hailNet) {
+        addLog(state, player.id, `Hagelschlag über ${plot.name} – das Hagelnetz hält das Meiste ab.`, 'good')
+        cropLoss(state, player, [plot], 1 - HAIL_LOSS * (1 - HAIL_NET_PROTECTION), 'Hagel')
+      } else {
+        plot.health = Math.max(0, plot.health - 0.1)
+        addLog(state, player.id, `Hagelschlag über ${plot.name} – die Hälfte der Trauben ist zerstört.`, 'bad')
+        cropLoss(state, player, [plot], 1 - HAIL_LOSS, 'Hagel')
+      }
+    }
   }
+
   const heatChance = 0.15 + (state.climateChange ? (state.year - 1) * CLIMATE_HEAT_PER_YEAR : 0)
-  if ((state.month === 7 || state.month === 8) && weather === 'sonnig' && nextFloat(state.rng) < heatChance) {
+  if ((state.month === 7 || state.month === 8) && weather === 'sonnig' && roll() < heatChance) {
     for (const plot of plots) {
-      plot.cropFactor *= 0.9
       plot.oechsle += 4
+      if (plot.irrigation) continue
+      plot.cropFactor *= 0.9
       plot.health = Math.max(0, plot.health - 0.05)
     }
-    addLog(state, player.id, 'Hitzewelle: Sonnenbrand an den Trauben, etwas weniger Menge, dafür süßer.')
+    const watered = plots.filter((p) => p.irrigation).length
+    addLog(
+      state,
+      player.id,
+      watered === plots.length
+        ? 'Hitzewelle: Die Bewässerung hält die Reben frisch – nur die Süße legt zu.'
+        : `Hitzewelle: Sonnenbrand an den Trauben, etwas weniger Menge, dafür süßer${watered ? ' (bewässerte Lagen ohne Schaden)' : ''}.`,
+    )
+  }
+
+  if (DROUGHT_MONTHS.includes(state.month) && weather === 'sonnig' && roll() < droughtChance(state, player)) {
+    const dry = plots.filter((p) => !p.irrigation)
+    if (dry.length === 0) {
+      addLog(state, player.id, '💧 Dürre im Hochsommer – deine Bewässerung bringt alle Lagen gut durch.', 'good')
+    } else {
+      for (const plot of dry) plot.health = Math.max(0, plot.health - 0.05)
+      addLog(
+        state,
+        player.id,
+        `Dürre! Unbewässerte Reben leiden unter Trockenstress – rund ${Math.round(DROUGHT_LOSS * 100)} % weniger Ertrag dort.`,
+        'bad',
+      )
+      cropLoss(state, player, dry, 1 - DROUGHT_LOSS, 'Dürre')
+    }
   }
 }
 

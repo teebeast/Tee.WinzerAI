@@ -192,6 +192,32 @@ export const BIO_CONVERSION_YEARS = 3
 /** Aufschlag im Direktverkauf für zertifizierte Bio-Weine */
 export const BIO_PRICE_BONUS = 0.1
 
+/** Wetterabwehr */
+export const FROST_MONTHS = [4, 5]
+/** Spätfrost-Chance je Monat = Frostrisiko des Gebiets × Faktor */
+export const FROST_CHANCE_PER_RISK = 0.02
+export const FROST_LOSS = 0.4
+export const FROST_CANDLES_PER_HA = 400
+export const HAIL_MONTHS = [6, 7, 8]
+export const HAIL_CHANCE = 0.05
+export const HAIL_CLIMATE_PER_YEAR = 0.002
+export const HAIL_LOSS = 0.5
+export const HAIL_NET_COST_PER_HA = 3_000
+/** Anteil des Hagelschadens, den ein Netz abhält */
+export const HAIL_NET_PROTECTION = 0.9
+export const DROUGHT_MONTHS = [7, 8]
+export const DROUGHT_CHANCE = 0.08
+export const DROUGHT_CLIMATE_PER_YEAR = 0.008
+export const DROUGHT_LOSS = 0.15
+export const IRRIGATION_COST_PER_HA = 2_500
+/** Ernteversicherung: Abschluss Januar–April, versicherter Wert je ha und Selbstbehalt */
+export const INSURANCE_MONTHS = [1, 2, 3, 4]
+export const INSURED_VALUE_PER_HA = 8_000
+export const INSURANCE_DEDUCTIBLE = 0.2
+/** Prämie je tragendem ha: Grundbetrag plus Aufschlag je Stufe Frostrisiko */
+export const INSURANCE_BASE_PREMIUM = 210
+export const INSURANCE_PREMIUM_PER_FROST_RISK = 85
+
 /** Eiswein: Frost ≤ −7 °C im Dezember; Chance = Basis + Frostrisiko des Gebiets × Faktor */
 export const ICE_WINE_BASE_CHANCE = 0.2
 export const ICE_WINE_CHANCE_PER_FROST_RISK = 0.04

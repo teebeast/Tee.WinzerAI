@@ -23,6 +23,10 @@ export interface Plot {
   botrytis: boolean
   /** Trauben bleiben für Eiswein hängen – gelesen wird nur bei starkem Frost im Dezember */
   iceWineGamble: boolean
+  /** Hagelnetz über den Reben */
+  hailNet?: boolean
+  /** Tröpfchenbewässerung gegen Hitze und Dürre */
+  irrigation?: boolean
 }
 
 export type AdulterationMethod = 'wasser' | 'zucker' | 'glykol'
@@ -228,6 +232,10 @@ export interface Player {
   effects: Effect[]
   /** Offenes Entscheidungsereignis */
   decision: Decision | null
+  /** Jahr, für das eine Ernteversicherung abgeschlossen ist */
+  insuredYear: number | null
+  /** In diesem Monat stehen Frostkerzen bereit */
+  frostCandles: boolean
 }
 
 export interface LogEntry {
@@ -240,7 +248,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 10
+  version: 11
   rng: Rng
   year: number
   month: number
@@ -299,6 +307,10 @@ export type Action =
   | { type: 'decide'; option: number }
   | { type: 'sellPlot'; plotId: string }
   | { type: 'clearPlot'; plotId: string }
+  | { type: 'installHailNet'; plotId: string }
+  | { type: 'installIrrigation'; plotId: string }
+  | { type: 'insureHarvest' }
+  | { type: 'frostCandles' }
   | { type: 'setProtection'; strategy: ProtectionStrategy }
   | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
   | { type: 'makeSekt'; batchId: string; hectoliters: number }

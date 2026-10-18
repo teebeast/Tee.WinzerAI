@@ -6,6 +6,15 @@
   import { isBioCertified, plantedHectares, totalHectares } from '../../engine/market'
   import type { Action, GameState, Player, ProtectionStrategy } from '../../engine/types'
   import { trendDirection } from '../../engine/trends'
+  import {
+    droughtChance,
+    frostCandlesCost,
+    frostChance as lateFrostChance,
+    hailChance,
+    installCost,
+    insurancePremium,
+    isInsured,
+  } from '../../engine/defense'
   import { iceWineChance } from '../../engine/vineyard'
   import PlotScene from '../gfx/PlotScene.svelte'
 
@@ -86,6 +95,52 @@
     </div>
   </div>
 
+  <section class="card defense">
+    <h2>🛡️ Wetterschutz</h2>
+    <div class="defense-grid">
+      <div>
+        <strong>Ernteversicherung</strong>
+        {#if isInsured(game, player)}
+          <p class="small"><span class="chip good">✔ versichert für Jahr {game.year}</span></p>
+          <p class="muted small">Zahlt 80 % des Schadens durch Frost, Hagel, Dürre und Unwetter.</p>
+        {:else}
+          {@const action = { type: 'insureHarvest' } as const}
+          {@const problem = validateAction(game, action)}
+          <p class="muted small">Abschluss Januar bis April für das laufende Jahr. Zahlt 80 % des Schadens durch Frost, Hagel, Dürre und Unwetter.</p>
+          <button disabled={problem !== null} title={problem ?? ''} onclick={() => run(action)}>
+            Versichern ({formatEuro(insurancePremium(game, player))})
+          </button>
+        {/if}
+      </div>
+      <div>
+        <strong>Frostkerzen</strong>
+        {#if lateFrostChance(game, player) > 0}
+          <p class="small">
+            Spätfrostgefahr diesen Monat: <strong>{Math.round(lateFrostChance(game, player) * 100)} %</strong> (−40 % Ertrag)
+          </p>
+          {#if player.frostCandles}
+            <span class="chip good">🕯️ stehen bereit</span>
+          {:else}
+            {@const action = { type: 'frostCandles' } as const}
+            {@const problem = validateAction(game, action)}
+            <button disabled={problem !== null} title={problem ?? ''} onclick={() => run(action)}>
+              🕯️ Bereitstellen ({formatEuro(frostCandlesCost(game, player))})
+            </button>
+          {/if}
+        {:else}
+          <p class="muted small">Spätfrost droht im April und Mai – dann lassen sich hier für einen Monat Kerzen aufstellen.</p>
+        {/if}
+      </div>
+      <div>
+        <strong>Hagel und Dürre</strong>
+        <p class="muted small">
+          Hagel Juni–August: {Math.round(hailChance(game) * 100)} % pro Monat · Dürre bei Sonne im Juli/August:
+          {Math.round(droughtChance(game, player) * 100)} %. Netze und Bewässerung installierst du je Parzelle.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <div class="tiles">
     {#each player.plots as plot (plot.id)}
       {@const harvestAction = { type: 'harvest', plotId: plot.id } as const}
@@ -128,6 +183,8 @@
               <span class="chip" class:bad={plot.health < 0.7}>❤️ {Math.round(plot.health * 100)} %</span>
               {#if plot.cropFactor < 0.99}<span class="chip bad">Ertrag {Math.round(plot.cropFactor * 100)} %</span>{/if}
               {#if plot.botrytis}<span class="chip good">🍇 Edelfäule</span>{/if}
+              {#if plot.hailNet}<span class="chip" title="Hält 90 % des Hagelschadens ab">🕸️ Hagelnetz</span>{/if}
+              {#if plot.irrigation}<span class="chip" title="Schützt vor Hitze- und Dürreschäden">💧 Bewässerung</span>{/if}
               {#if plot.iceWineGamble}<span class="chip">❄️ hängt für Eiswein ({frostChance} %)</span>{/if}
             </div>
           {:else if young}
@@ -170,6 +227,20 @@
           </div>
 
           <div class="manage">
+            {#if !plot.hailNet}
+              {@const action = { type: 'installHailNet', plotId: plot.id } as const}
+              {@const problem = validateAction(game, action)}
+              <button class="ghost" disabled={problem !== null} title={problem ?? 'Hält 90 % des Hagelschadens ab'} onclick={() => run(action)}>
+                🕸️ Hagelnetz ({formatEuro(installCost(plot, 'hailNet'))})
+              </button>
+            {/if}
+            {#if !plot.irrigation}
+              {@const action = { type: 'installIrrigation', plotId: plot.id } as const}
+              {@const problem = validateAction(game, action)}
+              <button class="ghost" disabled={problem !== null} title={problem ?? 'Schützt vor Hitze- und Dürreschäden'} onclick={() => run(action)}>
+                💧 Bewässerung ({formatEuro(installCost(plot, 'irrigation'))})
+              </button>
+            {/if}
             {#if plot.grape}
               {@const cost = plot.hectares * CLEARING_COST_PER_HA}
               {@const problem = validateAction(game, { type: 'clearPlot', plotId: plot.id })}
@@ -203,6 +274,14 @@
   }
   .warning {
     color: var(--danger);
+  }
+  .defense-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 12px 20px;
+  }
+  .defense-grid p {
+    margin: 4px 0 6px;
   }
   .manage {
     display: flex;
