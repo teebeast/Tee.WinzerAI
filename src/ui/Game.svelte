@@ -7,10 +7,11 @@
   import { exportEligible } from '../engine/exports'
   import { REGIONS } from '../engine/data/regions'
   import { applyAction, currentPlayer, formatEuro, validateAction, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, RuleError } from '../engine/game'
-  import type { Action, GameState } from '../engine/types'
+  import type { Action, GameState, LogEntry } from '../engine/types'
   import { loadChallengeBest, recordChallengeResult } from '../save'
   import AuctionLive from './AuctionLive.svelte'
   import LexiconDialog from './LexiconDialog.svelte'
+  import SkipSummary from './SkipSummary.svelte'
   import { PAGES, type Page } from './pages'
   import CellarPage from './pages/CellarPage.svelte'
   import EstatePage from './pages/EstatePage.svelte'
@@ -65,15 +66,18 @@
     const counts: Partial<Record<Page, number>> = {}
     if (!over) {
       for (const hint of monthHints(game, player)) {
-        if (hint.important) counts[hint.area] = (counts[hint.area] ?? 0) + 1
+        if (hint.important && hint.area !== 'auftraege') counts[hint.area] = (counts[hint.area] ?? 0) + 1
       }
+      // Aufträge immer zählen – Anfragen, angenommene, noch nicht gelieferte Aufträge und Exportanfragen –, damit nichts untergeht
+      const orders = player.orderOffers.length + player.orders.length + (player.exportOffer ? 1 : 0)
+      if (orders > 0) counts.auftraege = orders
     }
     return counts
   })
 
-  /** Zur Exportkarte auf der Hof-Seite springen */
+  /** Zur Exportkarte auf der Seite „Aufträge“ springen */
   async function showExport() {
-    go('hof')
+    go('auftraege')
     await tick()
     document.getElementById('export-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
@@ -111,9 +115,20 @@
     }
   }
 
+  /** Zusammenfassung nach dem Vorspulen – sonst gehen Ereignisse unter, wenn man nicht auf dem Hof steht */
+  let skipSummary = $state<{ months: number; entries: LogEntry[] } | null>(null)
+  /** Meldungen, die in der Zusammenfassung erscheinen: Ereignisse sowie Versteigerung */
+  const isNews = (e: LogEntry) => e.tone !== undefined || e.text.startsWith('📣') || e.text.startsWith('🔨')
+
   function skipAhead() {
     try {
-      commit(fastForward(game).state, true)
+      const start = game.year * 12 + game.month
+      const { state, months } = fastForward(game)
+      const entries = state.log.filter(
+        (e) => e.year * 12 + e.month >= start && (e.playerId === null || e.playerId === player.id) && isNews(e),
+      )
+      commit(state, true)
+      skipSummary = { months, entries }
     } catch (e) {
       showError(e)
     }
@@ -138,7 +153,9 @@
 
 <LexiconDialog bind:open={lexiconOpen} />
 
-{#if liveLot && !handover}
+{#if skipSummary}
+  <SkipSummary months={skipSummary.months} entries={skipSummary.entries} onClose={() => (skipSummary = null)} />
+{:else if liveLot && !handover}
   <AuctionLive {game} lot={liveLot} {run} />
 {/if}
 

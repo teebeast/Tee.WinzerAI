@@ -62,9 +62,25 @@ describe('Oberfläche', () => {
     }
     const page = (initialPage: Page) =>
       render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage } }).body
-    expect(page('hof')).toContain('Anfrage aus Japan')
+    expect(page('auftraege')).toContain('Anfrage aus Japan')
     for (const text of ['SEKT', 'reift noch', 'Kellertricks']) expect(page('keller')).toContain(text)
     expect(page('betrieb')).toContain('Konkurrenz')
+  })
+
+  it('der Reiter „Aufträge“ zählt Anfragen, laufende Aufträge und Exportanfragen', () => {
+    const game = advancedGame()
+    const order = {
+      id: 'o1', customer: 'Grandhotel Sonnenkamm', icon: '🏨', grape: null, color: null, sparkling: false,
+      minLevel: 'kabinett' as const, minQuality: 99, bioLabel: null, bottles: 5000, pricePerBottle: 9, points: 5,
+      reputation: 2, deadline: 99, offerExpires: 99,
+    }
+    currentPlayer(game).orderOffers = [order, { ...order, id: 'o2' }]
+    currentPlayer(game).orders = [{ ...order, id: 'o3' }]
+    currentPlayer(game).exportOffer = {
+      id: 'x', country: 'Japan', bottlesPerMonth: 200, pricePerBottle: 9, minLevel: 'qualitaetswein', minQuality: 50, months: 12,
+    }
+    const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
+    expect(body).toContain('aria-label="4 offene Aufgaben"')
   })
 
   it('weist auf jeder Seite auf eine Exportanfrage hin', () => {

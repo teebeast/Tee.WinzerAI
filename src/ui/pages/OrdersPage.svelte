@@ -12,6 +12,7 @@
     orderValue,
   } from '../../engine/orders'
   import type { Action, CustomerOrder, GameState, Player } from '../../engine/types'
+  import ExportCard from '../ExportCard.svelte'
 
   /** Kundenaufträge: Anfragen annehmen oder ablehnen, angenommene Aufträge rechtzeitig liefern */
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -60,6 +61,8 @@
     </div>
     <span class="chip">{player.orders.length} / {MAX_ORDERS} Aufträge angenommen</span>
   </div>
+
+  <ExportCard {player} {run} />
 
   <h2 class="section">Angenommene Aufträge</h2>
   {#if player.orders.length === 0}

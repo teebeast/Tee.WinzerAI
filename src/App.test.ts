@@ -135,6 +135,10 @@ describe('Bedienung', () => {
     click('Spiel starten')
     click('Vorspulen')
     expect(target.textContent).not.toContain('Januar · Jahr 1')
+    // Zusammenfassung der übersprungenen Monate als Overlay
+    expect(target.querySelector('[aria-labelledby="skip-title"]')?.textContent).toMatch(/Monate? vorgespult/)
+    click('Weiter')
+    expect(target.querySelector('[aria-labelledby="skip-title"]')).toBeNull()
     expect(target.textContent).toContain('Jetzt zu tun')
   })
 

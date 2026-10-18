@@ -9,7 +9,6 @@
   import { frostChance } from '../../engine/defense'
   import { WEATHER_KINDS, WEATHER_LABELS } from '../../engine/weather'
   import AuctionCard from '../AuctionCard.svelte'
-  import ExportCard from '../ExportCard.svelte'
   import Ring from '../gfx/Ring.svelte'
   import WeatherIcon from '../gfx/WeatherIcon.svelte'
   import { pageInfo, type Page } from '../pages'
@@ -125,7 +124,6 @@
         </ul>
       </section>
       <AuctionCard {game} {player} />
-      <ExportCard {player} {run} />
       <section class="card">
         <h2>Wetter im {MONTH_NAMES[game.month - 1]}</h2>
         <div class="forecast">
