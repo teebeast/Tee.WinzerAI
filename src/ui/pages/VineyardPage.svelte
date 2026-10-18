@@ -2,6 +2,7 @@
   import { CLEARING_COST_PER_HA, PROTECTION } from '../../engine/data/economy'
   import { BIO_LABELS, monthsUntilEligible } from '../../engine/bio'
   import BioCertification from '../BioCertification.svelte'
+  import RegionProfile from '../RegionProfile.svelte'
   import { GRAPES, type GrapeId } from '../../engine/data/grapes'
   import { QUALITY_LEVELS, qualityInfo } from '../../engine/data/quality'
   import { formatEuro, harvestPreview, plotAgeFactor, plotSalePrice, validateAction } from '../../engine/game'
@@ -79,6 +80,7 @@
       <span class="muted small">
         {plantedHectares(player)} von {totalHectares(player)} ha bestockt · {player.plots.length} Parzellen
       </span>
+      <RegionProfile regionId={player.regionId} />
     </div>
     <div class="protection">
       <span class="muted small">Pflanzenschutz</span>
@@ -278,7 +280,7 @@
               </button>
             {/if}
             {#if player.plots.length > 1}
-              {@const price = plotSalePrice(plot, game.year)}
+              {@const price = plotSalePrice(player, plot, game.year)}
               <button class="ghost" title="Verkauf zu 90 % des Schätzwerts" onclick={() => sellPlot(plot.id, plot.name, price)}>
                 💰 Verkaufen ({formatEuro(price)})
               </button>

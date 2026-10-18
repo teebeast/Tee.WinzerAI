@@ -336,7 +336,7 @@ export const DECISION_EVENTS: DecisionDef[] = [
       const suitable = grapeIds.filter((g) => REGIONS[player.regionId].suitability[g] >= 0)
       const grape = c.roll() < 0.7 ? suitable[Math.floor(c.roll() * suitable.length)] : null
       const plantedYear = grape ? state.year - c.between(5, 30) : null
-      const estimate = parcelValue({ hectares, grape, plantedYear, site }, state.year)
+      const estimate = parcelValue({ hectares, grape, plantedYear, site, regionId: player.regionId }, state.year)
       const price = Math.round((estimate * (0.85 + c.roll() * 0.3)) / 1000) * 1000
       return {
         title: '🤝 Der Nachbar will verkaufen',

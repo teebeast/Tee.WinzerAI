@@ -22,7 +22,10 @@ function act(state: GameState, action: Action): GameState {
 function withReadyWine(seed = 42): GameState {
   let state = endMonths(start(seed), 9)
   state = act(state, { type: 'harvest', plotId: currentPlayer(state).plots[0].id })
-  return endMonths(state, 6)
+  state = endMonths(state, 6)
+  // Ein passives Mosel-Gut ist nach den teuren Steillagen-Monaten knapp bei Kasse – die Tests prüfen die Kellermechanik.
+  currentPlayer(state).money += 50_000
+  return state
 }
 
 /** Wie withReadyWine, aber 100 hl abgefüllt und amtlich geprüft */

@@ -13,6 +13,7 @@ import {
   OVERDRAFT_INTEREST_RATE,
   PIWI_PRICE_FACTOR,
   PROTECTION,
+  PRESTIGE_PRICE_PER_LEVEL,
   PROTECTION_MONTHS,
   ROSE_SUMMER_BONUS,
   ROSE_SUMMER_MONTHS,
@@ -21,7 +22,9 @@ import {
   SEKT_HIGH_QUALITY,
   SEKT_POINTS_HIGH,
   SEKT_POINTS_LOW,
+  SLOPE_UPKEEP_FACTOR,
   TANK_VALUE_PER_HL,
+  TOURISM_DEMAND_PER_LEVEL,
   UPKEEP_PER_HA,
   VINES_VALUE_PER_HA,
   VINEYARD_COST_PER_HA,
@@ -36,6 +39,7 @@ import {
 } from './data/economy'
 import { GRAPES } from './data/grapes'
 import { qualityInfo } from './data/quality'
+import { REGIONS } from './data/regions'
 import { bioInfo } from './data/bio'
 import { effectValue } from './rules'
 import { trendFactor } from './trends'
@@ -71,10 +75,11 @@ export function bottlePrice(lot: BottleLot, player: Player, state: GameState): n
   if (lot.sparkling) base = SEKT_BOTTLE_PRICE * (lot.registered ? 1 : 0.5)
   else base = qualityInfo(lot.registered ? lot.level : 'deutscher-wein').bottlePrice
   const bio = 1 + (bioInfo(player)?.priceBonus ?? 0)
+  const prestige = 1 + REGIONS[player.regionId].character.prestige * PRESTIGE_PRICE_PER_LEVEL
   // Rosé geht im Sommer besonders gut
   const roseSeason = lot.rose && !lot.sparkling && ROSE_SUMMER_MONTHS.includes(state.month) ? 1 + ROSE_SUMMER_BONUS : 1
   const piwi = GRAPES[lot.grape].piwi ? PIWI_PRICE_FACTOR : 1
-  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player) * trendFactor(state, lot) * roseSeason
+  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * prestige * piwi * priceFactor(player) * trendFactor(state, lot) * roseSeason
   return Math.round(price * 100) / 100
 }
 
@@ -99,6 +104,7 @@ export function monthlyDemand(player: Player): number {
   if (player.hasOnlineShop) demand += player.reputation * ONLINE_DEMAND_PER_REPUTATION
   if (player.hasVinothek) demand *= VINOTHEK_DEMAND_FACTOR
   demand *= 1 + (bioInfo(player)?.demandBonus ?? 0)
+  demand *= 1 + REGIONS[player.regionId].character.tourism * TOURISM_DEMAND_PER_LEVEL
   return Math.round(demand * effectValue(player, 'demand'))
 }
 
@@ -116,7 +122,7 @@ export function plantedHectares(player: Player): number {
 
 export function assetValue(player: Player): number {
   return (
-    totalHectares(player) * LAND_VALUE_PER_HA +
+    totalHectares(player) * LAND_VALUE_PER_HA * REGIONS[player.regionId].character.landPrice +
     plantedHectares(player) * VINES_VALUE_PER_HA +
     player.tankCapacityHl * TANK_VALUE_PER_HL +
     player.barriqueCapacityHl * BARRIQUE_VALUE_PER_HL +
@@ -157,12 +163,14 @@ export interface MonthlyCosts {
 
 /** Laufende Kosten, die am Ende von `month` abgebucht werden */
 export function monthlyCosts(player: Player, month: number): MonthlyCosts {
+  // Steillagen brauchen viel mehr Handarbeit
+  const slopeUpkeep = 1 + REGIONS[player.regionId].character.slope * SLOPE_UPKEEP_FACTOR
   const salaries =
     staffFte(player) * WORKER_SALARY +
     (player.cellarMaster?.salary ?? 0) +
     (player.hasVinothek ? VINOTHEK_MONTHLY_COST : 0)
   const upkeep = player.plots.reduce(
-    (sum, p) => sum + p.hectares * (p.grape ? VINEYARD_COST_PER_HA : UPKEEP_PER_HA),
+    (sum, p) => sum + p.hectares * (p.grape ? VINEYARD_COST_PER_HA * slopeUpkeep : UPKEEP_PER_HA),
     0,
   )
   const protection = PROTECTION_MONTHS.includes(month)

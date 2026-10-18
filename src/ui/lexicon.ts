@@ -130,6 +130,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Aus roten Trauben, aber hell gekeltert: Der Most liegt nur kurz auf den Schalen. Schnell trinkfertig, im Sommer besonders gefragt – und mal mehr, mal weniger in Mode.',
   },
   {
+    term: 'Steillage',
+    text: 'Weinberg mit mehr als 30 % Gefälle, oft nur von Hand zu bewirtschaften. Pflege und Lese sind teurer, doch Sonne und karge Böden bringen besonders gute Weine – die Mosel und der Mittelrhein sind berühmt dafür.',
+  },
+  {
     term: 'Sekt',
     text: 'Schaumwein aus zweiter Gärung in der Flasche (traditionelle Flaschengärung). Reift neun Monate auf der Hefe, ist aufwändig – aber ein guter Winzersekt ist gefragt und bringt Punkte.',
   },
@@ -161,4 +165,4 @@ export const LEXICON: LexiconEntry[] = [
     term: 'Weinbergversteigerung',
     text: 'Alle 8–16 Monate kommen Weinberge unter den Hammer, angekündigt einen Monat vorher. Geboten wird live gegen Nachbarn und auswärtige Investoren: Wer bereit ist, am meisten zu zahlen, bekommt den Zuschlag.',
   },
-]
+].sort((a, b) => a.term.localeCompare(b.term, 'de')) // alphabetisch, egal wo ein Eintrag ergänzt wird

@@ -56,10 +56,11 @@ export function scheduleNextAuction(state: GameState) {
 
 /** Schätzwert: Boden plus Reben, je nach Lage teurer oder billiger */
 export function parcelValue(
-  parcel: Pick<AuctionLot, 'hectares' | 'grape' | 'plantedYear' | 'site'>,
+  parcel: Pick<AuctionLot, 'hectares' | 'grape' | 'plantedYear' | 'site' | 'regionId'>,
   year: number,
 ): number {
-  let perHa = LAND_VALUE_PER_HA
+  // Der Boden kostet je nach Gebiet unterschiedlich viel, die Reben überall gleich
+  let perHa = LAND_VALUE_PER_HA * REGIONS[parcel.regionId].character.landPrice
   if (parcel.grape !== null && parcel.plantedYear !== null) {
     perHa += VINES_VALUE_PER_HA * (year - parcel.plantedYear >= 3 ? 1 : 0.5)
   }
@@ -96,7 +97,7 @@ function makeLot(state: GameState, regionId: RegionId, taken: AuctionLot[]): Auc
     grape = pick(rng, suitable)
     plantedYear = state.year - 3 - Math.floor(nextFloat(rng) * 25)
   }
-  const estimate = roundThousand(parcelValue({ hectares, grape, plantedYear, site }, state.year))
+  const estimate = roundThousand(parcelValue({ hectares, grape, plantedYear, site, regionId }, state.year))
   const usedNames = new Set(taken.map((p) => p.name))
   const name = pick(rng, PARCEL_NAMES.filter((n) => !usedNames.has(n)))
   const limits: Record<BidderId, number> = {}
