@@ -133,6 +133,28 @@ export interface AuctionState {
 
 export type EffectKind = 'demand' | 'price' | 'costs' | 'quality'
 
+/** Eine Möglichkeit bei einem Entscheidungsereignis */
+export interface DecisionOption {
+  label: string
+  /** Was die Wahl bewirkt – wird unter dem Knopf angezeigt */
+  hint: string
+  /** Sofort fällige Kosten; die Wahl ist nur möglich, wenn das Konto sie deckt */
+  cost: number
+}
+
+/** Offene Entscheidung eines Weinguts – gilt bis Monatsende */
+export interface Decision {
+  /** ID der Ereignisdefinition */
+  eventId: string
+  title: string
+  text: string
+  options: DecisionOption[]
+  /** Wahl, die am Monatsende ohne Antwort gilt */
+  fallback: number
+  /** Ausgewürfelte Werte (Mengen, Preise), die beim Auflösen gebraucht werden */
+  params: Record<string, number>
+}
+
 /** Befristete Folge eines Ereignisses */
 export interface Effect {
   label: string
@@ -182,6 +204,8 @@ export interface Player {
   bankrupt: boolean
   /** Laufende Folgen von Ereignissen */
   effects: Effect[]
+  /** Offenes Entscheidungsereignis */
+  decision: Decision | null
 }
 
 export interface LogEntry {
@@ -194,7 +218,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 7
+  version: 8
   rng: Rng
   year: number
   month: number
@@ -245,6 +269,9 @@ export type Action =
   | { type: 'auctionLimit'; lotId: string; amount: number }
   | { type: 'auctionBid'; lotId: string; amount: number }
   | { type: 'auctionPass'; lotId: string }
+  | { type: 'decide'; option: number }
+  | { type: 'sellPlot'; plotId: string }
+  | { type: 'clearPlot'; plotId: string }
   | { type: 'setProtection'; strategy: ProtectionStrategy }
   | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
   | { type: 'makeSekt'; batchId: string; hectoliters: number }

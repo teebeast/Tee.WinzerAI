@@ -133,6 +133,10 @@ export const AUCTION_INCREMENT_SHARE = 0.04
 /** Höchstgebot auswärtiger Investoren als Anteil des Schätzwerts; nicht bei jedem Los bieten sie mit */
 export const AUCTION_INVESTOR_RANGE: [number, number] = [0.85, 1.35]
 export const AUCTION_INVESTOR_CHANCE = 0.85
+/** Verkauf eines Weinbergs: Anteil des Schätzwerts nach Makler und Notar */
+export const PLOT_SALE_SHARE = 0.9
+/** Roden einer bestockten Parzelle je ha */
+export const CLEARING_COST_PER_HA = 2_000
 /** Güte-Bonus je Stufe Lagenqualität */
 export const SITE_QUALITY_BONUS = 4
 

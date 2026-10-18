@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { BIO_CONVERSION_YEARS, PROTECTION } from '../../engine/data/economy'
+  import { BIO_CONVERSION_YEARS, CLEARING_COST_PER_HA, PROTECTION } from '../../engine/data/economy'
   import { GRAPES, type GrapeId } from '../../engine/data/grapes'
   import { QUALITY_LEVELS, qualityInfo } from '../../engine/data/quality'
-  import { formatEuro, harvestPreview, plotAgeFactor, validateAction } from '../../engine/game'
+  import { formatEuro, harvestPreview, plotAgeFactor, plotSalePrice, validateAction } from '../../engine/game'
   import { isBioCertified, plantedHectares, totalHectares } from '../../engine/market'
   import type { Action, GameState, Player, ProtectionStrategy } from '../../engine/types'
   import { iceWineChance } from '../../engine/vineyard'
@@ -16,6 +16,18 @@
   /** Lagenqualität −1 bis +2 als Sterne */
   const stars = (site: number) => '★'.repeat(site + 2) + '☆'.repeat(2 - site)
   let plantChoice = $state<Record<string, GrapeId>>({})
+
+  function clearPlot(plotId: string, name: string, grape: string, cost: number) {
+    if (confirm(`${grape} in der Lage ${name} roden? Das kostet ${formatEuro(cost)}; eine neue Rebsorte pflanzt du im März oder April – sie trägt erst ab dem dritten Jahr.`)) {
+      run({ type: 'clearPlot', plotId })
+    }
+  }
+
+  function sellPlot(plotId: string, name: string, price: number) {
+    if (confirm(`Die Lage ${name} für ${formatEuro(price)} verkaufen? Der Weinberg ist danach weg, Trauben am Stock inklusive.`)) {
+      run({ type: 'sellPlot', plotId })
+    }
+  }
   const frostChance = $derived(Math.round(iceWineChance(game, player.regionId) * 100))
 
   /** Reifeskala für die Mostgewichtsanzeige */
@@ -149,6 +161,27 @@
               <button disabled={problem !== null} title={problem ?? ''} onclick={() => run(plantAction)}>🌱 Pflanzen</button>
             {/if}
           </div>
+
+          <div class="manage">
+            {#if plot.grape}
+              {@const cost = plot.hectares * CLEARING_COST_PER_HA}
+              {@const problem = validateAction(game, { type: 'clearPlot', plotId: plot.id })}
+              <button
+                class="ghost"
+                disabled={problem !== null}
+                title={problem ?? 'Reben entfernen, um eine andere Sorte zu pflanzen'}
+                onclick={() => clearPlot(plot.id, plot.name, GRAPES[plot.grape!].name, cost)}
+              >
+                🪓 Roden ({formatEuro(cost)})
+              </button>
+            {/if}
+            {#if player.plots.length > 1}
+              {@const price = plotSalePrice(plot, game.year)}
+              <button class="ghost" title="Verkauf zu 90 % des Schätzwerts" onclick={() => sellPlot(plot.id, plot.name, price)}>
+                💰 Verkaufen ({formatEuro(price)})
+              </button>
+            {/if}
+          </div>
         </div>
       </article>
     {/each}
@@ -163,6 +196,18 @@
   }
   .warning {
     color: var(--danger);
+  }
+  .manage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed var(--border);
+  }
+  .manage button {
+    padding: 4px 8px;
+    font-size: 0.85rem;
   }
   .stars {
     color: #d1a12c;

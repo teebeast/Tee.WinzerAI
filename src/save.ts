@@ -8,7 +8,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 7
+const CURRENT_VERSION: GameState['version'] = 8
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -46,11 +46,16 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 6) {
     // Version 7: Live-Versteigerung in zufälligen Abständen und befristete Ereignis-Effekte
-    state.version = 7
+    old.version = 7
     state.auction = null
     scheduleNextAuction(state)
     state.randomEvents = true
     for (const p of state.players) p.effects = []
+  }
+  if (old.version === 7) {
+    // Version 8: Entscheidungsereignisse
+    state.version = 8
+    for (const p of state.players) p.decision = null
   }
   return state.version === CURRENT_VERSION ? state : null
 }
