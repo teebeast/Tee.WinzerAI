@@ -4,6 +4,7 @@
   import { formatEuro, hasPointTarget as pointTarget, isEndless } from '../../engine/game'
   import { netWorth, totalHectares } from '../../engine/market'
   import { relation, relationLabel } from '../../engine/rivals'
+  import Milestones from '../Milestones.svelte'
   import type { GameState, Player } from '../../engine/types'
 
   let { game, player }: { game: GameState; player: Player } = $props()
@@ -13,13 +14,15 @@
   /** Balkenlänge: bis zum Punkteziel, bei offenem Ende relativ zum Besten */
   const scale = $derived(Math.max(hasPointTarget ? game.targetPoints : 0, ...game.players.map((p) => p.points), 1))
   const MEDALS = ['🥇', '🥈', '🥉']
+  /** Rangliste nur, wenn mehrere Weingüter spielen – Meilensteine gibt es immer */
+  const multiplayer = $derived(game.players.length > 1)
   const rivals = $derived(game.players.filter((p) => p.ai !== null && !p.bankrupt && p.id !== player.id))
 </script>
 
 <div class="page">
   <div class="page-head card">
     <div>
-      <h1>🏆 Rangliste</h1>
+      <h1>🏆 Erfolge</h1>
       <span class="muted small">
         {hasPointTarget
           ? `Gewonnen hat, wer zuerst ${game.targetPoints} Punkte erreicht.`
@@ -31,57 +34,62 @@
     </div>
   </div>
 
-  <section class="card">
-    <h2>Siegpunkte</h2>
-    <div class="bars">
-      {#each ranking as p, i (p.id)}
-        <div class="bar-row" class:current={p.id === player.id} class:out={p.bankrupt}>
-          <span class="place">{MEDALS[i] ?? `${i + 1}.`}</span>
-          <span class="name">{p.name}</span>
-          <div class="bar">
-            <div style:width="{(p.points / scale) * 100}%"></div>
-            {#if hasPointTarget}<span class="goal" title="Ziel"></span>{/if}
-          </div>
-          <strong class="num">{p.points}</strong>
-        </div>
-      {/each}
-    </div>
-  </section>
+  <Milestones {game} {player} />
 
-  <section class="card">
-    <h2>Weingüter im Vergleich</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Weingut</th>
-            <th class="num">Punkte</th>
-            <th class="num">⭐</th>
-            <th class="num">ha</th>
-            <th class="num">Vermögen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each ranking as p, i (p.id)}
-            <tr class:current={p.id === player.id} class:out={p.bankrupt}>
-              <td>{i + 1}</td>
-              <td>
-                {p.name}
-                <span class="muted small">
-                  · {REGIONS[p.regionId].name}{p.ai ? ` · KI ${AI_PROFILES[p.ai].name}` : ''}{p.bankrupt ? ' · insolvent' : ''}
-                </span>
-              </td>
-              <td class="num">{p.points}</td>
-              <td class="num">{Math.round(p.reputation)}</td>
-              <td class="num">{totalHectares(p)}</td>
-              <td class="num">{formatEuro(netWorth(p))}</td>
+  {#if multiplayer}
+    <section class="card">
+      <h2>Siegpunkte</h2>
+      <div class="bars">
+        {#each ranking as p, i (p.id)}
+          <div class="bar-row" class:current={p.id === player.id} class:out={p.bankrupt}>
+            <span class="place">{MEDALS[i] ?? `${i + 1}.`}</span>
+            <span class="name">{p.name}</span>
+            <div class="bar">
+              <div style:width="{(p.points / scale) * 100}%"></div>
+              {#if hasPointTarget}<span class="goal" title="Ziel"></span>{/if}
+            </div>
+            <strong class="num">{p.points}</strong>
+          </div>
+        {/each}
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Weingüter im Vergleich</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Weingut</th>
+              <th class="num">Punkte</th>
+              <th class="num">⭐</th>
+              <th class="num">ha</th>
+              <th class="num">Vermögen</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </section>
+          </thead>
+          <tbody>
+            {#each ranking as p, i (p.id)}
+              <tr class:current={p.id === player.id} class:out={p.bankrupt}>
+                <td>{i + 1}</td>
+                <td>
+                  {p.name}
+                  <span class="muted small">
+                    · {REGIONS[p.regionId].name}{p.ai ? ` · KI ${AI_PROFILES[p.ai].name}` : ''}{p.bankrupt ? ' · insolvent' : ''}
+                  </span>
+                </td>
+                <td class="num">{p.points}</td>
+                <td class="num">{Math.round(p.reputation)}</td>
+                <td class="num">{totalHectares(p)}</td>
+                <td class="num">{formatEuro(netWorth(p))}</td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  {/if}
 
   {#if rivals.length > 0}
     <section class="card">

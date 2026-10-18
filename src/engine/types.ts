@@ -138,6 +138,22 @@ export interface CustomerOrder {
   offerExpires: number
 }
 
+/** Zähler für Meilensteine – dauerhaft, unabhängig vom begrenzten Logbuch */
+export interface PlayerStats {
+  harvests: number
+  /** Beste je gelesene Qualitätsstufe (Rang wie levelRank, −1 = noch keine) */
+  bestLevelRank: number
+  edelsuess: number
+  sekt: number
+  barrique: number
+  bottlesSold: number
+  medals: number
+  goldMedals: number
+  ordersDelivered: number
+  exportsCompleted: number
+  auctionsWon: number
+}
+
 export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
 export type Difficulty = 'leicht' | 'normal' | 'schwierig'
@@ -258,6 +274,9 @@ export interface Player {
   orders: CustomerOrder[]
   /** Nur Computergegner: Verhältnis zu den anderen Weingütern (−100 verfeindet … +100 befreundet) */
   relations: Record<string, number>
+  stats: PlayerStats
+  /** Chronik: erreichte Meilensteine mit fortlaufendem Spielmonat */
+  milestones: Record<string, number>
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -285,7 +304,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 14
+  version: 15
   rng: Rng
   year: number
   month: number

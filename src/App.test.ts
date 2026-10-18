@@ -95,7 +95,7 @@ describe('Bedienung', () => {
     click('Spiel starten')
     click('Monat beenden')
     expect(target.textContent).toContain('Februar · Jahr 1')
-    expect(target.textContent).toContain('Rangliste')
+    expect(target.textContent).toContain('Erfolge')
   })
 
   it('Hot-Seat zeigt bei mehreren Menschen den Übergabebildschirm', () => {

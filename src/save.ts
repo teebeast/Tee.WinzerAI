@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { scheduleNextAuction } from './engine/auction'
 import { refreshCandidates, salaryFor } from './engine/cellarmaster'
 import { initTrends } from './engine/trends'
+import { checkMilestones, emptyStats } from './engine/milestones'
 import type { GameState } from './engine/types'
 
 /**
@@ -10,7 +11,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 14
+const CURRENT_VERSION: GameState['version'] = 15
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -109,8 +110,17 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 13) {
     // Version 14: Verhältnis der Computergegner zu den anderen Weingütern
-    state.version = 14
+    old.version = 14
     for (const p of state.players) p.relations = {}
+  }
+  if (old.version === 14) {
+    // Version 15: Meilensteine. Bereits Erreichtes wird ohne Belohnung eingetragen, die Zähler beginnen bei null.
+    state.version = 15
+    for (const p of state.players) {
+      p.stats = emptyStats()
+      p.milestones = {}
+    }
+    checkMilestones(state, true)
   }
   return state.version === CURRENT_VERSION ? state : null
 }

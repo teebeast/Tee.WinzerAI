@@ -75,6 +75,7 @@ export function makeSekt(state: GameState, player: Player, batchId: string, hect
   const bottles = hlToBottles(hectoliters)
   const cost = Math.round(bottles * sektCost(player))
   player.money -= cost
+  player.stats.sekt++
   removeBatchVolume(player, batch, hectoliters)
   player.bottles.push(newLot(state, batch, bottles, true))
   addLog(
@@ -116,6 +117,7 @@ export function validateToBarrique(player: Player, batchId: string): string | nu
 export function toBarrique(state: GameState, player: Player, batchId: string) {
   const batch = player.cellar.find((b) => b.id === batchId)!
   const bonus = barriqueBonus(batch)
+  player.stats.barrique++
   batch.barrique = true
   batch.quality = Math.min(100, batch.quality + bonus)
   batch.monthsUntilReady = Math.max(batch.monthsUntilReady, BARRIQUE_MONTHS)

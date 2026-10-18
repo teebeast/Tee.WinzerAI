@@ -17,7 +17,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { REGIONS, type RegionId } from './data/regions'
 import { nextFloat } from './rng'
-import { climateWarming, computeQuality, plotAgeFactor, storeWine } from './rules'
+import { climateWarming, computeQuality, levelRank, plotAgeFactor, storeWine } from './rules'
 import type { GameState, Player, Plot, ProtectionStrategy } from './types'
 import { addLog, formatEuro } from './util'
 import { SUN_FACTOR, type WeatherKind } from './weather'
@@ -204,6 +204,9 @@ export function resolveIceWine(state: GameState, player: Player, frost: boolean)
     )
     const cost = Math.round(plot.hectares * HARVEST_COST_PER_HA * 1.5)
     player.money -= cost
+    player.stats.harvests++
+    player.stats.edelsuess++
+    player.stats.bestLevelRank = Math.max(player.stats.bestLevelRank, levelRank('eiswein'))
     storeWine(state, player, {
       grape: grape.id,
       vintage: state.year,

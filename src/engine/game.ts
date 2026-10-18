@@ -62,6 +62,7 @@ import { decide, expireDecision, monthlyEvent, validateDecide } from './decision
 import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
 import { marketEvents, tickEffects } from './events'
 import { monthlyRivalry } from './rivals'
+import { checkMilestones, emptyStats } from './milestones'
 import { initTrends, updateTrends } from './trends'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
 import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
@@ -85,6 +86,7 @@ import {
   HARVEST_MONTHS,
   hasPointTarget,
   isEndless,
+  levelRank,
   NO_POINT_TARGET,
   PLANT_MONTHS,
   plotAgeFactor,
@@ -134,7 +136,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 14,
+    version: 15,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -199,6 +201,8 @@ export function newGame(options: NewGameOptions): GameState {
       orderOffers: [],
       orders: [],
       relations: {},
+      stats: emptyStats(),
+      milestones: {},
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -492,6 +496,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       const revenue = Math.round(wholesalePrice(lot, player, next) * action.bottles)
       player.money += revenue
       player.wholesaleThisYear += action.bottles
+      player.stats.bottlesSold += action.bottles
       removeBottles(player, lot, action.bottles)
       addLog(next, player.id, `${action.bottles} Fl. ${wineLabel(lot)} an den Großhandel: +${formatEuro(revenue)}.`)
       break
@@ -648,6 +653,9 @@ export function applyAction(state: GameState, action: Action): GameState {
 function harvest(state: GameState, player: Player, plot: Plot) {
   const preview = harvestPreview(state, player, plot)
   player.money -= preview.cost
+  player.stats.harvests++
+  player.stats.bestLevelRank = Math.max(player.stats.bestLevelRank, levelRank(preview.level))
+  if (preview.level === 'beerenauslese' || preview.level === 'trockenbeerenauslese') player.stats.edelsuess++
   plot.harvestedThisYear = true
   plot.iceWineGamble = false
   addLog(
@@ -728,6 +736,7 @@ function resolveMonth(state: GameState) {
     checkInsolvency(state, player)
   }
   if (state.randomEvents) monthlyRivalry(state)
+  checkMilestones(state)
   checkWinner(state)
 
   if (state.month === 12) {
@@ -768,6 +777,7 @@ function sellDirect(state: GameState, player: Player) {
     const count = Math.min(demand, lot.bottles)
     revenue += count * bottlePrice(lot, player, state)
     sold += count
+    player.stats.bottlesSold += count
     demand -= count
     removeBottles(player, lot, count)
   }
@@ -790,6 +800,8 @@ function judgeCompetition(state: GameState, player: Player, competition: Competi
     }
     lot.awards.push({ competition: competition.id, year: state.year, medal })
     player.points += competition.points[medal]
+    player.stats.medals++
+    if (medal === 'gold') player.stats.goldMedals++
     changeReputation(player, competition.reputation[medal])
     addLog(
       state,
