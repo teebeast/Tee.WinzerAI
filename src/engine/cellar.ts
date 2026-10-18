@@ -8,6 +8,7 @@ import {
   SEKT_MONTHS,
   SEKT_QUALITY_BONUS,
 } from './data/economy'
+import { bottlingCostFactor, hasSkill } from './cellarmaster'
 import { GRAPES } from './data/grapes'
 import { hlToBottles } from './market'
 import { removeBatchVolume, usedBarriqueHl, wineLabel } from './rules'
@@ -15,6 +16,10 @@ import type { BottleLot, GameState, Player, WineBatch } from './types'
 import { addLog, formatEuro, newId } from './util'
 
 export const SEKT_COST_PER_BOTTLE = BOTTLE_COST + SEKT_EXTRA_COST_PER_BOTTLE
+
+/** Kosten je Flasche – ein sparsamer Kellermeister drückt sie */
+export const bottleCost = (player: Player) => BOTTLE_COST * bottlingCostFactor(player)
+export const sektCost = (player: Player) => SEKT_COST_PER_BOTTLE * bottlingCostFactor(player)
 
 function readyBatch(player: Player, batchId: string, hectoliters: number): WineBatch | string {
   const batch = player.cellar.find((b) => b.id === batchId)
@@ -27,7 +32,7 @@ function readyBatch(player: Player, batchId: string, hectoliters: number): WineB
 export function validateBottle(player: Player, batchId: string, hectoliters: number): string | null {
   const batch = readyBatch(player, batchId, hectoliters)
   if (typeof batch === 'string') return batch
-  const cost = hlToBottles(hectoliters) * BOTTLE_COST
+  const cost = hlToBottles(hectoliters) * bottleCost(player)
   if (player.money < cost) return `Nicht genug Geld für Flaschen (benötigt ${formatEuro(cost)}).`
   return null
 }
@@ -35,7 +40,8 @@ export function validateBottle(player: Player, batchId: string, hectoliters: num
 export function bottle(state: GameState, player: Player, batchId: string, hectoliters: number) {
   const batch = player.cellar.find((b) => b.id === batchId)!
   const bottles = hlToBottles(hectoliters)
-  player.money -= bottles * BOTTLE_COST
+  const cost = Math.round(bottles * bottleCost(player))
+  player.money -= cost
   removeBatchVolume(player, batch, hectoliters)
 
   // Nachfüllen in einen noch ungeprüften Posten desselben Weins, damit kleine Abfüllungen prüfbar bleiben.
@@ -51,13 +57,14 @@ export function bottle(state: GameState, player: Player, batchId: string, hectol
   )
   if (existing) existing.bottles += bottles
   else player.bottles.push(newLot(state, batch, bottles, false))
-  addLog(state, player.id, `${bottles} Flaschen ${wineLabel(batch)} abgefüllt: −${formatEuro(bottles * BOTTLE_COST)}.`)
+  addLog(state, player.id, `${bottles} Flaschen ${wineLabel(batch)} abgefüllt: −${formatEuro(cost)}.`)
 }
 
 export function validateSekt(player: Player, batchId: string, hectoliters: number): string | null {
   const batch = readyBatch(player, batchId, hectoliters)
   if (typeof batch === 'string') return batch
-  const cost = hlToBottles(hectoliters) * SEKT_COST_PER_BOTTLE
+  if (!hasSkill(player, 'sekt')) return 'Für Sekt braucht es einen Kellermeister, der die Flaschengärung beherrscht.'
+  const cost = hlToBottles(hectoliters) * sektCost(player)
   if (player.money < cost) return `Nicht genug Geld für die Sektherstellung (benötigt ${formatEuro(cost)}).`
   return null
 }
@@ -66,13 +73,14 @@ export function validateSekt(player: Player, batchId: string, hectoliters: numbe
 export function makeSekt(state: GameState, player: Player, batchId: string, hectoliters: number) {
   const batch = player.cellar.find((b) => b.id === batchId)!
   const bottles = hlToBottles(hectoliters)
-  player.money -= bottles * SEKT_COST_PER_BOTTLE
+  const cost = Math.round(bottles * sektCost(player))
+  player.money -= cost
   removeBatchVolume(player, batch, hectoliters)
   player.bottles.push(newLot(state, batch, bottles, true))
   addLog(
     state,
     player.id,
-    `${bottles} Flaschen Sekt aus ${wineLabel(batch)} angesetzt – fertig in ${SEKT_MONTHS} Monaten (−${formatEuro(bottles * SEKT_COST_PER_BOTTLE)}).`,
+    `${bottles} Flaschen Sekt aus ${wineLabel(batch)} angesetzt – fertig in ${SEKT_MONTHS} Monaten (−${formatEuro(cost)}).`,
   )
 }
 
@@ -97,6 +105,7 @@ export function validateToBarrique(player: Player, batchId: string): string | nu
   const batch = player.cellar.find((b) => b.id === batchId)
   if (!batch) return 'Unbekannte Charge.'
   if (batch.barrique) return 'Der Wein liegt bereits im Barrique.'
+  if (!hasSkill(player, 'barrique')) return 'Für den Barrique-Ausbau braucht es einen Kellermeister mit Erfahrung im Eichenfass.'
   if (batch.level === 'eiswein' || batch.level === 'trockenbeerenauslese') return 'Edelsüße Weine gehören nicht ins Barrique.'
   const free = player.barriqueCapacityHl - usedBarriqueHl(player)
   if (batch.hectoliters > free) return `Im Barrique ist nur Platz für ${free} hl.`

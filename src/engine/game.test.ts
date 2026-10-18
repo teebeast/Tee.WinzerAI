@@ -220,19 +220,25 @@ describe('Prämierungen', () => {
 })
 
 describe('Kellermeister', () => {
-  it('hebt die Güte bei der Lese und kostet Gehalt', () => {
+  it('hebt die Güte bei der Lese um sein Talent und kostet Gehalt', () => {
     const october = endMonths(start(), 9)
     const plotId = currentPlayer(october).plots[0].id
     const without = currentPlayer(act(october, { type: 'harvest', plotId })).cellar[0]
 
-    const hired = act(october, { type: 'cellarMaster', hire: true })
+    const candidate = october.cellarMasterCandidates[0]
+    const hired = act(october, { type: 'hireCellarMaster', candidate: 0 })
+    expect(currentPlayer(hired).cellarMaster?.name).toBe(candidate.name)
+    expect(hired.cellarMasterCandidates).not.toContainEqual(candidate)
     const withMaster = currentPlayer(act(hired, { type: 'harvest', plotId })).cellar[0]
-    expect(withMaster.quality).toBeGreaterThan(without.quality)
+    expect(withMaster.quality).toBeGreaterThanOrEqual(without.quality + candidate.talent)
 
     const costWithout = currentPlayer(october).money - currentPlayer(endMonths(october, 1)).money
     const costWith = currentPlayer(hired).money - currentPlayer(endMonths(hired, 1)).money
-    expect(costWith).toBeGreaterThan(costWithout)
-    expect(() => act(hired, { type: 'cellarMaster', hire: true })).toThrow('bereits')
+    expect(costWith - costWithout).toBeCloseTo(candidate.salary, -2)
+
+    const fired = act(hired, { type: 'fireCellarMaster' })
+    expect(currentPlayer(fired).cellarMaster).toBeNull()
+    expect(() => act(fired, { type: 'fireCellarMaster' })).toThrow('kein Kellermeister')
   })
 })
 

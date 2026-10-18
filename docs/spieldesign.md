@@ -23,7 +23,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
 | Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufalls- und Entscheidungsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +11 % / −6 % / −27 % Punkte; pleite gehen 0, 2 bzw. 9 von 78 Partien. |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufalls- und Entscheidungsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +7 % / −6 % / −21 % Punkte; pleite gehen 1, 0 bzw. 3 von 78 Partien. |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
@@ -146,7 +146,18 @@ Jeder Wein hat neben der Stufe eine **Güte von 0–100**. Sie ergibt sich aus Q
 - **Fassweinverkauf** an die Großkellerei geht **jederzeit** und sofort, aber billig (1,0–3,0 € pro Liter je nach Stufe und Güte). Das ist der Liquiditätsanker: Beim Start-Weingut deckt reiner Fassweinverkauf ungefähr die laufenden Kosten, Gewinn bringt erst die Flasche.
 - **Abfüllung:** 1 hl ergibt 133 Flaschen à 0,75 l. Flaschen, Korken und Etiketten kosten 0,60 € pro Flasche (Mengenrabatt ab 10.000).
 - **Sekt:** Aus ausgebautem Grundwein entsteht in Flaschengärung Sekt; das kostet 1,60 € pro Flasche (Flasche plus Gärung). Er reift 9 Monate auf der Hefe, ist bis dahin unverkäuflich und bekommt +3 Güte. Die Prüfung bringt 10 Punkte bei Güte ≥ 80, sonst 3. Ab Hof liegt der Grundpreis bei 12 €, bei Prämierungen gibt es +6 auf die Wertung. Ungeprüfter Sekt geht nur als einfacher Schaumwein zum halben Preis weg.
-- **Kellermeister:** einstellbar, +5 Güte, 4.000 € pro Monat.
+- **Kellermeister:** Jeden Januar bewerben sich drei Kandidaten (für alle Spieler gemeinsam; wer zuerst einstellt, bekommt ihn). Jeder hat ein Talent (+1 bis +5 Güte für jede Lese) und 1–3 Fähigkeiten. Erfahrung: alle vier Dienstjahre +1 Güte, höchstens +2. Gehalt: 2.500 € + 350 € je Talentpunkt + 600 € je Fähigkeit. Ein neuer Kellermeister löst den bisherigen ab.
+
+| Fähigkeit | Wirkung |
+|---|---|
+| 🍾 Sekt | Voraussetzung für Sekt (Flaschengärung) |
+| 🛢️ Barrique | Voraussetzung für den Ausbau im Eichenfass |
+| 🍷 Rotwein | +3 Güte bei roten Sorten |
+| 🥂 Weißwein | +3 Güte bei weißen Sorten |
+| 🍯 Edelsüß | +4 Güte ab 95 °Oe (Auslese und höher, Eiswein) |
+| 💡 Sparsam | −25 % Kosten fürs Abfüllen und die Sektherstellung |
+
+Ein Spitzen-Kellermeister bringt so bis zu +11 Güte (Talent 5, Erfahrung 2, Edelsüß 4) – im Schnitt holt die KI etwa so viel heraus wie früher mit dem festen +5-Kellermeister. Die KI bewertet Bewerber nach Talent, den Fähigkeiten, die ihr Profil braucht (Sekt, Barrique), und dem Gehalt; im Januar wechselt sie, wenn ein Bewerber deutlich besser passt.
 
 ## 9. Weinprüfung (AP-Nummer)
 
@@ -263,7 +274,7 @@ Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe
 
 ## 14. Finanzen
 
-- **Laufende Kosten pro Monat:** 2.500 € je Vollzeitkraft, eine je 10 ha, mindestens eine, dazwischen anteilig (11 ha = 1,1 Kräfte). Kellermeister 4.000 €, Vinothek 1.000 €, Pflanzenschutz siehe §12.
+- **Laufende Kosten pro Monat:** 2.500 € je Vollzeitkraft, eine je 10 ha, mindestens eine, dazwischen anteilig (11 ha = 1,1 Kräfte). Kellermeister je nach Talent und Fähigkeiten 3.500–6.100 €, Vinothek 1.000 €, Pflanzenschutz siehe §12.
 - **Marktsättigung im Großhandel:** Je 20.000 Flaschen, die ein Weingut im Jahr an den Großhandel verkauft, zahlt er 10 % weniger, höchstens 50 % weniger. Zum Jahreswechsel wird zurückgesetzt. Bewirtschaftung 350 € pro ha bestockt (auch Junganlagen), Brache 50 € pro ha.
 - **Kredit:** bis 50 % des Betriebswerts (Land 25.000 €/ha, Reben +15.000 €/ha, Tank 150 €/hl), 6 % Zinsen p. a., monatlich belastet. Aufnahme und Tilgung jederzeit in ganzen Euro.
 - **Dispo:** Ein negatives Konto kostet 12 % Zinsen p. a. Die Lese darf ins Minus führen.

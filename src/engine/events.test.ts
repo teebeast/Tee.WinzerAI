@@ -81,7 +81,7 @@ describe('Zufallsereignisse', () => {
     const costs = monthlyCosts(player, 6).total
     triggerEvent(s, player, ESTATE_EVENTS.find((e) => e.id === 'handelskette')!)
     triggerEvent(s, player, ESTATE_EVENTS.find((e) => e.id === 'strom')!)
-    expect(monthlyDemand(player)).toBe(Math.round(demand * 1.5))
+    expect(Math.abs(monthlyDemand(player) - demand * 1.5)).toBeLessThanOrEqual(1) // Nachfrage wird gerundet
     expect(monthlyCosts(player, 6).total).toBeGreaterThan(costs)
 
     for (let i = 0; i < 6; i++) s = applyAction(s, { type: 'endTurn' })

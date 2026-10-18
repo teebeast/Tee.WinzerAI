@@ -12,7 +12,7 @@ function prepared(months?: number[]): GameState {
   const player = currentPlayer(s)
   player.ai = null
   player.money = 500_000
-  player.hasCellarMaster = true
+  player.cellarMaster = { name: 'Test', talent: 5, skills: ['sekt', 'barrique'], salary: 4000, hiredYear: 1 }
   s.month = months?.[0] ?? 6
   for (const plot of player.plots) plot.harvestedThisYear = false
   player.bottles.push({

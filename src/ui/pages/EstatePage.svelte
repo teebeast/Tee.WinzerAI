@@ -1,8 +1,6 @@
 <script lang="ts">
   import {
     BARRIQUE_COST_PER_HL,
-    CELLAR_MASTER_QUALITY_BONUS,
-    CELLAR_MASTER_SALARY,
     LOAN_INTEREST_RATE,
     MARKETING,
     ONLINE_SHOP_COST,
@@ -12,9 +10,10 @@
     TANK_COST_PER_HL,
     VINOTHEK_COST,
   } from '../../engine/data/economy'
+  import { experience, SKILLS } from '../../engine/cellarmaster'
   import { formatEuro, MONTH_NAMES, validateAction } from '../../engine/game'
   import { availableCredit, creditLimit, monthlyCosts, staffFte } from '../../engine/market'
-  import type { Action, GameState, MarketingKind, Player, SabotageKind } from '../../engine/types'
+  import type { Action, CellarMaster, GameState, MarketingKind, Player, SabotageKind } from '../../engine/types'
   import Ring from '../gfx/Ring.svelte'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -56,7 +55,7 @@
       icon: '🪵',
       name: 'Barrique',
       state: player.barriqueCapacityHl > 0 ? `${player.barriqueCapacityHl} hl` : 'keins',
-      text: 'Eichenfässer – vor allem Rotwein gewinnt an Güte',
+      text: 'Eichenfässer – vor allem Rotwein gewinnt an Güte. Nutzbar nur mit einem Kellermeister, der Barrique beherrscht.',
       action: { type: 'expandBarrique', hectoliters: TANK_STEP } as Action,
       label: `+${TANK_STEP} hl (${formatEuro(TANK_STEP * BARRIQUE_COST_PER_HL)})`,
     },
@@ -76,15 +75,18 @@
       action: player.hasOnlineShop ? null : ({ type: 'buyOnlineShop' } as Action),
       label: `Starten (${formatEuro(ONLINE_SHOP_COST)})`,
     },
-    {
-      icon: '👨‍🔬',
-      name: 'Kellermeister',
-      state: player.hasCellarMaster ? '✔ angestellt' : 'keiner',
-      text: `+${CELLAR_MASTER_QUALITY_BONUS} Güte für jede Lese, ${formatEuro(CELLAR_MASTER_SALARY)}/Monat`,
-      action: { type: 'cellarMaster', hire: !player.hasCellarMaster } as Action,
-      label: player.hasCellarMaster ? 'Entlassen' : 'Einstellen',
-    },
   ])
+
+  function fireMaster(master: CellarMaster) {
+    if (confirm(`${master.name} wirklich entlassen? Erfahrung und Fähigkeiten gehen verloren.`)) run({ type: 'fireCellarMaster' })
+  }
+
+  function hireMaster(index: number, candidate: CellarMaster) {
+    const current = player.cellarMaster
+    if (!current || confirm(`${candidate.name} einstellen? ${current.name} muss dafür gehen.`)) {
+      run({ type: 'hireCellarMaster', candidate: index })
+    }
+  }
 </script>
 
 <div class="page">
@@ -139,7 +141,7 @@
           {/each}
         </ul>
         <p class="muted small">
-          {staffFte(player).toLocaleString('de-DE', { maximumFractionDigits: 1 })} Vollzeitkräfte{player.hasCellarMaster
+          {staffFte(player).toLocaleString('de-DE', { maximumFractionDigits: 1 })} Vollzeitkräfte{player.cellarMaster
             ? ' + Kellermeister'
             : ''}{player.hasVinothek ? ' + Vinothek' : ''}
         </p>
@@ -162,6 +164,65 @@
             </button>
           {/each}
         </div>
+      </div>
+    </article>
+  </div>
+
+  {#snippet skillChips(master: CellarMaster)}
+    <span class="chips">
+      {#each master.skills as skill (skill)}
+        <span class="chip" title={SKILLS[skill].text}>{SKILLS[skill].icon} {SKILLS[skill].name}</span>
+      {/each}
+    </span>
+  {/snippet}
+
+  <h2 class="section">👨‍🔬 Kellermeister</h2>
+  <div class="tiles master-tiles">
+    <article class="tile">
+      <div class="tile-body">
+        {#if player.cellarMaster}
+          {@const master = player.cellarMaster}
+          {@const exp = experience(master, game.year)}
+          <strong>{master.name}</strong>
+          <span class="small">
+            +{master.talent + exp} Güte für jede Lese{exp > 0 ? ` (davon +${exp} Erfahrung)` : ''} · {formatEuro(master.salary)}/Monat
+          </span>
+          {@render skillChips(master)}
+          <ul class="skill-list small">
+            {#each master.skills as skill (skill)}<li>{SKILLS[skill].icon} {SKILLS[skill].text}</li>{/each}
+          </ul>
+          <div class="tile-actions">
+            <button class="ghost" onclick={() => fireMaster(master)}>Entlassen</button>
+          </div>
+        {:else}
+          <strong>Kein Kellermeister</strong>
+          <p class="muted small">
+            Ohne Kellermeister gibt es keinen Güte-Zuschlag – und weder Sekt noch Barriqueweine. Wähle rechts aus den Bewerbungen
+            dieses Jahres.
+          </p>
+        {/if}
+      </div>
+    </article>
+    <article class="tile">
+      <div class="tile-body">
+        <strong>Bewerbungen {game.year}</strong>
+        <span class="muted small">Jeden Januar bewerben sich neue Kandidaten. Erfahrung: alle vier Dienstjahre +1 Güte (höchstens +2).</span>
+        {#if game.cellarMasterCandidates.length === 0}
+          <p class="muted small">Alle Bewerber sind vergeben – im Januar kommen neue.</p>
+        {/if}
+        <ul class="candidates">
+          {#each game.cellarMasterCandidates as candidate, i (candidate.name)}
+            {@const action = { type: 'hireCellarMaster', candidate: i } as const}
+            <li>
+              <span class="candidate-text">
+                <strong>{candidate.name}</strong>
+                <span class="small">+{candidate.talent} Güte · {formatEuro(candidate.salary)}/Monat</span>
+                {@render skillChips(candidate)}
+              </span>
+              <button {...button(action)} onclick={() => hireMaster(i, candidate)}>Einstellen</button>
+            </li>
+          {/each}
+        </ul>
       </div>
     </article>
   </div>
@@ -210,6 +271,34 @@
 </div>
 
 <style>
+  .master-tiles {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  }
+  .skill-list {
+    margin: 0;
+    padding-left: 1.2em;
+  }
+  .candidates {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .candidates li {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .candidate-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
   .visual {
     display: flex;
     gap: 14px;

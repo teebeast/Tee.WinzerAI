@@ -3,12 +3,12 @@
  * Bewusst ohne Abhängigkeit zu game.ts, damit keine Import-Zyklen entstehen.
  */
 import {
-  CELLAR_MASTER_QUALITY_BONUS,
   CLIMATE_WARMTH_PER_YEAR,
   OVERFLOW_PRICE_PER_LITER,
   REPUTATION_SATURATION,
   SITE_QUALITY_BONUS,
 } from './data/economy'
+import { cellarMasterBonus } from './cellarmaster'
 import { GRAPES } from './data/grapes'
 import { QUALITY_LEVELS, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS } from './data/regions'
@@ -66,11 +66,11 @@ export function effectValue(player: Player, kind: EffectKind): number {
     : matching.reduce((product, e) => product * e.value, 1)
 }
 
-export function computeQuality(player: Player, plot: Plot, oechsle = plot.oechsle): number {
+export function computeQuality(player: Player, plot: Plot, year: number, oechsle = plot.oechsle): number {
   const grape = GRAPES[plot.grape!]
   const suitability = REGIONS[player.regionId].suitability[grape.id]
   const bonus =
-    (player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0) + plot.site * SITE_QUALITY_BONUS + effectValue(player, 'quality')
+    cellarMasterBonus(player, grape.id, oechsle, year) + plot.site * SITE_QUALITY_BONUS + effectValue(player, 'quality')
   const raw =
     20 + grape.qualityPotential * 4 + suitability * 6 + (oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 + bonus
   return Math.max(0, Math.min(100, Math.round(raw)))

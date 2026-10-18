@@ -76,6 +76,8 @@ describe('Geldsenken', () => {
     currentPlayer(state).money = 200_000
     state = applyAction(state, { type: 'harvest', plotId: currentPlayer(state).plots[0].id })
     const batch = currentPlayer(state).cellar[0]
+    expect(() => applyAction(state, { type: 'toBarrique', batchId: batch.id })).toThrow('Eichenfass')
+    currentPlayer(state).cellarMaster = { name: 'Test', talent: 0, skills: ['barrique'], salary: 3000, hiredYear: 1 }
     expect(() => applyAction(state, { type: 'toBarrique', batchId: batch.id })).toThrow('Platz')
 
     state = applyAction(state, { type: 'expandBarrique', hectoliters: 300 })

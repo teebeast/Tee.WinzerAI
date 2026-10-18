@@ -46,6 +46,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
+import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
 import { marketEvents, tickEffects } from './events'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
@@ -119,7 +120,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 8,
+    version: 9,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -133,6 +134,7 @@ export function newGame(options: NewGameOptions): GameState {
     auction: null,
     monthsToAuction: 0,
     randomEvents: options.randomEvents ?? true,
+    cellarMasterCandidates: [],
     bulkCrisisMonths: 0,
     climateChange: options.climateChange ?? true,
     yearLimit: options.yearLimit ?? null,
@@ -165,7 +167,7 @@ export function newGame(options: NewGameOptions): GameState {
       hasOnlineShop: false,
       hasVinothek: false,
       wholesaleThisYear: 0,
-      hasCellarMaster: false,
+      cellarMaster: null,
       plots: [
         makePlot(state, 'Hauslage', 4, fallow ? null : region.startGrape, fallow ? null : -10, 0),
         makePlot(state, 'Südhang', 3, oldVines ? region.startGrape : null, oldVines ? -10 : null, 1),
@@ -187,6 +189,7 @@ export function newGame(options: NewGameOptions): GameState {
     }
   })
   scheduleNextAuction(state)
+  refreshCandidates(state)
   state.forecast = makeForecast(state.rng, state.month, 0.8)
   addLog(
     state,
@@ -248,7 +251,7 @@ export function harvestPreview(state: GameState, player: Player, plot: Plot): Ha
   return {
     hectoliters: Math.round(hectoliters),
     level: levelForOechsle(plot.oechsle).level,
-    quality: computeQuality(player, plot),
+    quality: computeQuality(player, plot, state.year),
     cost: plot.hectares * HARVEST_COST_PER_HA,
   }
 }
@@ -339,11 +342,10 @@ export function validateAction(state: GameState, action: Action): string | null 
       if (player.hasOnlineShop) return 'Der Online-Shop läuft bereits.'
       if (player.money < ONLINE_SHOP_COST) return `Nicht genug Geld (benötigt ${formatEuro(ONLINE_SHOP_COST)}).`
       return null
-    case 'cellarMaster':
-      if (player.hasCellarMaster === action.hire) {
-        return action.hire ? 'Es ist bereits ein Kellermeister angestellt.' : 'Es ist kein Kellermeister angestellt.'
-      }
-      return null
+    case 'hireCellarMaster':
+      return validateHire(state, player, action.candidate)
+    case 'fireCellarMaster':
+      return player.cellarMaster ? null : 'Es ist kein Kellermeister angestellt.'
     case 'borrow':
       if (!Number.isInteger(action.amount) || action.amount <= 0) return 'Ungültiger Betrag.'
       if (action.amount > availableCredit(player)) return `Kreditrahmen reicht nur für ${formatEuro(availableCredit(player))}.`
@@ -479,9 +481,11 @@ export function applyAction(state: GameState, action: Action): GameState {
       player.hasOnlineShop = true
       addLog(next, player.id, 'Der Online-Shop ist eröffnet.')
       break
-    case 'cellarMaster':
-      player.hasCellarMaster = action.hire
-      addLog(next, player.id, action.hire ? 'Ein Kellermeister ist eingestellt.' : 'Der Kellermeister ist entlassen.')
+    case 'hireCellarMaster':
+      hire(next, player, action.candidate)
+      break
+    case 'fireCellarMaster':
+      fire(next, player)
       break
     case 'borrow':
       player.loan += action.amount
@@ -658,6 +662,7 @@ function resolveMonth(state: GameState) {
       return
     }
     addLog(state, null, `Jahr ${state.year} beginnt.`)
+    refreshCandidates(state)
   } else {
     state.month++
   }

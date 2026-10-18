@@ -3,7 +3,6 @@ import {
   BIO_CONVERSION_YEARS,
   BIO_PRICE_BONUS,
   BOTTLES_PER_HL,
-  CELLAR_MASTER_SALARY,
   COMPETITIONS,
   DIFFICULTIES,
   FARM_SHOP_BASE_DEMAND,
@@ -154,7 +153,7 @@ export interface MonthlyCosts {
 export function monthlyCosts(player: Player, month: number): MonthlyCosts {
   const salaries =
     staffFte(player) * WORKER_SALARY +
-    (player.hasCellarMaster ? CELLAR_MASTER_SALARY : 0) +
+    (player.cellarMaster?.salary ?? 0) +
     (player.hasVinothek ? VINOTHEK_MONTHLY_COST : 0)
   const upkeep = player.plots.reduce(
     (sum, p) => sum + p.hectares * (p.grape ? VINEYARD_COST_PER_HA : UPKEEP_PER_HA),
