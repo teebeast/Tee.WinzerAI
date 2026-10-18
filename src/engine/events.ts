@@ -82,7 +82,7 @@ export function sellBottles(ctx: EventContext, lots: BottleLot[], count: number,
   for (const lot of lots) {
     if (left <= 0) break
     const n = Math.min(left, lot.bottles)
-    revenue += n * bottlePrice(lot, ctx.player, ctx.state.year) * priceFactor
+    revenue += n * bottlePrice(lot, ctx.player, ctx.state) * priceFactor
     removeBottles(ctx.player, lot, n)
     left -= n
   }

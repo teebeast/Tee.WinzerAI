@@ -163,6 +163,13 @@ export const VINOTHEK_REPUTATION = 5
 export const WHOLESALE_SATURATION_BOTTLES = 200_000
 export const WHOLESALE_MIN_FACTOR = 0.5
 
+/** Markttrends: Spanne des Preisfaktors, Anteil der Annäherung ans Ziel je Monat, Chance auf ein neues Ziel je Sorte und Monat */
+export const TREND_RANGE: [number, number] = [0.8, 1.3]
+export const TREND_SPEED = 0.08
+export const TREND_SHIFT_CHANCE = 0.03
+/** Ab dieser Änderung des Ziels wird der Umschwung gemeldet */
+export const TREND_NEWS_THRESHOLD = 0.15
+
 /** Pilzwiderstandsfähige Sorten gelten als weniger edel */
 export const PIWI_PRICE_FACTOR = 0.9
 

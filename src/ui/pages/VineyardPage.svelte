@@ -5,6 +5,7 @@
   import { formatEuro, harvestPreview, plotAgeFactor, plotSalePrice, validateAction } from '../../engine/game'
   import { isBioCertified, plantedHectares, totalHectares } from '../../engine/market'
   import type { Action, GameState, Player, ProtectionStrategy } from '../../engine/types'
+  import { trendDirection } from '../../engine/trends'
   import { iceWineChance } from '../../engine/vineyard'
   import PlotScene from '../gfx/PlotScene.svelte'
 
@@ -16,6 +17,10 @@
   /** Lagenqualität −1 bis +2 als Sterne */
   const stars = (site: number) => '★'.repeat(site + 2) + '☆'.repeat(2 - site)
   let plantChoice = $state<Record<string, GrapeId>>({})
+  const ARROWS = { up: '↗', down: '↘', flat: '→' } as const
+  /** Markttrend als kurzer Zusatz in der Sortenauswahl */
+  const trendLabel = (id: GrapeId) =>
+    `Markt ${Math.round(game.trends[id].value * 100)} % ${ARROWS[trendDirection(game.trends[id])]}`
 
   function clearPlot(plotId: string, name: string, grape: string, cost: number) {
     if (confirm(`${grape} in der Lage ${name} roden? Das kostet ${formatEuro(cost)}; eine neue Rebsorte pflanzt du im März oder April – sie trägt erst ab dem dritten Jahr.`)) {
@@ -155,7 +160,9 @@
               {@const problem = validateAction(game, plantAction)}
               <select bind:value={() => grape, (v) => (plantChoice[plot.id] = v)} aria-label="Rebsorte">
                 {#each grapeIds as id (id)}
-                  <option value={id}>{GRAPES[id].name} ({formatEuro(GRAPES[id].plantCostPerHa * plot.hectares)})</option>
+                  <option value={id}>
+                    {GRAPES[id].name} ({formatEuro(GRAPES[id].plantCostPerHa * plot.hectares)}) · {trendLabel(id)}
+                  </option>
                 {/each}
               </select>
               <button disabled={problem !== null} title={problem ?? ''} onclick={() => run(plantAction)}>🌱 Pflanzen</button>

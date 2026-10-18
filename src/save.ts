@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { scheduleNextAuction } from './engine/auction'
 import { refreshCandidates, salaryFor } from './engine/cellarmaster'
+import { initTrends } from './engine/trends'
 import type { GameState } from './engine/types'
 
 /**
@@ -9,7 +10,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 9
+const CURRENT_VERSION: GameState['version'] = 10
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -61,7 +62,7 @@ function migrate(state: GameState): GameState | null {
   if (old.version === 8) {
     // Version 9: Kellermeister mit Talent und Fähigkeiten. Ein vorhandener bleibt als erfahrener Allrounder,
     // damit laufende Partien Sekt und Barrique behalten.
-    state.version = 9
+    old.version = 9
     for (const p of state.players) {
       const legacy = p as unknown as { hasCellarMaster?: boolean }
       p.cellarMaster = legacy.hasCellarMaster
@@ -70,6 +71,11 @@ function migrate(state: GameState): GameState | null {
       delete legacy.hasCellarMaster
     }
     refreshCandidates(state)
+  }
+  if (old.version === 9) {
+    // Version 10: Markttrends je Rebsorte und für Sekt
+    state.version = 10
+    initTrends(state)
   }
   return state.version === CURRENT_VERSION ? state : null
 }

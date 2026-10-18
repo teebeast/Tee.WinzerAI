@@ -26,6 +26,7 @@ function liveFor(limits: Record<string, number> = {}, extraPlayers: NewGameOptio
   const s = until(game([anna, ...extraPlayers]), 'live')
   const lot = awaitingLot(s)!
   lot.limits = { ...limits }
+  s.players[0].money = Math.max(s.players[0].money, 1_000_000) // genug Spielraum für jedes Testgebot
   return { s, lot }
 }
 

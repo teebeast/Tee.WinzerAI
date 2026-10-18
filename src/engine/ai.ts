@@ -219,7 +219,9 @@ export function playAiTurn(state: GameState): GameState {
     const plot = me().plots.filter((p) => p.grape === null).sort((a, b) => b.site - a.site)[0]
     if (plot) {
       const region = REGIONS[me().regionId]
-      const grape = [...profile.grapes].sort((a, b) => region.suitability[b] - region.suitability[a])[0]
+      // Eignung zählt am meisten; wohin der Markt läuft, gibt den Ausschlag (die Reben tragen erst in drei Jahren)
+      const score = (g: GrapeId) => region.suitability[g] + (s.trends[g].target - 1) * 5
+      const grape = [...profile.grapes].sort((a, b) => score(b) - score(a))[0]
       const cost = GRAPES[grape].plantCostPerHa * plot.hectares
       if (canExpand(cost) && ensureCash(cost, 0)) {
         act({ type: 'plant', plotId: plot.id, grape })
@@ -420,7 +422,7 @@ export function playAiTurn(state: GameState): GameState {
       const missing = target - me().money
       if (missing <= 0) return
       if (!lot.registered || me().competitionEntries.includes(lot.id)) continue
-      const bottles = Math.min(lot.bottles, Math.ceil(missing / Math.max(0.01, wholesalePrice(lot, me(), s.year))))
+      const bottles = Math.min(lot.bottles, Math.ceil(missing / Math.max(0.01, wholesalePrice(lot, me(), s))))
       act({ type: 'sellWholesale', lotId: lot.id, bottles })
     }
   }

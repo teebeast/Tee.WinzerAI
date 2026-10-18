@@ -49,6 +49,7 @@ import { REGIONS, type RegionId } from './data/regions'
 import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
 import { marketEvents, tickEffects } from './events'
+import { initTrends, updateTrends } from './trends'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
 import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
 import {
@@ -120,7 +121,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 9,
+    version: 10,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -135,6 +136,7 @@ export function newGame(options: NewGameOptions): GameState {
     monthsToAuction: 0,
     randomEvents: options.randomEvents ?? true,
     cellarMasterCandidates: [],
+    trends: {} as GameState['trends'],
     bulkCrisisMonths: 0,
     climateChange: options.climateChange ?? true,
     yearLimit: options.yearLimit ?? null,
@@ -190,6 +192,7 @@ export function newGame(options: NewGameOptions): GameState {
   })
   scheduleNextAuction(state)
   refreshCandidates(state)
+  initTrends(state)
   state.forecast = makeForecast(state.rng, state.month, 0.8)
   addLog(
     state,
@@ -449,7 +452,7 @@ export function applyAction(state: GameState, action: Action): GameState {
     }
     case 'sellWholesale': {
       const lot = lotOf(action.lotId)
-      const revenue = Math.round(wholesalePrice(lot, player, next.year) * action.bottles)
+      const revenue = Math.round(wholesalePrice(lot, player, next) * action.bottles)
       player.money += revenue
       player.wholesaleThisYear += action.bottles
       removeBottles(player, lot, action.bottles)
@@ -622,6 +625,7 @@ function resolveMonth(state: GameState) {
   const competition = Object.values(COMPETITIONS).find((c) => c.month === state.month)
   if (state.auction?.phase === 'live') finishAuction(state)
   marketEvents(state)
+  updateTrends(state)
 
   // Eiswein-Frost wird je Anbaugebiet einmal ausgewürfelt
   const frost = new Map<RegionId, boolean>()
@@ -688,7 +692,7 @@ function sellDirect(state: GameState, player: Player) {
   for (const lot of forSale) {
     if (demand <= 0) break
     const count = Math.min(demand, lot.bottles)
-    revenue += count * bottlePrice(lot, player, state.year)
+    revenue += count * bottlePrice(lot, player, state)
     sold += count
     demand -= count
     removeBottles(player, lot, count)

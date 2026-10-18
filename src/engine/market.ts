@@ -37,6 +37,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { qualityInfo } from './data/quality'
 import { effectValue } from './rules'
+import { trendFactor } from './trends'
 import type { BottleLot, GameState, Player, WineBatch } from './types'
 
 /** Auf- oder Abschlag auf Verkaufserlöse durch Schwierigkeitsgrad und laufende Ereignisse */
@@ -52,7 +53,7 @@ export function costFactor(player: Player): number {
 /** Fasswein-Erlös je hl – in einer Krise der Großkellereien nur die Hälfte */
 export function bulkPricePerHl(batch: WineBatch, state: GameState, player: Player): number {
   const crisis = state.bulkCrisisMonths > 0 ? 0.5 : 1
-  return qualityInfo(batch.level).bulkPricePerLiter * 100 * (0.7 + batch.quality / 200) * crisis * priceFactor(player)
+  return qualityInfo(batch.level).bulkPricePerLiter * 100 * (0.7 + batch.quality / 200) * crisis * priceFactor(player) * trendFactor(state, batch)
 }
 
 export function isBioCertified(player: Player, year: number): boolean {
@@ -63,13 +64,13 @@ export function isBioCertified(player: Player, year: number): boolean {
  * Ab-Hof-Preis je Flasche. Ungeprüfte Weine dürfen nur als „Deutscher Wein“ verkauft werden,
  * ungeprüfter Sekt nur als einfacher Schaumwein zum halben Preis.
  */
-export function bottlePrice(lot: BottleLot, player: Player, year: number): number {
+export function bottlePrice(lot: BottleLot, player: Player, state: GameState): number {
   let base: number
   if (lot.sparkling) base = SEKT_BOTTLE_PRICE * (lot.registered ? 1 : 0.5)
   else base = qualityInfo(lot.registered ? lot.level : 'deutscher-wein').bottlePrice
-  const bio = isBioCertified(player, year) ? 1 + BIO_PRICE_BONUS : 1
+  const bio = isBioCertified(player, state.year) ? 1 + BIO_PRICE_BONUS : 1
   const piwi = GRAPES[lot.grape].piwi ? PIWI_PRICE_FACTOR : 1
-  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player)
+  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player) * trendFactor(state, lot)
   return Math.round(price * 100) / 100
 }
 
@@ -78,8 +79,8 @@ export function wholesaleSaturation(player: Player): number {
   return Math.max(WHOLESALE_MIN_FACTOR, 1 - player.wholesaleThisYear / WHOLESALE_SATURATION_BOTTLES)
 }
 
-export function wholesalePrice(lot: BottleLot, player: Player, year: number): number {
-  return Math.round(bottlePrice(lot, player, year) * WHOLESALE_SHARE * wholesaleSaturation(player) * 100) / 100
+export function wholesalePrice(lot: BottleLot, player: Player, state: GameState): number {
+  return Math.round(bottlePrice(lot, player, state) * WHOLESALE_SHARE * wholesaleSaturation(player) * 100) / 100
 }
 
 /** Siegpunkte für die amtliche Prüfung */
