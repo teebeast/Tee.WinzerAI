@@ -103,7 +103,7 @@ export const LEXICON: LexiconEntry[] = [
   },
   {
     term: 'Prämierung',
-    text: 'Weinwettbewerbe, bei denen Fachjurys Medaillen vergeben – regional im Juni, bundesweit im November. Medaillen bringen Siegpunkte und Bekanntheit.',
+    text: 'Weinwettbewerbe, bei denen Fachjurys Medaillen vergeben – regional im Juni, bundesweit bei der Großen Rebenkrone im November. Medaillen bringen Siegpunkte und Bekanntheit.',
   },
   {
     term: 'Qualitätswein',

@@ -110,7 +110,7 @@ export const COMPETITIONS: Record<CompetitionId, CompetitionInfo> = {
     reputation: { gold: 6, silber: 3, bronze: 1 },
   },
   bund: {
-    id: 'bund', name: 'Bundesweinprämierung', month: 11, fee: 300, maxEntries: 3,
+    id: 'bund', name: 'Große Rebenkrone', month: 11, fee: 300, maxEntries: 3,
     thresholds: { gold: 93, silber: 86, bronze: 79 },
     points: { gold: 60, silber: 30, bronze: 15 },
     reputation: { gold: 15, silber: 8, bronze: 4 },

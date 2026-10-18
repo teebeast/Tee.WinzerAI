@@ -209,6 +209,13 @@ describe('Bedienung', () => {
     expect(savedGames()[0].difficulty).toBe('leicht')
   })
 
+  it('die Startseite verlinkt die Lizenzhinweise', () => {
+    expect(target.textContent).toContain('frei erfunden')
+    click('Lizenzen')
+    const dialog = [...target.querySelectorAll('dialog')].find((d) => d.textContent?.includes('Lizenzhinweise'))
+    expect(dialog).toBeDefined()
+  })
+
   it('speichert den Spielstand nach jedem Zug', () => {
     click('Spiel starten')
     click('Monat beenden')

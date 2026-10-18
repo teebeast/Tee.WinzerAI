@@ -80,12 +80,12 @@ export interface AiProfile {
   cautious: boolean
 }
 
-/** Vorgeschlagene Namen der Computer-Weingüter */
+/** Vorgeschlagene Namen der Computer-Weingüter – bewusst erfunden, damit kein echter Betrieb gemeint ist */
 export const AI_ESTATE_NAMES: Record<AiProfileId, string> = {
-  tradition: 'Weingut Steinbach',
-  genossenschaft: 'Winzergenossenschaft',
-  bio: 'Biohof Lindner',
-  schlitzohr: 'Weinhaus Fuchs',
+  tradition: 'Weingut Rebenhain',
+  genossenschaft: 'Genossenschaft Talblick',
+  bio: 'Biohof Morgentau',
+  schlitzohr: 'Weinhaus Gaukler',
 }
 
 export const AI_PROFILES: Record<AiProfileId, AiProfile> = {

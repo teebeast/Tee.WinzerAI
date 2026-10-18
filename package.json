@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
     "test": "vitest run",
     "sim": "vitest run --config vitest.sim.config.ts --silent=false",
+    "licenses": "node scripts/licenses.mjs",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build --target x86_64-pc-windows-msvc"

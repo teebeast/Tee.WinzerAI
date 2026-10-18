@@ -7,6 +7,7 @@
   import { MONTH_NAMES, NO_POINT_TARGET } from '../engine/game'
   import type { AiProfileId, Difficulty, NewGameOptions } from '../engine/types'
   import { deleteSave, listSaves, loadChallengeBest, saveLocation, type SaveSlot } from '../save'
+  import LicensesDialog from './LicensesDialog.svelte'
   import SeasonScene from './SeasonScene.svelte'
 
   let { onStart, onLoad }: { onStart: (options: NewGameOptions) => void; onLoad: (slot: SaveSlot) => void } = $props()
@@ -48,6 +49,7 @@
   const endlessYears = $derived(ENDLESS_YEARS[endlessStep])
 
   // raw: Die geladenen Spielstände gehen unverändert an die Engine, die sie per structuredClone kopiert.
+  let licensesOpen = $state(false)
   let saves = $state.raw<SaveSlot[] | null>(null)
   let saveDir = $state<string | null>(null)
 
@@ -313,7 +315,14 @@
       </details>
     </aside>
   </form>
+
+  <footer class="credits small muted">
+    Alle Weingüter, Personen, Siegel und Prämierungen sind frei erfunden.
+    <button type="button" class="link" onclick={() => (licensesOpen = true)}>Lizenzen</button>
+  </footer>
 </div>
+
+<LicensesDialog bind:open={licensesOpen} />
 
 <style>
   .start {
@@ -609,6 +618,22 @@
   }
   .warning {
     color: var(--danger);
+  }
+  .credits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .link {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--wine);
+    text-decoration: underline;
+    font-weight: normal;
   }
   .primary {
     width: 100%;

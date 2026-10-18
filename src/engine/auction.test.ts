@@ -19,7 +19,7 @@ function until(state: GameState, phase: 'announced' | 'live'): GameState {
 }
 
 const anna = { name: 'Anna', regionId: 'mosel' as const }
-const steinbach = { name: 'Steinbach', regionId: 'mosel' as const, ai: 'tradition' as const }
+const rebenhain = { name: 'Rebenhain', regionId: 'mosel' as const, ai: 'tradition' as const }
 
 /** Live-Versteigerung, bei der Anna am Zug ist, mit selbst gesetzten Limits der Gegner */
 function liveFor(limits: Record<string, number> = {}, extraPlayers: NewGameOptions['players'] = []) {
@@ -36,7 +36,7 @@ const soldTo = (s: GameState, lot: AuctionLot) => s.log.find((e) => e.text.start
 
 describe('Weinbergversteigerung', () => {
   it('findet in zufälligen Abständen von 8 bis 16 Monaten statt', () => {
-    let s = newGame({ seed: 11, targetPoints: Number.MAX_SAFE_INTEGER, players: [{ ...steinbach }] })
+    let s = newGame({ seed: 11, targetPoints: Number.MAX_SAFE_INTEGER, players: [{ ...rebenhain }] })
     const months: number[] = []
     while (s.year <= 12 && !s.finished) {
       const before = s.auction?.phase
@@ -146,7 +146,7 @@ describe('Weinbergversteigerung', () => {
   })
 
   it('Computergegner hinterlegen im Ankündigungsmonat ein Höchstgebot, Menschen nicht', () => {
-    const s = until(game([anna, steinbach], 5, { plots: 'planted', money: 400_000 }), 'announced')
+    const s = until(game([anna, rebenhain], 5, { plots: 'planted', money: 400_000 }), 'announced')
     const lot = s.auction!.lots[0]
     // Anna ist am Zug; die KI zieht erst nach ihr
     expect(() => applyAction(s, { type: 'auctionLimit', lotId: lot.id, amount: lot.startPrice })).toThrow('live')
