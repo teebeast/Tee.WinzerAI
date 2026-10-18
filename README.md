@@ -19,7 +19,7 @@ npm run build    # Produktions-Build inkl. Service Worker
 
 - `src/engine/` enthält die Spiellogik ohne UI-Abhängigkeit. `applyAction(state, action)` ist eine reine Funktion, der Zufall ist Seed-basiert.
 - `src/engine/ai.ts` enthält die KI-Gegner (vier Profile), `src/engine/auction.ts` die Live-Versteigerung von Weinbergen, `src/engine/simulate.ts` reine KI-Partien für Tests und Balancing.
-- `src/engine/rules.ts` enthält gemeinsame Regeln (Güte, Tanks, Bekanntheit). `vineyard.ts` regelt Reife, Krankheiten, Wetterereignisse, Botrytis und Eiswein. `cellar.ts` regelt Abfüllung und Sekt, `intrigue.ts` Panschen und Sabotage, `exports.ts` die Exportverträge `events.ts` den Ereigniskatalog mit Seltenheitsstufen und befristeten Effekten und `decisions.ts` die Entscheidungsereignisse.
+- `src/engine/rules.ts` enthält gemeinsame Regeln (Güte, Tanks, Bekanntheit). `vineyard.ts` regelt Reife, Krankheiten, Wetterereignisse, Botrytis und Eiswein. `cellar.ts` regelt Abfüllung und Sekt, `intrigue.ts` Panschen und Sabotage, `exports.ts` die Exportverträge `events.ts` den Ereigniskatalog mit Seltenheitsstufen und befristeten Effekten `decisions.ts` die Entscheidungsereignisse, `trends.ts` die Markttrends und `cellarmaster.ts` Kellermeister mit Fähigkeiten.
 - `src/engine/advisor.ts` liefert die Aufgabenliste „Diesen Monat“ und das Vorspulen, `src/engine/challenge.ts` die Tages-Challenge.
 - `src/engine/market.ts` enthält reine Berechnungen: Preise, Nachfrage, Kreditrahmen, Prämierungswertung.
 - `src/engine/data/` enthält Anbaugebiete, Rebsorten, Qualitätsstufen und in `economy.ts` alle Kosten- und Balancing-Werte.

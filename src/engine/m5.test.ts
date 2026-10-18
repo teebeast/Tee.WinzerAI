@@ -38,12 +38,14 @@ describe('Anbaugebiete und Rebsorten', () => {
 
   it('PIWI-Sorten sind kaum krankheitsanfällig, verkaufen sich aber etwas schlechter', () => {
     expect(GRAPES.regent.diseaseSusceptibility).toBeLessThan(GRAPES.spaetburgunder.diseaseSusceptibility)
-    const player = currentPlayer(start())
+    const state = start()
+    for (const trend of Object.values(state.trends)) trend.value = 1 // Markttrends ausblenden
+    const player = currentPlayer(state)
     const lot: BottleLot = {
       id: 'x', grape: 'regent', vintage: 1, oechsle: 80, level: 'spaetlese', quality: 70, adulterated: null,
       bottles: 100, sparkling: false, monthsUntilReady: 0, registered: true, awards: [],
     }
-    expect(bottlePrice(lot, player, 1)).toBeLessThan(bottlePrice({ ...lot, grape: 'lemberger' }, player, 1))
+    expect(bottlePrice(lot, player, state)).toBeLessThan(bottlePrice({ ...lot, grape: 'lemberger' }, player, state))
   })
 })
 
@@ -96,14 +98,15 @@ describe('Geldsenken', () => {
   })
 
   it('der Großhandel zahlt weniger, je mehr Flaschen er im Jahr abnimmt', () => {
-    const player = currentPlayer(rich())
+    const state = rich()
+    const player = currentPlayer(state)
     const lot: BottleLot = {
       id: 'x', grape: 'riesling', vintage: 1, oechsle: 80, level: 'spaetlese', quality: 80, adulterated: null,
       bottles: 100, sparkling: false, monthsUntilReady: 0, registered: true, awards: [],
     }
-    const fresh = wholesalePrice(lot, player, 1)
+    const fresh = wholesalePrice(lot, player, state)
     player.wholesaleThisYear = 60_000
-    expect(wholesalePrice(lot, player, 1)).toBeCloseTo(fresh * 0.7, 1)
+    expect(wholesalePrice(lot, player, state)).toBeCloseTo(fresh * 0.7, 1)
   })
 })
 
@@ -166,17 +169,18 @@ describe('Schwierigkeitsgrad', () => {
     const [easy, hard] = [game('leicht'), game('schwierig')]
     expect(easy.players[0].money).toBe(DIFFICULTIES.leicht.startMoney)
     expect(hard.players[0].money).toBe(DIFFICULTIES.schwierig.startMoney)
-    expect(bottlePrice(lot, hard.players[0], 1)).toBeLessThan(bottlePrice(lot, easy.players[0], 1))
+    expect(bottlePrice(lot, hard.players[0], hard)).toBeLessThan(bottlePrice(lot, easy.players[0], easy))
     expect(monthlyCosts(hard.players[0], 6).total).toBeGreaterThan(monthlyCosts(easy.players[0], 6).total)
     const batch = { ...lot, hectoliters: 10, monthsUntilReady: 0, barrique: false }
     expect(bulkPricePerHl(batch, hard, hard.players[0])).toBeLessThan(bulkPricePerHl(batch, easy, easy.players[0]))
   })
 
   it('lässt die Computergegner unverändert', () => {
-    const [easy, hard] = [game('leicht').players[1], game('schwierig').players[1]]
+    const [easyGame, hardGame] = [game('leicht'), game('schwierig')]
+    const [easy, hard] = [easyGame.players[1], hardGame.players[1]]
     expect(easy.difficulty).toBeNull()
     expect(easy.money).toBe(hard.money)
-    expect(bottlePrice(lot, easy, 1)).toBe(bottlePrice(lot, hard, 1))
+    expect(bottlePrice(lot, easy, easyGame)).toBe(bottlePrice(lot, hard, hardGame))
     expect(monthlyCosts(easy, 6)).toEqual(monthlyCosts(hard, 6))
   })
 })

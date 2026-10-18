@@ -26,6 +26,7 @@
   import { usedBarriqueHl } from '../../engine/rules'
   import type { Action, AdulterationMethod, BottleLot, GameState, Player, WineBatch } from '../../engine/types'
   import Bottle from '../gfx/Bottle.svelte'
+  import MarketTrends from '../MarketTrends.svelte'
   import Vessel from '../gfx/Vessel.svelte'
 
   let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
@@ -114,6 +115,8 @@
       Krise der Großkellereien: Fasswein bringt noch {game.bulkCrisisMonths} Monate nur den halben Preis.
     </p>
   {/if}
+
+  <MarketTrends {game} {player} />
 
   <h2 class="section">Im Tank und im Fass</h2>
   {#if player.cellar.length > 0 && masterHint}
@@ -228,7 +231,7 @@
             <div class="visual-text">
               <strong>{wineLabel(lot)}{lot.adulterated ? ' 🧪' : ''}</strong>
               <span class="muted small">
-                {lot.bottles.toLocaleString('de-DE')} Fl. · Güte {lot.quality} · {formatEuro(bottlePrice(lot, player, game.year))}/Fl.
+                {lot.bottles.toLocaleString('de-DE')} Fl. · Güte {lot.quality} · {formatEuro(bottlePrice(lot, player, game))}/Fl.
               </span>
               <span class="chips">
                 <span class="chip {status.tone}">{status.text}</span>
@@ -264,7 +267,7 @@
                   bind:value={() => amount, (v) => (lotAmounts[lot.id] = v)}
                 />
                 <button {...button(wholesaleAction)} onclick={() => run(wholesaleAction)}>
-                  Großhandel +{formatEuro(wholesalePrice(lot, player, game.year) * amount)}
+                  Großhandel +{formatEuro(wholesalePrice(lot, player, game) * amount)}
                 </button>
               </div>
             {/if}

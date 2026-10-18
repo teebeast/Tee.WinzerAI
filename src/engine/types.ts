@@ -86,6 +86,15 @@ export interface ExportContract extends ExportOffer {
   missedMonths: number
 }
 
+/** Marktsegment mit eigener Beliebtheit: jede Rebsorte und Sekt */
+export type TrendKey = GrapeId | 'sekt'
+
+/** Beliebtheit am Markt als Preisfaktor; sie wandert langsam auf ein Ziel zu */
+export interface Trend {
+  value: number
+  target: number
+}
+
 export type CellarSkill = 'sekt' | 'barrique' | 'rotwein' | 'weisswein' | 'edelsuess' | 'sparsam'
 
 export interface CellarMaster {
@@ -231,7 +240,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 9
+  version: 10
   rng: Rng
   year: number
   month: number
@@ -254,6 +263,8 @@ export interface GameState {
   randomEvents: boolean
   /** Kellermeister, die sich in diesem Jahr bewerben – neu jedes Jahr im Januar */
   cellarMasterCandidates: CellarMaster[]
+  /** Markttrends je Rebsorte und für Sekt */
+  trends: Record<TrendKey, Trend>
   /** Restmonate einer Krise der Großkellereien (Fassweinpreis halbiert) */
   bulkCrisisMonths: number
   /** Jedes Jahr wird es etwas wärmer: frühere Reife, mehr Hitze, weniger Eiswein */

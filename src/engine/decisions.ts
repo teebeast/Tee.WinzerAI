@@ -65,7 +65,7 @@ function expectedRevenue(ctx: EventContext, bottles: number, share: number): num
   let revenue = 0
   for (const lot of sellableLots(ctx)) {
     const n = Math.min(left, lot.bottles)
-    revenue += n * bottlePrice(lot, ctx.player, ctx.state.year) * share
+    revenue += n * bottlePrice(lot, ctx.player, ctx.state) * share
     left -= n
     if (left <= 0) break
   }
