@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { tick } from 'svelte'
   import { fastForward, monthHints } from '../engine/advisor'
   import { awaitingLot } from '../engine/auction'
   import { activeHumans, runAiTurns } from '../engine/ai'
+  import { qualityInfo } from '../engine/data/quality'
+  import { exportEligible } from '../engine/exports'
   import { REGIONS } from '../engine/data/regions'
-  import { applyAction, currentPlayer, formatEuro, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, RuleError } from '../engine/game'
+  import { applyAction, currentPlayer, formatEuro, validateAction, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, RuleError } from '../engine/game'
   import type { Action, GameState } from '../engine/types'
   import { loadChallengeBest, recordChallengeResult } from '../save'
   import AuctionLive from './AuctionLive.svelte'
@@ -67,6 +70,13 @@
     }
     return counts
   })
+
+  /** Zur Exportkarte auf der Hof-Seite springen */
+  async function showExport() {
+    go('hof')
+    await tick()
+    document.getElementById('export-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   function go(target: Page) {
     page = target
@@ -182,21 +192,68 @@
     <div class="card error" role="alert">{error}</div>
   {/if}
 
-  <nav class="tabs" aria-label="Bereiche">
-    {#each tabs as tab (tab.id)}
-      <button
-        class="tab"
-        role="tab"
-        aria-selected={page === tab.id}
-        class:active={page === tab.id}
-        onclick={() => go(tab.id)}
-      >
-        <span class="tab-icon" aria-hidden="true">{tab.icon}</span>
-        <span>{tab.label}</span>
-        {#if badges[tab.id]}<span class="badge" aria-label="{badges[tab.id]} offene Aufgaben">{badges[tab.id]}</span>{/if}
-      </button>
-    {/each}
-  </nav>
+  <div class="sticky-head">
+    <nav class="tabs" aria-label="Bereiche">
+      {#each tabs as tab (tab.id)}
+        <button
+          class="tab"
+          role="tab"
+          aria-selected={page === tab.id}
+          class:active={page === tab.id}
+          onclick={() => go(tab.id)}
+        >
+          <span class="tab-icon" aria-hidden="true">{tab.icon}</span>
+          <span>{tab.label}</span>
+          {#if badges[tab.id]}<span class="badge" aria-label="{badges[tab.id]} offene Aufgaben">{badges[tab.id]}</span>{/if}
+        </button>
+      {/each}
+    </nav>
+
+    {#if player.decision && !over}
+      {@const decision = player.decision}
+      <aside class="offer decision" role="alert" aria-label="Entscheidung">
+        <span class="offer-text">
+          <strong>{decision.title}</strong>
+          <span class="small">{decision.text} <em>Gilt bis Monatsende.</em></span>
+        </span>
+        <span class="choices">
+          {#each decision.options as choice, i (i)}
+            {@const problem = validateAction(game, { type: 'decide', option: i })}
+            <button
+              class="choice"
+              class:primary={i === 0}
+              disabled={problem !== null}
+              title={problem ?? ''}
+              onclick={() => run({ type: 'decide', option: i })}
+            >
+              <strong>{choice.label}{choice.cost > 0 ? ` (${formatEuro(choice.cost)})` : ''}</strong>
+              <span class="small">{choice.hint}</span>
+            </button>
+          {/each}
+        </span>
+      </aside>
+    {/if}
+
+    {#if player.exportOffer && !over}
+      {@const offer = player.exportOffer}
+      <aside class="offer" role="alert" aria-label="Exportanfrage">
+        <span class="offer-icon" aria-hidden="true">🌍</span>
+        <span class="offer-text">
+          <strong>Exportanfrage aus {offer.country} – nur diesen Monat gültig</strong>
+          <span class="small">
+            {offer.bottlesPerMonth.toLocaleString('de-DE')} Fl. pro Monat zu {formatEuro(offer.pricePerBottle)} ·
+            {offer.months} Monate · mindestens {qualityInfo(offer.minLevel).name}, Güte ab {offer.minQuality} ·
+            passender Vorrat: {exportEligible(player, offer).reduce((sum, l) => sum + l.bottles, 0).toLocaleString('de-DE')} Fl.
+          </span>
+        </span>
+        <span class="offer-actions">
+          <button class="primary" onclick={() => run({ type: 'answerExport', accept: true })}>Annehmen</button>
+          <button onclick={() => run({ type: 'answerExport', accept: false })}>Ablehnen</button>
+          <button class="ghost" onclick={showExport}>Details</button>
+        </span>
+      </aside>
+    {/if}
+  </div>
 
   <main>
     {#if page === 'hof'}
@@ -273,10 +330,61 @@
   .topbar {
     border-bottom: none;
   }
-  .tabs {
+  /* Reiter und dringende Hinweise bleiben beim Scrollen sichtbar */
+  .sticky-head {
     position: sticky;
     top: 0;
     z-index: 5;
+  }
+  .offer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 8px 16px;
+    background: color-mix(in srgb, var(--sun) 28%, var(--surface));
+    border-bottom: 2px solid var(--sun);
+    animation: arrive 0.6s ease-out;
+  }
+  @keyframes arrive {
+    from { transform: translateY(-8px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .offer { animation: none; }
+  }
+  .offer-icon {
+    font-size: 1.6rem;
+  }
+  .offer-text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 260px;
+    min-width: 0;
+  }
+  .decision {
+    background: color-mix(in srgb, var(--wine) 14%, var(--surface));
+    border-bottom-color: var(--wine);
+  }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 6px;
+    flex: 2 1 360px;
+  }
+  .choice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+    font-weight: normal;
+  }
+  .offer-actions {
+    display: flex;
+    gap: 6px;
+  }
+  .tabs {
     display: flex;
     gap: 2px;
     padding: 0 8px;

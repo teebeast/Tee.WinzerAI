@@ -65,6 +65,19 @@ describe('Oberfläche', () => {
     expect(page('betrieb')).toContain('Konkurrenz')
   })
 
+  it('weist auf jeder Seite auf eine Exportanfrage hin', () => {
+    const game = advancedGame()
+    currentPlayer(game).exportOffer = {
+      id: 'x', country: 'Japan', bottlesPerMonth: 200, pricePerBottle: 9, minLevel: 'qualitaetswein', minQuality: 50, months: 12,
+    }
+    for (const page of ['keller', 'weinberg', 'betrieb']) {
+      const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage: page as Page } })
+      expect(body).toContain('Exportanfrage aus Japan')
+      expect(body).toContain('Annehmen')
+      expect(body).toContain('passender Vorrat')
+    }
+  })
+
   it('rendert eine Partie gegen die KI mit laufender Versteigerung', () => {
     let game = runAiTurns(
       newGame({

@@ -19,7 +19,7 @@
 {/snippet}
 
 {#if player.exportOffer || player.exportContract}
-  <section class="card export">
+  <section class="card export" id="export-card">
     <h2>🌍 Export</h2>
     {#if player.exportOffer}
       {@const offer = player.exportOffer}

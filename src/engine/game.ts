@@ -3,6 +3,7 @@ import {
   auctionBid,
   auctionPass,
   finishAuction,
+  parcelValue,
   scheduleNextAuction,
   setAuctionLimit,
   startLiveAuction,
@@ -22,6 +23,7 @@ import {
   validateToBarrique,
 } from './cellar'
 import {
+  CLEARING_COST_PER_HA,
   COMPETITIONS,
   DIFFICULTIES,
   DIRECT_SALES_COST_SHARE,
@@ -30,6 +32,7 @@ import {
   MARKETING,
   MEDAL_NAMES,
   ONLINE_SHOP_COST,
+  PLOT_SALE_SHARE,
   REGISTER_FEE,
   REGISTER_MIN_BOTTLES,
   REPUTATION_DECAY_RATE,
@@ -43,7 +46,8 @@ import {
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
-import { estateEvents, marketEvents, tickEffects } from './events'
+import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
+import { marketEvents, tickEffects } from './events'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
 import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
 import {
@@ -115,7 +119,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 7,
+    version: 8,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -179,6 +183,7 @@ export function newGame(options: NewGameOptions): GameState {
       monthsInsolvent: 0,
       bankrupt: false,
       effects: [],
+      decision: null,
     }
   })
   scheduleNextAuction(state)
@@ -217,6 +222,11 @@ function makePlot(
     botrytis: false,
     iceWineGamble: false,
   }
+}
+
+/** Erlös beim Verkauf eines Weinbergs */
+export function plotSalePrice(plot: Plot, year: number): number {
+  return Math.round((parcelValue(plot, year) * PLOT_SALE_SHARE) / 1000) * 1000
 }
 
 export interface HarvestPreview {
@@ -348,6 +358,22 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateAuctionBid(state, action.lotId, action.amount)
     case 'auctionPass':
       return validateAuctionPass(state, action.lotId)
+    case 'decide':
+      return validateDecide(player, action.option)
+    case 'sellPlot': {
+      const plot = player.plots.find((p) => p.id === action.plotId)
+      if (!plot) return 'Unbekannte Parzelle.'
+      if (player.plots.length <= 1) return 'Die letzte Parzelle kann nicht verkauft werden.'
+      return null
+    }
+    case 'clearPlot': {
+      const plot = player.plots.find((p) => p.id === action.plotId)
+      if (!plot) return 'Unbekannte Parzelle.'
+      if (plot.grape === null) return 'Die Parzelle liegt bereits brach.'
+      const cost = plot.hectares * CLEARING_COST_PER_HA
+      if (player.money < cost) return `Nicht genug Geld (benötigt ${formatEuro(cost)}).`
+      return null
+    }
     case 'setProtection':
       return validateProtection(player, action.strategy)
     case 'gambleIceWine':
@@ -477,6 +503,29 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'auctionPass':
       auctionPass(next, action.lotId)
       break
+    case 'decide':
+      decide(next, player, action.option)
+      break
+    case 'sellPlot': {
+      const plot = player.plots.find((p) => p.id === action.plotId)!
+      const price = plotSalePrice(plot, next.year)
+      player.money += price
+      player.plots = player.plots.filter((p) => p.id !== plot.id)
+      addLog(next, player.id, `${plot.name} (${plot.hectares} ha) für ${formatEuro(price)} verkauft.`)
+      break
+    }
+    case 'clearPlot': {
+      const plot = player.plots.find((p) => p.id === action.plotId)!
+      const cost = plot.hectares * CLEARING_COST_PER_HA
+      const grape = GRAPES[plot.grape!].name
+      player.money -= cost
+      Object.assign(plot, {
+        grape: null, plantedYear: null, oechsle: 0, health: 1, cropFactor: 1,
+        harvestedThisYear: false, botrytis: false, iceWineGamble: false,
+      })
+      addLog(next, player.id, `${plot.name}: ${grape} gerodet (${formatEuro(cost)}). Neu gepflanzt wird im März oder April.`)
+      break
+    }
     case 'setProtection':
       setProtection(next, player, action.strategy)
       break
@@ -589,7 +638,8 @@ function resolveMonth(state: GameState) {
     if (competition) judgeCompetition(state, player, competition)
     randomControl(state, player)
     tickEffects(state, player)
-    if (state.randomEvents) estateEvents(state, player)
+    expireDecision(state, player)
+    if (state.randomEvents) monthlyEvent(state, player)
     payMonthlyCosts(state, player)
     changeReputation(player, -player.reputation * REPUTATION_DECAY_RATE)
     player.marketingThisMonth = []

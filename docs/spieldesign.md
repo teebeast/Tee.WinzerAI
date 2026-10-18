@@ -23,7 +23,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
 | Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufallsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +7 % / −7 % / −24 % Punkte; pleite gehen 0, 3 bzw. 11 von 78 Partien. |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufalls- und Entscheidungsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +11 % / −6 % / −27 % Punkte; pleite gehen 0, 2 bzw. 9 von 78 Partien. |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
@@ -222,6 +222,16 @@ Der Hofladen verkauft geprüfte Weine und Deutschen Wein, ältere Posten zuerst.
 | Sehr selten | 0,15 | 7 | Jahrhundertunwetter (−70 % Ernte), Kellerbrand, 100 Punkte vom Weinpapst (+40 Punkte, doppelte Nachfrage), Vermögen geerbt (+150.000 €), Hangrutsch (eine Lage verloren), Weinskandal im Gebiet, Exportboom |
 
 Ein bestimmtes Alltagsereignis trifft ein Weingut etwa zweimal in zehn Jahren, ein bestimmtes sehr seltenes in weniger als einem von hundert Spieljahren. Im ersten Jahr bleiben seltene und sehr seltene Rückschläge aus, solange die Kasse am knappsten ist. Geldbeträge sind so gewählt, dass Glücksfälle und Rückschläge sich im Mittel etwa die Waage halten. Befristete Folgen (Nachfrage, Preise, Kosten, Güte) stehen auf der Hof-Seite unter „Neuigkeiten“, seltene und sehr seltene Ereignisse erfahren alle am Tisch.
+
+**Entscheidungsereignisse** (`src/engine/decisions.ts`): Ein Teil der Monatsereignisse stellt das Weingut vor eine Wahl. Sie stehen mit Titel, Beschreibung und den Folgen jeder Möglichkeit als Hinweis unter den Reitern – auf jeder Seite – und gelten bis Monatsende; ohne Antwort greift die vorsichtige Wahl (meist „Ablehnen“). Kostspielige Möglichkeiten müssen über Konto und freien Kreditrahmen finanzierbar sein, ein Fehlbetrag wird per Kredit gedeckt. Computergegner entscheiden sofort nach einfachen Regeln (etwa nur zahlen, wenn danach noch 20.000 € Rücklage bleiben).
+
+| Stufe | Entscheidungen |
+|---|---|
+| Alltag | Stand auf dem Stadtweinfest, Spende fürs Vereinsfest, bezahlte Influencer-Werbung |
+| Gelegentlich | Großauftrag vom Discounter (halber Preis, Ramsch-Image), Reportage im Weinmagazin (Chance auf Hymne oder Verriss), Erntehelfer wollen mehr Lohn, Frostwarnung (Frostkerzen oder Risiko), gebrauchte Tanks zum halben Preis |
+| Selten | Der Nachbar verkauft seine Lage privat, Kellermeister wird abgeworben, Auftritt in einer Kochsendung, Einladung zur internationalen Weinmesse |
+
+**Weinberge verkaufen und roden:** Jede Parzelle außer der letzten lässt sich jederzeit für 90 % des Schätzwerts verkaufen (Trauben am Stock gehen mit). Bestockte Parzellen können für 2.000 €/ha gerodet werden; die Brache wird dann im März oder April mit einer neuen Sorte bepflanzt und trägt wie jede Junganlage erst ab dem dritten Jahr.
 
 **Weinbergversteigerung (Live-Event):**
 - Alle 8–16 Monate (zufällig) wird eine Versteigerung angekündigt und im Folgemonat abgehalten. Je Anbaugebiet, in dem noch jemand wirtschaftet, kommen 1–3 Weinberge à 1–5 ha unter den Hammer. Rund 60 % davon sind bereits bestockt (3–27 Jahre alt) und tragen sofort, der Rest ist Brache.

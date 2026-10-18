@@ -4,7 +4,7 @@
  */
 import type { GameState } from '../engine/types'
 
-export type SoundName = 'click' | 'month' | 'harvest' | 'coin' | 'medal' | 'scandal' | 'frost' | 'hammer' | 'bid'
+export type SoundName = 'click' | 'month' | 'harvest' | 'coin' | 'medal' | 'scandal' | 'frost' | 'hammer' | 'bid' | 'offer'
 
 const MUTE_KEY = 'winzer.muted'
 let context: AudioContext | null = null
@@ -36,6 +36,7 @@ const MELODIES: Record<SoundName, [number, number][]> = {
   frost: [[1568, 0.05], [1760, 0.05], [2093, 0.15]],
   hammer: [[196, 0.06], [0, 0.08], [196, 0.06], [0, 0.08], [147, 0.2]],
   bid: [[523, 0.05], [784, 0.08]],
+  offer: [[784, 0.08], [988, 0.08], [1175, 0.08], [1568, 0.18]],
 }
 
 export function play(name: SoundName) {
@@ -80,6 +81,7 @@ export function soundForChange(before: GameState, after: GameState): SoundName |
   if (any(/Gold|Silber|Bronze|gewinnt|vollständig erfüllt/)) return 'medal'
   if (any(/Klirrender Frost/)) return 'frost'
   if (any(/^🔨 Zuschlag/)) return 'hammer'
+  if (any(/^Exportanfrage aus .*:/)) return 'offer'
   if (any(/gelesen/)) return 'harvest'
   if (any(/verkauft|Großhandel/) && after.month === before.month) return 'coin'
   if (after.month !== before.month || after.year !== before.year) return 'month'

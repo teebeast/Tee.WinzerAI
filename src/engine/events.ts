@@ -26,7 +26,7 @@ export const RARITY_WEIGHT: Record<Rarity, number> = {
   'sehr-selten': 0.15,
 }
 
-interface EventContext {
+export interface EventContext {
   state: GameState
   player: Player
   /** Zufallszahl im Bereich [min, max], auf `step` gerundet */
@@ -48,25 +48,25 @@ export interface EstateEventDef {
 
 // Hilfen für den Katalog
 
-const bearingPlots = ({ state, player }: EventContext) =>
+export const bearingPlots = ({ state, player }: EventContext) =>
   player.plots.filter((p) => p.grape !== null && !p.harvestedThisYear && plotAgeFactor(p, state.year) > 0)
-const hasBearing = (ctx: EventContext) => bearingPlots(ctx).length > 0
+export const hasBearing = (ctx: EventContext) => bearingPlots(ctx).length > 0
 const plantedPlots = ({ player }: EventContext) => player.plots.filter((p) => p.grape !== null)
 const randomOf = <T>(ctx: EventContext, items: T[]): T => items[Math.floor(ctx.roll() * items.length)]
 
 /** Verkaufsfertige Flaschen, die nicht für eine Prämierung angemeldet sind */
-const sellableLots = ({ player }: EventContext, registeredOnly = false) =>
+export const sellableLots = ({ player }: EventContext, registeredOnly = false) =>
   player.bottles.filter(
     (l) => l.monthsUntilReady === 0 && !player.competitionEntries.includes(l.id) && (!registeredOnly || l.registered),
   )
-const bottleCount = (lots: BottleLot[]) => lots.reduce((sum, l) => sum + l.bottles, 0)
+export const bottleCount = (lots: BottleLot[]) => lots.reduce((sum, l) => sum + l.bottles, 0)
 
-function money({ player }: EventContext, amount: number): string {
+export function money({ player }: EventContext, amount: number): string {
   player.money += amount
   return `${amount >= 0 ? '+' : '−'}${formatEuro(Math.abs(amount))}`
 }
 
-function reputation({ player }: EventContext, delta: number): string {
+export function reputation({ player }: EventContext, delta: number): string {
   const change = changeReputation(player, delta)
   return `Bekanntheit ${change >= 0 ? '+' : ''}${change.toFixed(1)}`
 }
@@ -76,7 +76,7 @@ export function addEffect(player: Player, kind: EffectKind, value: number, month
 }
 
 /** Verkauft Flaschen, älteste zuerst; liefert verkaufte Menge und Erlös */
-function sellBottles(ctx: EventContext, lots: BottleLot[], count: number, priceFactor: number) {
+export function sellBottles(ctx: EventContext, lots: BottleLot[], count: number, priceFactor: number) {
   let left = count
   let revenue = 0
   for (const lot of lots) {
@@ -438,7 +438,7 @@ export function marketEvents(state: GameState) {
   }
 }
 
-function context(state: GameState, player: Player): EventContext {
+export function context(state: GameState, player: Player): EventContext {
   const roll = () => nextFloat(state.rng)
   return {
     state,
@@ -460,14 +460,23 @@ export function possibleEvents(state: GameState, player: Player): EstateEventDef
   )
 }
 
-/** Würfelt höchstens ein Ereignis für ein Weingut aus. */
-export function estateEvents(state: GameState, player: Player) {
+/** Weitere Kandidaten für die Monatsziehung, etwa Entscheidungsereignisse */
+export interface ExtraCandidate {
+  rarity: Rarity
+  trigger: () => void
+}
+
+/** Würfelt höchstens ein Ereignis für ein Weingut aus – aus dem Katalog und den zusätzlichen Kandidaten. */
+export function estateEvents(state: GameState, player: Player, extra: ExtraCandidate[] = []) {
   if (nextFloat(state.rng) >= EVENT_CHANCE) return
-  const candidates = possibleEvents(state, player)
+  const candidates: ExtraCandidate[] = [
+    ...possibleEvents(state, player).map((e) => ({ rarity: e.rarity, trigger: () => triggerEvent(state, player, e) })),
+    ...extra,
+  ]
   const total = candidates.reduce((sum, e) => sum + RARITY_WEIGHT[e.rarity], 0)
   let pick = nextFloat(state.rng) * total
-  const event = candidates.find((e) => (pick -= RARITY_WEIGHT[e.rarity]) < 0) ?? candidates.at(-1)
-  if (event) triggerEvent(state, player, event)
+  const chosen = candidates.find((e) => (pick -= RARITY_WEIGHT[e.rarity]) < 0) ?? candidates.at(-1)
+  chosen?.trigger()
 }
 
 export function triggerEvent(state: GameState, player: Player, event: EstateEventDef) {

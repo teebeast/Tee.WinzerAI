@@ -23,6 +23,7 @@ export function monthHints(state: GameState, player: Player): Hint[] {
 
   if (player.money < 0) add('betrieb', `Konto im Minus – Kredit aufnehmen oder Wein verkaufen.`)
   if (player.monthsInsolvent > 0) add('betrieb', 'Insolvenzgefahr: Es ist kein Kreditrahmen mehr frei!')
+  if (player.decision) add('hof', `Entscheidung gefragt: ${player.decision.title} – bis Monatsende.`)
   if (player.exportOffer) add('hof', `Exportanfrage aus ${player.exportOffer.country} – nur diesen Monat gültig.`)
   const lots = state.auction?.lots.filter((l) => l.regionId === player.regionId && l.status !== 'sold' && l.status !== 'unsold') ?? []
   if (state.auction?.phase === 'announced' && lots.length > 0) {
