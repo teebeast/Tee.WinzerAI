@@ -88,6 +88,8 @@ export interface ExportContract extends ExportOffer {
 
 export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
+export type Difficulty = 'leicht' | 'normal' | 'schwierig'
+
 /** Ein Weinberg, der im Februar versteigert wird */
 export interface AuctionParcel {
   id: string
@@ -110,6 +112,8 @@ export interface Player {
   regionId: RegionId
   /** null = Mensch, sonst das Profil des Computergegners */
   ai: AiProfileId | null
+  /** Schwierigkeitsgrad eines menschlichen Spielers; Computergegner (null) spielen ohne Auf- oder Abschlag */
+  difficulty: Difficulty | null
   money: number
   points: number
   /** Bekanntheit 0–100 */
@@ -150,7 +154,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 5
+  version: 6
   rng: Rng
   year: number
   month: number
@@ -175,6 +179,7 @@ export interface GameState {
   yearLimit: number | null
   /** Datum der Tages-Challenge (JJJJ-MM-TT) */
   challenge: string | null
+  difficulty: Difficulty
   nextId: number
   log: LogEntry[]
 }
@@ -212,4 +217,17 @@ export interface NewGameOptions {
   climateChange?: boolean
   yearLimit?: number | null
   challenge?: string | null
+  /** Gilt für die menschlichen Spieler, Standard: normal */
+  difficulty?: Difficulty
+  /** Abweichende Startbedingungen für alle Weingüter (Szenarien der Tages-Challenge) */
+  start?: StartSetup
+}
+
+export interface StartSetup {
+  money?: number
+  loan?: number
+  tankHl?: number
+  reputation?: number
+  /** standard: Hauslage bestockt, Rest Brache · planted: alles mit alten Reben · fallow: alles Brache */
+  plots?: 'standard' | 'planted' | 'fallow'
 }

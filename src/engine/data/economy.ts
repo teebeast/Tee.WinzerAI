@@ -1,6 +1,7 @@
 import type {
   AdulterationMethod,
   CompetitionId,
+  Difficulty,
   MarketingKind,
   Medal,
   ProtectionStrategy,
@@ -12,6 +13,29 @@ import type {
 export const START_MONEY = 80_000
 export const START_TANK_HL = 300
 export const START_REPUTATION = 10
+
+/**
+ * Schwierigkeitsgrad der menschlichen Spieler: Startkapital sowie Auf- oder Abschlag auf alle Verkaufserlöse
+ * (ab Hof, Großhandel, Fasswein) und auf die laufenden Kosten. Computergegner spielen immer mit Faktor 1 –
+ * das entspricht etwa dem früheren Spielgefühl zwischen Leicht und Normal.
+ */
+export const DIFFICULTIES: Record<
+  Difficulty,
+  { name: string; icon: string; description: string; startMoney: number; priceFactor: number; costFactor: number }
+> = {
+  leicht: {
+    name: 'Leicht', icon: '🌱', description: '100.000 € Startkapital, 5 % höhere Erlöse, 5 % weniger Kosten',
+    startMoney: 100_000, priceFactor: 1.05, costFactor: 0.95,
+  },
+  normal: {
+    name: 'Normal', icon: '🍷', description: '80.000 € Startkapital, 5 % niedrigere Erlöse',
+    startMoney: START_MONEY, priceFactor: 0.95, costFactor: 1,
+  },
+  schwierig: {
+    name: 'Schwierig', icon: '🔥', description: '60.000 € Startkapital, 15 % niedrigere Erlöse, 10 % höhere Kosten',
+    startMoney: 60_000, priceFactor: 0.85, costFactor: 1.1,
+  },
+}
 
 export const WORKER_SALARY = 2_500
 /** Monatliche Kosten je ha: Brache bzw. Bewirtschaftung bestockter Fläche */

@@ -19,7 +19,7 @@
     onChange,
     onQuit,
     initialPage = 'hof',
-  }: { game: GameState; onChange: (g: GameState) => void; onQuit: () => void; initialPage?: Page } = $props()
+  }: { game: GameState; onChange: (g: GameState) => void; onQuit: (finished: boolean) => void; initialPage?: Page } = $props()
 
   /** Unterseite aus der Adresse (#keller …), damit Zurück-Taste und Lesezeichen funktionieren */
   function pageFromHash(): Page | null {
@@ -166,7 +166,7 @@
           Du bist insolvent und scheidest aus.
         {/if}
       </strong>
-      <button onclick={onQuit}>Neues Spiel</button>
+      <button onclick={() => onQuit(true)}>Neues Spiel</button>
     </div>
   {/if}
 
@@ -205,7 +205,9 @@
   </main>
 
   <footer class="bottombar">
-    <button class="ghost" onclick={onQuit}><span class="wide-only">Spiel</span> beenden</button>
+    <button class="ghost" onclick={() => onQuit(over)} title="Der Spielstand ist gespeichert und lässt sich im Hauptmenü wieder laden.">
+      ← <span class="wide-only">Hauptmenü</span>
+    </button>
     <div class="row">
       {#if !hotSeat}
         <button

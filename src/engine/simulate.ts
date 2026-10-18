@@ -1,8 +1,9 @@
 import { playAiTurn } from './ai'
+import { DIFFICULTIES } from './data/economy'
 import type { RegionId } from './data/regions'
 import { newGame } from './game'
 import { netWorth, totalHectares } from './market'
-import type { AiProfileId, GameState } from './types'
+import type { AiProfileId, Difficulty, GameState } from './types'
 
 export interface SimOptions {
   seed: number
@@ -10,6 +11,8 @@ export interface SimOptions {
   years: number
   /** Ohne Angabe praktisch unerreichbar, damit die volle Laufzeit gemessen wird */
   targetPoints?: number
+  /** Lässt die KI unter den Bedingungen eines Schwierigkeitsgrads spielen, um dessen Wirkung zu messen */
+  difficulty?: Difficulty
 }
 
 export interface PlayerSnapshot {
@@ -43,6 +46,12 @@ export function simulate(options: SimOptions): SimResult {
     targetPoints: options.targetPoints ?? Number.MAX_SAFE_INTEGER,
     players: options.players.map((p, i) => ({ name: p.name ?? `KI ${i + 1}`, regionId: p.regionId, ai: p.ai })),
   })
+  if (options.difficulty) {
+    for (const p of state.players) {
+      p.difficulty = options.difficulty
+      p.money = DIFFICULTIES[options.difficulty].startMoney
+    }
+  }
   const snapshots: YearSnapshot[] = []
   while (!state.winnerId && !state.finished && state.year <= options.years) {
     const year = state.year
