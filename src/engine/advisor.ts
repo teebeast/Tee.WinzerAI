@@ -41,7 +41,7 @@ export function monthHints(state: GameState, player: Player): Hint[] {
     const fulfillable = player.orderOffers.some((o) => eligibleBottles(player, o) >= o.bottles)
     add('auftraege', `📦 ${player.orderOffers.length} Auftragsanfrage(n) liegen vor${fulfillable ? ' – eine davon kannst du sofort liefern' : ''}.`, fulfillable)
   }
-  if (player.exportOffer) add('hof', `Exportanfrage aus ${player.exportOffer.country} – nur diesen Monat gültig.`)
+  if (player.exportOffer) add('auftraege', `Exportanfrage aus ${player.exportOffer.country} – nur diesen Monat gültig.`)
   const lots = state.auction?.lots.filter((l) => l.regionId === player.regionId && l.status !== 'sold' && l.status !== 'unsold') ?? []
   if (state.auction?.phase === 'announced' && lots.length > 0) {
     add('hof', `📣 Nächsten Monat werden ${lots.length} Weinberg(e) in deinem Gebiet versteigert – Geld bereithalten.`)

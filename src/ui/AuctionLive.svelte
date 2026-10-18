@@ -3,6 +3,7 @@
   import { GRAPES } from '../engine/data/grapes'
   import { REGIONS } from '../engine/data/regions'
   import { formatEuro, validateAction } from '../engine/game'
+  import { availableCredit } from '../engine/market'
   import type { Action, AuctionLot, GameState } from '../engine/types'
 
   /** Live-Versteigerung: Ein Mensch ist am Zug und bietet oder steigt aus. */
@@ -20,6 +21,7 @@
   )
   const minimum = $derived(nextMinimum(lot))
   const affordable = $derived(maxAffordableBid(bidder))
+  const credit = $derived(availableCredit(bidder))
   const ticker = $derived(
     lot.bids
       .map((b, i) => ({ ...b, i }))
@@ -49,16 +51,23 @@
       </div>
     </header>
 
-    {#if lastClosed}
-      <p class="result small" class:won={lastClosed.leader === bidder.id}>
-        {#if lastClosed.status === 'sold' && lastClosed.leader}
-          Zuschlag {lastClosed.name}: {formatEuro(lastClosed.price)} an
-          {lastClosed.leader === bidder.id ? 'dich' : bidderName(game, lastClosed.leader, true)}
-        {:else}
-          {lastClosed.name}: kein Gebot, bleibt unverkauft
-        {/if}
-      </p>
-    {/if}
+    <div class="finance" aria-label="Deine Finanzen">
+      <span><span class="muted small">Konto</span><strong class:negative={bidder.money < 0}>{formatEuro(bidder.money)}</strong></span>
+      <span><span class="muted small">Freier Kreditrahmen</span><strong>{formatEuro(credit)}</strong></span>
+      <span><span class="muted small">Finanzierbar bis</span><strong>{formatEuro(affordable)}</strong></span>
+    </div>
+
+    <!-- Die Zeile bleibt immer stehen, damit das Fenster nicht springt -->
+    <p class="result small" class:won={lastClosed?.leader === bidder.id}>
+      {#if lastClosed?.status === 'sold' && lastClosed.leader}
+        Zuschlag {lastClosed.name}: {formatEuro(lastClosed.price)} an
+        {lastClosed.leader === bidder.id ? 'dich' : bidderName(game, lastClosed.leader, true)}
+      {:else if lastClosed}
+        {lastClosed.name}: kein Gebot, bleibt unverkauft
+      {:else}
+        <span class="muted">Erstes Los – noch kein Zuschlag in dieser Versteigerung</span>
+      {/if}
+    </p>
 
     <section class="lot">
       <h3>{lot.name}</h3>
@@ -89,16 +98,17 @@
       {/if}
     </div>
 
-    {#if ticker.length > 0}
-      <ol class="ticker" aria-label="Gebotsverlauf">
-        {#each ticker as entry (entry.i)}
-          <li class:mine={entry.bidder === bidder.id}>
-            <span>{entry.bidder === bidder.id ? 'Du' : bidderName(game, entry.bidder)}</span>
-            <strong>{formatEuro(entry.amount)}</strong>
-          </li>
-        {/each}
-      </ol>
-    {/if}
+    <!-- Feste Höhe: Neue Gebote schieben die alten nach unten, das Fenster wächst nicht -->
+    <ol class="ticker" aria-label="Gebotsverlauf">
+      {#each ticker as entry (entry.i)}
+        <li class:mine={entry.bidder === bidder.id}>
+          <span>{entry.bidder === bidder.id ? 'Du' : bidderName(game, entry.bidder)}</span>
+          <strong>{formatEuro(entry.amount)}</strong>
+        </li>
+      {:else}
+        <li class="empty muted">Noch keine Gebote – eröffne mit dem Ausrufpreis oder steig aus.</li>
+      {/each}
+    </ol>
 
     <section class="controls">
       {#if hotSeat}<p class="turn"><strong>{bidder.name}</strong> ist am Zug.</p>{/if}
@@ -124,10 +134,7 @@
         <button disabled={problem(amount) !== null} title={problem(amount) ?? ''} onclick={() => bid(amount)}>Bieten</button>
         <button class="ghost" onclick={() => run({ type: 'auctionPass', lotId: lot.id })}>Aussteigen</button>
       </div>
-      <p class="muted small">
-        Finanzierbar bis {formatEuro(affordable)} (Konto plus freier Kreditrahmen). Ein Fehlbetrag wird beim Zuschlag
-        automatisch über den Kredit gedeckt.
-      </p>
+      <p class="muted small">Ein Fehlbetrag wird beim Zuschlag automatisch über den Kredit gedeckt.</p>
     </section>
   </div>
 </div>
@@ -138,15 +145,17 @@
     inset: 0;
     z-index: 20;
     display: grid;
-    /* Oben ausgerichtet, damit die Knöpfe nicht springen, wenn der Ticker wächst */
-    justify-items: center;
-    align-items: start;
-    padding: max(16px, 6vh) 16px 16px;
-    background: rgb(20 10 14 / 0.55);
+    /* Das Fenster hat eine feste Höhe – es kann daher mittig stehen, ohne dass die Knöpfe springen */
+    place-items: center;
+    padding: 16px;
+    background: rgb(20 10 14 / 0.7);
+    backdrop-filter: blur(2px);
     overflow-y: auto;
   }
   .live {
     width: min(560px, 100%);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -174,7 +183,24 @@
     .gavel { animation: none; }
     .ticker li { animation: none; }
   }
+  .finance {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+  .finance > span {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .negative {
+    color: var(--danger);
+  }
   .result {
+    min-height: 2.4em;
     margin: 0;
     padding: 6px 10px;
     border-radius: 8px;
@@ -210,9 +236,18 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    max-height: 170px;
+    /* feste Höhe für sechs Zeilen */
+    height: 10.5em;
     overflow-y: auto;
     font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .ticker li.empty {
+    justify-content: center;
+    border-bottom: none;
+    padding-top: 2em;
+    animation: none;
   }
   .ticker li {
     display: flex;
