@@ -207,29 +207,6 @@ export const DECISION_EVENTS: DecisionDef[] = [
     },
   },
   {
-    id: 'frostwarnung', rarity: 'gelegentlich', months: [3, 4], when: hasBearing,
-    offer: (c) => {
-      const cost = Math.round((bearingHa(c) * 400) / 100) * 100
-      return {
-        title: '🥶 Frostwarnung',
-        text: `Der Wetterdienst warnt vor einer klaren Frostnacht. Frostkerzen für alle tragenden Lagen kosten ${formatEuro(cost)}.`,
-        options: [
-          option('Frostkerzen aufstellen', 'Die Triebe sind sicher geschützt.', cost),
-          option('Risiko tragen', 'Halbe-halbe: Glück gehabt oder rund 30 % weniger Ertrag'),
-        ],
-        fallback: 1,
-        params: { cost },
-      }
-    },
-    ai: (c, d) => (affordable(c.player, d.params.cost) ? 0 : 1),
-    resolve: (c, choice, d) => {
-      if (choice === 0) return { text: `Die Frostkerzen brennen die ganze Nacht – die Reben überstehen den Frost (${pay(c, d.params.cost)}).`, tone: 'good' }
-      if (c.roll() < 0.5) return { text: 'Glück gehabt: Der Frost bleibt knapp über den Reben.', tone: 'good' }
-      for (const plot of bearingPlots(c)) plot.cropFactor *= 0.7
-      return { text: 'Der Frost erwischt die jungen Triebe – rund 30 % weniger Ertrag.', tone: 'bad' }
-    },
-  },
-  {
     id: 'gebrauchte-tanks', rarity: 'gelegentlich',
     offer: (c) => {
       const hl = c.between(100, 200, 50)

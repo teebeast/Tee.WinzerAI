@@ -10,7 +10,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 10
+const CURRENT_VERSION: GameState['version'] = 11
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -74,8 +74,16 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 9) {
     // Version 10: Markttrends je Rebsorte und für Sekt
-    state.version = 10
+    old.version = 10
     initTrends(state)
+  }
+  if (old.version === 10) {
+    // Version 11: Wetterabwehr (Versicherung, Frostkerzen; Netze und Bewässerung sind optional je Parzelle)
+    state.version = 11
+    for (const p of state.players) {
+      p.insuredYear = null
+      p.frostCandles = false
+    }
   }
   return state.version === CURRENT_VERSION ? state : null
 }

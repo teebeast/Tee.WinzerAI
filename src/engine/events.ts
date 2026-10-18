@@ -4,6 +4,7 @@
  */
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
+import { cropLoss } from './defense'
 import { bottlePrice } from './market'
 import { nextFloat } from './rng'
 import { changeReputation, plotAgeFactor, removeBatchVolume, removeBottles, wineLabel } from './rules'
@@ -275,7 +276,7 @@ export const ESTATE_EVENTS: EstateEventDef[] = [
     id: 'gewitter', rarity: 'gelegentlich', tone: 'bad', months: [5, 6, 7, 8], when: hasBearing,
     apply: (c) => {
       const plot = randomOf(c, bearingPlots(c))
-      damageCrop([plot], 0.85)
+      cropLoss(c.state, c.player, [plot], 0.85, 'Sturmböen') // versicherbares Wetter
       return `Ein Gewitter mit Sturmböen reißt in der Lage ${plot.name} Triebe ab – 15 % weniger Ertrag.`
     },
   },
@@ -370,7 +371,7 @@ export const ESTATE_EVENTS: EstateEventDef[] = [
   {
     id: 'jahrhundertunwetter', rarity: 'sehr-selten', tone: 'bad', months: [5, 6, 7, 8, 9], when: hasBearing,
     apply: (c) => {
-      damageCrop(bearingPlots(c), 0.3)
+      cropLoss(c.state, c.player, bearingPlots(c), 0.3, 'das Jahrhundertunwetter')
       return `Jahrhundertunwetter! Hagel und Sturzfluten vernichten 70 % der Trauben, Schäden an Mauern und Wegen: ${money(c, -20_000)}.`
     },
   },

@@ -46,6 +46,18 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Leichtester Prädikatswein, ab 73 °Oechsle. Frisch, oft mit feiner Restsüße.',
   },
   {
+    term: 'Ernteversicherung',
+    text: 'Wird von Januar bis April für das laufende Jahr abgeschlossen und ersetzt 80 % des Ernteschadens durch Frost, Hagel, Dürre und Unwetter. In frostgefährdeten Gebieten ist die Prämie höher.',
+  },
+  {
+    term: 'Frostkerzen',
+    text: 'Paraffinkerzen zwischen den Rebzeilen heben in klaren Frostnächten die Temperatur um die entscheidenden Grade. Im April und Mai schützen sie die jungen Triebe vor dem Spätfrost.',
+  },
+  {
+    term: 'Hagelnetz',
+    text: 'Engmaschige Netze über den Rebzeilen fangen Hagelkörner ab. Teuer in der Anschaffung, hält aber den Großteil des Schadens ab – mit dem Klimawandel hagelt es häufiger.',
+  },
+  {
     term: 'Kellermeister',
     text: 'Verantwortlich für Gärung, Ausbau und Abfüllung. Je nach Talent holt er +1 bis +5 Güte aus jedem Jahrgang, mit den Dienstjahren bis zu +2 mehr. Fähigkeiten entscheiden, was im Keller möglich ist: Sekt und Barrique nur mit dem passenden Können, Spezialisten für Rot-, Weiß- oder edelsüße Weine holen zusätzlich Güte heraus.',
   },
@@ -108,6 +120,10 @@ export const LEXICON: LexiconEntry[] = [
   {
     term: 'Trockenbeerenauslese (TBA)',
     text: 'Die Krönung: aus edelfaulen, rosinenartig eingeschrumpften Beeren ab 150 °Oechsle. Winzige Mengen, höchste Preise.',
+  },
+  {
+    term: 'Tröpfchenbewässerung',
+    text: 'Schläuche geben jeder Rebe gezielt Wasser. Schützt vor Hitzeschäden und Dürre, die mit dem Klimawandel zunehmen.',
   },
   {
     term: 'Vinothek',

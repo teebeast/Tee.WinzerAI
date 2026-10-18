@@ -48,6 +48,7 @@ import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
 import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
+import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
 import { marketEvents, tickEffects } from './events'
 import { initTrends, updateTrends } from './trends'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
@@ -121,7 +122,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 10,
+    version: 11,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -188,6 +189,8 @@ export function newGame(options: NewGameOptions): GameState {
       bankrupt: false,
       effects: [],
       decision: null,
+      insuredYear: null,
+      frostCandles: false,
     }
   })
   scheduleNextAuction(state)
@@ -365,6 +368,14 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateAuctionPass(state, action.lotId)
     case 'decide':
       return validateDecide(player, action.option)
+    case 'installHailNet':
+      return validateInstall(player, action.plotId, 'hailNet')
+    case 'installIrrigation':
+      return validateInstall(player, action.plotId, 'irrigation')
+    case 'insureHarvest':
+      return validateInsurance(state, player)
+    case 'frostCandles':
+      return validateFrostCandles(state, player)
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)
       if (!plot) return 'Unbekannte Parzelle.'
@@ -513,6 +524,18 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'decide':
       decide(next, player, action.option)
       break
+    case 'installHailNet':
+      install(next, player, action.plotId, 'hailNet')
+      break
+    case 'installIrrigation':
+      install(next, player, action.plotId, 'irrigation')
+      break
+    case 'insureHarvest':
+      insure(next, player)
+      break
+    case 'frostCandles':
+      setFrostCandles(next, player)
+      break
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)!
       const price = plotSalePrice(plot, next.year)
@@ -651,6 +674,7 @@ function resolveMonth(state: GameState) {
     payMonthlyCosts(state, player)
     changeReputation(player, -player.reputation * REPUTATION_DECAY_RATE)
     player.marketingThisMonth = []
+    player.frostCandles = false
     player.intrigueThisMonth = false
     maybeOfferExport(state, player)
     checkInsolvency(state, player)

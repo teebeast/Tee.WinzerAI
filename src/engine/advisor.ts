@@ -1,8 +1,10 @@
 import { activeHumans, runAiTurns } from './ai'
 import { COMPETITIONS, ICE_WINE_MIN_OECHSLE, REGISTER_MIN_BOTTLES } from './data/economy'
-import { applyAction, harvestPreview, MONTH_NAMES } from './game'
+import { applyAction, formatEuro, harvestPreview, MONTH_NAMES } from './game'
 import { qualityInfo } from './data/quality'
 import { HARVEST_MONTHS, PLANT_MONTHS, currentPlayer, plotAgeFactor } from './rules'
+import { frostCandlesCost, frostChance, insurancePremium, isInsured } from './defense'
+import { INSURANCE_MONTHS } from './data/economy'
 import type { GameState, Player } from './types'
 
 /** Bereich der Oberfläche, in dem sich ein Hinweis erledigen lässt */
@@ -31,6 +33,17 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   }
   if (state.auction?.phase === 'live' && lots.some((l) => l.awaiting !== null)) {
     add('hof', '🔨 Live-Versteigerung läuft – jetzt mitbieten!')
+  }
+  const frost = frostChance(state, player)
+  if (frost > 0 && !player.frostCandles && bearing.length > 0) {
+    add(
+      'weinberg',
+      `🥶 Spätfrostgefahr diesen Monat: ${Math.round(frost * 100)} % – Frostkerzen für ${formatEuro(frostCandlesCost(state, player))} bereitstellen?`,
+      frost >= 0.08,
+    )
+  }
+  if (INSURANCE_MONTHS.includes(state.month) && !isInsured(state, player) && insurancePremium(state, player) > 0) {
+    add('weinberg', `🛡️ Die Ernte ist für dieses Jahr noch nicht versichert (Prämie ${formatEuro(insurancePremium(state, player))}).`, false)
   }
   if (PLANT_MONTHS.includes(state.month) && player.plots.some((p) => p.grape === null)) {
     add('weinberg', 'Pflanzzeit: Brachflächen können bestockt werden.')
