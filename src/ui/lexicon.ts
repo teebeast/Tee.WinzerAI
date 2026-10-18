@@ -94,6 +94,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Die Computergegner merken sich, wie du mit ihnen umgehst. Freundliche Nachbarn bieten gemeinsame Messestände, Weinkäufe oder Erntehilfe an; wer sie sabotiert oder ihnen Weinberge wegschnappt, muss mit Rabattaktionen, öffentlicher Kritik oder – beim Schlitzohr – mit Rache rechnen.',
   },
   {
+    term: 'Federweißer',
+    text: 'Frischer, noch gärender Most – süß, prickelnd und nur im Herbst zu haben. Aus roten Trauben heißt er Roter Rauscher. Bringt in der Lesezeit schnelles Geld, aber nur so viel, wie die Kundschaft trinkt.',
+  },
+  {
     term: 'Oechsle (°Oe)',
     text: 'Maß für das Mostgewicht, also den Zuckergehalt der Trauben. Je mehr Sonne und Reifezeit, desto höher. Entscheidet über die Qualitätsstufe – von Deutschem Wein bis zur Trockenbeerenauslese.',
   },
@@ -122,6 +126,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Wein aus einem bestimmten Anbaugebiet, ab 60 °Oechsle und mit amtlicher Prüfung. Die Basis des deutschen Weinrechts.',
   },
   {
+    term: 'Rosé',
+    text: 'Aus roten Trauben, aber hell gekeltert: Der Most liegt nur kurz auf den Schalen. Schnell trinkfertig, im Sommer besonders gefragt – und mal mehr, mal weniger in Mode.',
+  },
+  {
     term: 'Sekt',
     text: 'Schaumwein aus zweiter Gärung in der Flasche (traditionelle Flaschengärung). Reift neun Monate auf der Hefe, ist aufwändig – aber ein guter Winzersekt ist gefragt und bringt Punkte.',
   },
@@ -136,6 +144,10 @@ export const LEXICON: LexiconEntry[] = [
   {
     term: 'Trockenbeerenauslese (TBA)',
     text: 'Die Krönung: aus edelfaulen, rosinenartig eingeschrumpften Beeren ab 150 °Oechsle. Winzige Mengen, höchste Preise.',
+  },
+  {
+    term: 'Straußwirtschaft',
+    text: 'Ausschank auf dem eigenen Hof, höchstens vier Monate im Jahr – erkennbar am Strauß über der Tür. Lockt Gäste an und bringt mehr Absatz ab Hof.',
   },
   {
     term: 'Tröpfchenbewässerung',

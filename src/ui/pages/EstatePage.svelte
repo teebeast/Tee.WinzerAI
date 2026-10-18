@@ -7,10 +7,13 @@
     SABOTAGE,
     SABOTAGE_DETECTION,
     SABOTAGE_FINE,
+    STRAUSS_COST,
+    STRAUSS_DEMAND_FACTOR,
     TANK_COST_PER_HL,
     VINOTHEK_COST,
   } from '../../engine/data/economy'
   import { experience, SKILLS } from '../../engine/cellarmaster'
+  import { STRAUSS_EFFECT_LABEL } from '../../engine/products'
   import { formatEuro, MONTH_NAMES, validateAction } from '../../engine/game'
   import { availableCredit, creditLimit, monthlyCosts, staffFte } from '../../engine/market'
   import type { Action, CellarMaster, GameState, MarketingKind, Player, SabotageKind } from '../../engine/types'
@@ -42,6 +45,7 @@
     return { disabled: problem !== null, title: problem ?? '' }
   }
 
+  const straussOpen = $derived(player.effects.find((e) => e.label === STRAUSS_EFFECT_LABEL))
   const upgrades = $derived([
     {
       icon: '🛢️',
@@ -74,6 +78,14 @@
       text: 'Verkauft zusätzlich ins ganze Land',
       action: player.hasOnlineShop ? null : ({ type: 'buyOnlineShop' } as Action),
       label: `Starten (${formatEuro(ONLINE_SHOP_COST)})`,
+    },
+    {
+      icon: '🌳',
+      name: 'Straußwirtschaft',
+      state: straussOpen ? `✔ geöffnet (noch ${straussOpen.monthsLeft} Mon.)` : player.straussYear === game.year ? 'dieses Jahr schon' : 'geschlossen',
+      text: `Vier Monate Ausschank auf dem Hof: +${Math.round((STRAUSS_DEMAND_FACTOR - 1) * 100)} % Ab-Hof-Kundschaft, einmal im Jahr (März–Oktober)`,
+      action: straussOpen || player.straussYear === game.year ? null : ({ type: 'openStrausswirtschaft' } as Action),
+      label: `Öffnen (${formatEuro(STRAUSS_COST)})`,
     },
   ])
 

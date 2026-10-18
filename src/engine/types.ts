@@ -48,6 +48,8 @@ export interface WineInfo {
   quality: number
   /** Heimlich gepanscht – fliegt womöglich bei Prüfung oder Kontrolle auf */
   adulterated: AdulterationMethod | null
+  /** Aus roten Trauben hell gekeltert */
+  rose?: boolean
 }
 
 /** Wein im Tank oder im Barriquefass */
@@ -94,7 +96,7 @@ export interface ExportContract extends ExportOffer {
 }
 
 /** Marktsegment mit eigener Beliebtheit: jede Rebsorte und Sekt */
-export type TrendKey = GrapeId | 'sekt'
+export type TrendKey = GrapeId | 'sekt' | 'rose'
 
 /** Beliebtheit am Markt als Preisfaktor; sie wandert langsam auf ein Ziel zu */
 export interface Trend {
@@ -277,6 +279,10 @@ export interface Player {
   stats: PlayerStats
   /** Chronik: erreichte Meilensteine mit fortlaufendem Spielmonat */
   milestones: Record<string, number>
+  /** In diesem Monat als Federweißer verkaufte Hektoliter */
+  federweisserThisMonth: number
+  /** Jahr, in dem zuletzt die Straußwirtschaft geöffnet hatte */
+  straussYear: number | null
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -304,7 +310,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 15
+  version: 16
   rng: Rng
   year: number
   month: number
@@ -344,7 +350,7 @@ export interface GameState {
 
 export type Action =
   | { type: 'plant'; plotId: string; grape: GrapeId }
-  | { type: 'harvest'; plotId: string }
+  | { type: 'harvest'; plotId: string; rose?: boolean }
   | { type: 'sellBulk'; batchId: string; hectoliters: number }
   | { type: 'bottle'; batchId: string; hectoliters: number }
   | { type: 'register'; lotId: string }
@@ -368,6 +374,8 @@ export type Action =
   | { type: 'insureHarvest' }
   | { type: 'frostCandles' }
   | { type: 'applyBioLabel' }
+  | { type: 'sellFederweisser'; batchId: string; hectoliters: number }
+  | { type: 'openStrausswirtschaft' }
   | { type: 'acceptOrder'; orderId: string }
   | { type: 'declineOrder'; orderId: string }
   | { type: 'deliverOrder'; orderId: string }

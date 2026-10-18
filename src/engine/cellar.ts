@@ -53,7 +53,8 @@ export function bottle(state: GameState, player: Player, batchId: string, hectol
       l.vintage === batch.vintage &&
       l.level === batch.level &&
       l.quality === batch.quality &&
-      l.adulterated === batch.adulterated,
+      l.adulterated === batch.adulterated &&
+      !!l.rose === !!batch.rose,
   )
   if (existing) existing.bottles += bottles
   else player.bottles.push(newLot(state, batch, bottles, false))
@@ -106,6 +107,7 @@ export function validateToBarrique(player: Player, batchId: string): string | nu
   const batch = player.cellar.find((b) => b.id === batchId)
   if (!batch) return 'Unbekannte Charge.'
   if (batch.barrique) return 'Der Wein liegt bereits im Barrique.'
+  if (batch.rose) return 'Rosé lebt von Frische – ins Barrique gehört er nicht.'
   if (!hasSkill(player, 'barrique')) return 'Für den Barrique-Ausbau braucht es einen Kellermeister mit Erfahrung im Eichenfass.'
   if (batch.level === 'eiswein' || batch.level === 'trockenbeerenauslese') return 'Edelsüße Weine gehören nicht ins Barrique.'
   const free = player.barriqueCapacityHl - usedBarriqueHl(player)
@@ -133,6 +135,7 @@ function newLot(state: GameState, batch: WineBatch, bottles: number, sparkling: 
     level: batch.level,
     quality: sparkling ? Math.min(100, batch.quality + SEKT_QUALITY_BONUS) : batch.quality,
     adulterated: batch.adulterated,
+    ...(batch.rose ? { rose: true } : {}),
     bottles,
     sparkling,
     monthsUntilReady: sparkling ? SEKT_MONTHS : 0,

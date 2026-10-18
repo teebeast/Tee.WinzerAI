@@ -163,6 +163,22 @@ export const VINOTHEK_REPUTATION = 5
 export const WHOLESALE_SATURATION_BOTTLES = 200_000
 export const WHOLESALE_MIN_FACTOR = 0.5
 
+/** Rosé: kurzer Ausbau und Sommeraufschlag auf den Flaschenpreis */
+export const ROSE_MATURING_MONTHS = 3
+export const ROSE_SUMMER_MONTHS = [5, 6, 7, 8]
+export const ROSE_SUMMER_BONUS = 0.15
+/** Federweißer: frischer Most im September und Oktober, Erlös je Liter und Absatz je Monat */
+export const FEDERWEISSER_MONTHS = [9, 10]
+export const FEDERWEISSER_PRICE_PER_L = 2.5
+export const FEDERWEISSER_BASE_HL = 8
+export const FEDERWEISSER_HL_PER_REPUTATION = 0.25
+/** Straußwirtschaft: einmal im Jahr für vier Monate, Kosten inklusive Aushilfen */
+export const STRAUSS_START_MONTHS = [3, 4, 5, 6, 7, 8, 9, 10]
+export const STRAUSS_MONTHS = 4
+export const STRAUSS_COST = 8_000
+export const STRAUSS_DEMAND_FACTOR = 1.4
+export const STRAUSS_REPUTATION = 3
+
 /** Markttrends: Spanne des Preisfaktors, Anteil der Annäherung ans Ziel je Monat, Chance auf ein neues Ziel je Sorte und Monat */
 export const TREND_RANGE: [number, number] = [0.8, 1.3]
 export const TREND_SPEED = 0.08

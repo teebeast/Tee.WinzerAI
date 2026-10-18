@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { scheduleNextAuction } from './engine/auction'
 import { refreshCandidates, salaryFor } from './engine/cellarmaster'
-import { initTrends } from './engine/trends'
+import { ensureTrends, initTrends } from './engine/trends'
 import { checkMilestones, emptyStats } from './engine/milestones'
 import type { GameState } from './engine/types'
 
@@ -11,7 +11,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 15
+const CURRENT_VERSION: GameState['version'] = 16
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -115,12 +115,21 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 14) {
     // Version 15: Meilensteine. Bereits Erreichtes wird ohne Belohnung eingetragen, die Zähler beginnen bei null.
-    state.version = 15
+    old.version = 15
     for (const p of state.players) {
       p.stats = emptyStats()
       p.milestones = {}
     }
     checkMilestones(state, true)
+  }
+  if (old.version === 15) {
+    // Version 16: Rosé (eigener Trend), Federweißer und Straußwirtschaft
+    state.version = 16
+    ensureTrends(state)
+    for (const p of state.players) {
+      p.federweisserThisMonth = 0
+      p.straussYear = null
+    }
   }
   return state.version === CURRENT_VERSION ? state : null
 }

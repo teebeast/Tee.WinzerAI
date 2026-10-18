@@ -9,9 +9,9 @@ import { nextFloat } from './rng'
 import type { GameState, Trend, TrendKey, WineInfo } from './types'
 import { addLog } from './util'
 
-export const TREND_KEYS: TrendKey[] = [...(Object.keys(GRAPES) as GrapeId[]), 'sekt']
+export const TREND_KEYS: TrendKey[] = [...(Object.keys(GRAPES) as GrapeId[]), 'sekt', 'rose']
 
-export const trendName = (key: TrendKey) => (key === 'sekt' ? 'Sekt' : GRAPES[key].name)
+export const trendName = (key: TrendKey) => (key === 'sekt' ? 'Sekt' : key === 'rose' ? 'Rosé' : GRAPES[key].name)
 
 const round = (value: number) => Math.round(value * 100) / 100
 const clamp = (value: number) => Math.min(TREND_RANGE[1], Math.max(TREND_RANGE[0], value))
@@ -53,9 +53,14 @@ export function updateTrends(state: GameState) {
   }
 }
 
-/** Preisfaktor für einen Wein: Sekt folgt dem Sekt-Trend, alles andere dem der Rebsorte */
-export function trendFactor(state: GameState, wine: Pick<WineInfo, 'grape'> & { sparkling?: boolean }): number {
-  return state.trends[wine.sparkling ? 'sekt' : wine.grape].value
+/** Preisfaktor für einen Wein: Sekt und Rosé folgen ihrem eigenen Trend, alles andere dem der Rebsorte */
+export function trendFactor(state: GameState, wine: Pick<WineInfo, 'grape' | 'rose'> & { sparkling?: boolean }): number {
+  return state.trends[wine.sparkling ? 'sekt' : wine.rose ? 'rose' : wine.grape].value
+}
+
+/** Für ältere Spielstände: fehlende Trends nachtragen */
+export function ensureTrends(state: GameState) {
+  for (const key of TREND_KEYS) state.trends[key] ??= { value: 1, target: 1 }
 }
 
 /** Richtung für die Anzeige: steigend, fallend oder stabil */
