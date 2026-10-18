@@ -1,5 +1,6 @@
 import { maxAffordableBid } from './auction'
 import { barriqueBonus, bottleCost, sektCost } from './cellar'
+import { BIO_LABELS, monthsUntilEligible, nextBioLabel } from './bio'
 import { hasSkill } from './cellarmaster'
 import { droughtChance, frostCandlesCost, frostChance, installCost, insurancePremium } from './defense'
 import {
@@ -188,6 +189,12 @@ export function playAiTurn(state: GameState): GameState {
   if (me().money < 0) raiseCash(-me().money)
 
   if (me().protection !== profile.protection) act({ type: 'setProtection', strategy: profile.protection })
+
+  // Bio-Siegel beantragen, sobald es geht und die Gebühr die Reserve nicht angreift
+  const nextLabel = nextBioLabel(me())
+  if (nextLabel && monthsUntilEligible(s, me()) === 0 && me().money - BIO_LABELS[nextLabel].fee >= profile.cashReserve + 20_000) {
+    act({ type: 'applyBioLabel' })
+  }
 
   // Exportanfrage nur annehmen, wenn der Vorrat für mehrere Monate reicht
   const offer = me().exportOffer

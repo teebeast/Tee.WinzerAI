@@ -22,6 +22,7 @@ import type { GameState, Player, Plot, ProtectionStrategy } from './types'
 import { addLog, formatEuro } from './util'
 import { SUN_FACTOR, type WeatherKind } from './weather'
 import { cropLoss, droughtChance, frostChance, hailChance } from './defense'
+import { gameMonth, loseBio } from './bio'
 
 /** Basis-Reifezuwachs in °Oe am Ende des jeweiligen Monats */
 const RIPENING_BASE: Record<number, number> = { 8: 20, 9: 18, 10: 12, 11: 5 }
@@ -224,13 +225,14 @@ export function validateProtection(player: Player, strategy: ProtectionStrategy)
 }
 
 export function setProtection(state: GameState, player: Player, strategy: ProtectionStrategy) {
+  if (player.protection === 'bio') loseBio(state, player, 'kein Bio-Pflanzenschutz mehr')
   player.protection = strategy
-  player.bioSinceYear = strategy === 'bio' ? state.year : null
+  player.bioSince = strategy === 'bio' ? gameMonth(state) : null
   addLog(
     state,
     player.id,
     strategy === 'bio'
-      ? 'Umstellung auf Bio-Weinbau begonnen – zertifiziert in drei Jahren.'
+      ? 'Umstellung auf Bio-Weinbau begonnen – nach zwei Jahren kann das Grünblatt-Siegel beantragt werden.'
       : `Pflanzenschutz: ${PROTECTION[strategy].name}.`,
   )
 }

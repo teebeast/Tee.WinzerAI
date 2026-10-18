@@ -203,7 +203,17 @@ Der Hofladen verkauft geprüfte Weine und Deutschen Wein, ältere Posten zuerst.
 |---|---|---|---|
 | Keiner | 0 | 0 % | |
 | Konventionell | 600 € | 90 % | |
-| Bio | 900 € | 70 % | nach 3 Jahren zertifiziert: +10 % im Direktverkauf; wer wechselt, beginnt die Umstellung neu |
+| Bio | 900 € | 70 % | Voraussetzung für die Bio-Siegel (siehe unten); wer wechselt, verliert Siegel und Umstellungszeit |
+
+**Bio-Zertifizierung** (`src/engine/bio.ts`, `src/engine/data/bio.ts`): Mit dem Wechsel auf Bio-Pflanzenschutz beginnt die Umstellung. Nach 24 Monaten lässt sich das erste Siegel beantragen, jede weitere Stufe nach 12 Monaten auf der vorigen. Siegel kommen nur auf Antrag; jedes Jahr im Januar fällt die Jahresgebühr an. Wer den Bio-Pflanzenschutz aufgibt oder beim Panschen erwischt wird, verliert alle Siegel (Meldung für alle).
+
+| Stufe | Voraussetzung | Antrag | Jahresgebühr | Wirkung |
+|---|---|---|---|---|
+| 🍃 Grünblatt | 24 Monate Umstellung | 1.500 € | 600 € | +10 % auf alle Flaschenpreise, +2 Bekanntheit |
+| 🌿 Terravita | 12 Monate Grünblatt | 3.000 € | 1.500 € | +18 % Preise, +10 % Ab-Hof-Nachfrage, +4 Bekanntheit |
+| 🌙 Lunaris | 12 Monate Terravita | 5.000 € | 2.500 € | +28 % Preise, +15 % Nachfrage, +2 Güte, +8 Bekanntheit; dafür +25 % Pflanzenschutzkosten und −5 % Ertrag |
+
+Der Biopionier beantragt jede Stufe, sobald er darf und die Gebühr seine Reserve nicht angreift. Die Weinberg-Seite zeigt die Stufenleiter mit Fortschritt der Umstellung.
 
 **Krankheiten & Schädlinge.** Sie treffen nur tragende Parzellen. Der Schutz senkt die Chance um seinen Prozentsatz:
 

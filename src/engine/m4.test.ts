@@ -46,11 +46,11 @@ describe('Pflanzenschutz & Krankheiten', () => {
     expect(monthlyCosts(player, 6).protection).toBe((4 * 600) / 4)
   })
 
-  it('Bio braucht drei Jahre bis zur Zertifizierung', () => {
+  it('die Bio-Umstellung beginnt mit dem Wechsel und endet ohne Bio-Pflanzenschutz', () => {
     const state = applyAction(start(), { type: 'setProtection', strategy: 'bio' })
-    expect(currentPlayer(state).bioSinceYear).toBe(1)
+    expect(currentPlayer(state).bioSince).toBe(1)
     const back = applyAction(state, { type: 'setProtection', strategy: 'conventional' })
-    expect(currentPlayer(back).bioSinceYear).toBeNull()
+    expect(currentPlayer(back).bioSince).toBeNull()
   })
 })
 
