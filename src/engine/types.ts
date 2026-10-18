@@ -256,6 +256,8 @@ export interface Player {
   orderOffers: CustomerOrder[]
   /** Angenommene, noch nicht gelieferte Aufträge */
   orders: CustomerOrder[]
+  /** Nur Computergegner: Verhältnis zu den anderen Weingütern (−100 verfeindet … +100 befreundet) */
+  relations: Record<string, number>
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -283,7 +285,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 13
+  version: 14
   rng: Rng
   year: number
   month: number

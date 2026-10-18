@@ -86,6 +86,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Wie gefragt eine Rebsorte oder Sekt gerade ist – als Preisfaktor zwischen 80 % und 130 % auf alle Verkaufspreise. Trends wandern über viele Monate; weil neue Reben erst im dritten Jahr tragen, ist jede Pflanzung eine Wette auf den Markt von übermorgen.',
   },
   {
+    term: 'Nachbarschaft',
+    text: 'Die Computergegner merken sich, wie du mit ihnen umgehst. Freundliche Nachbarn bieten gemeinsame Messestände, Weinkäufe oder Erntehilfe an; wer sie sabotiert oder ihnen Weinberge wegschnappt, muss mit Rabattaktionen, öffentlicher Kritik oder – beim Schlitzohr – mit Rache rechnen.',
+  },
+  {
     term: 'Oechsle (°Oe)',
     text: 'Maß für das Mostgewicht, also den Zuckergehalt der Trauben. Je mehr Sonne und Reifezeit, desto höher. Entscheidet über die Qualitätsstufe – von Deutschem Wein bis zur Trockenbeerenauslese.',
   },

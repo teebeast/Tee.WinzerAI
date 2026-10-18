@@ -120,7 +120,7 @@ export function maybeOfferOrder(state: GameState, player: Player) {
     bioLabel: customer.bio ?? null,
     bottles,
     pricePerBottle,
-    points: Math.min(25, Math.max(3, Math.round(bottles / 200 + levelBonus * 2 + (customer.bio ? 3 : 0)))),
+    points: Math.min(12, Math.max(2, Math.round(bottles / 400 + levelBonus + (customer.bio ? 2 : 0)))),
     reputation: 2 + Math.floor(roll() * 3),
     // Der Termin liegt 2 bis 8 Monate nach Ablauf der Anfrage
     deadline: now + OFFER_MONTHS + 2 + Math.floor(roll() * 7),

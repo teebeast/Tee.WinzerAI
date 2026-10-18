@@ -61,6 +61,7 @@ import {
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
 import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
 import { marketEvents, tickEffects } from './events'
+import { monthlyRivalry } from './rivals'
 import { initTrends, updateTrends } from './trends'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
 import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
@@ -133,7 +134,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 13,
+    version: 14,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -197,6 +198,7 @@ export function newGame(options: NewGameOptions): GameState {
       bioLabelSince: null,
       orderOffers: [],
       orders: [],
+      relations: {},
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -590,7 +592,14 @@ export function applyAction(state: GameState, action: Action): GameState {
         grape: null, plantedYear: null, oechsle: 0, health: 1, cropFactor: 1,
         harvestedThisYear: false, botrytis: false, iceWineGamble: false,
       })
-      addLog(next, player.id, `${plot.name}: ${grape} gerodet (${formatEuro(cost)}). Neu gepflanzt wird im März oder April.`)
+      // Computergegner roden öffentlich – so sieht man, wohin der Markt läuft
+      addLog(
+        next,
+        player.ai ? null : player.id,
+        player.ai
+          ? `${player.name} rodet ${grape} in der Lage ${plot.name} und pflanzt im Frühjahr neu.`
+          : `${plot.name}: ${grape} gerodet (${formatEuro(cost)}). Neu gepflanzt wird im März oder April.`,
+      )
       break
     }
     case 'setProtection':
@@ -718,6 +727,7 @@ function resolveMonth(state: GameState) {
     maybeOfferOrder(state, player)
     checkInsolvency(state, player)
   }
+  if (state.randomEvents) monthlyRivalry(state)
   checkWinner(state)
 
   if (state.month === 12) {

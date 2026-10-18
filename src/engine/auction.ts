@@ -18,6 +18,7 @@ import { availableCredit } from './market'
 import { nextFloat, nextRange, type Rng } from './rng'
 import type { AuctionLot, BidderId, GameState, Player } from './types'
 import { addLog, formatEuro, newId } from './util'
+import { adjustRelation } from './rivals'
 
 export const INVESTOR: BidderId = 'investor'
 
@@ -305,6 +306,10 @@ function closeLot(state: GameState, lot: AuctionLot) {
   )
   const winner = state.players.find((p) => p.id === lot.leader)
   if (winner) awardParcel(state, winner, lot)
+  // Wer mitgeboten und verloren hat, ist verstimmt
+  for (const loser of state.players.filter((p) => p.ai !== null && p.id !== lot.leader && lot.limits[p.id] !== undefined)) {
+    if (winner) adjustRelation(loser, winner.id, -10)
+  }
 }
 
 function awardParcel(state: GameState, player: Player, lot: AuctionLot) {

@@ -19,8 +19,9 @@ import {
   type EventContext,
   type Rarity,
 } from './events'
-import { availableCredit, bottlePrice } from './market'
-import { usedTankHl } from './rules'
+import { availableCredit, bottlePrice, bulkPricePerHl } from './market'
+import { adjustRelation, relation } from './rivals'
+import { changeReputation, removeBatchVolume, usedTankHl, wineLabel } from './rules'
 import type { Decision, DecisionOption, GameState, Player } from './types'
 import { addLog, formatEuro, newId } from './util'
 
@@ -71,6 +72,18 @@ function expectedRevenue(ctx: EventContext, bottles: number, share: number): num
   }
   return Math.round(revenue)
 }
+
+/** Ein Computer-Nachbar im selben Gebiet, der nicht verfeindet ist – der freundlichste zuerst */
+function neighbour(ctx: EventContext, minRelation = -10): Player | undefined {
+  if (ctx.player.ai !== null) return undefined
+  return ctx.state.players
+    .filter((p) => p.ai !== null && !p.bankrupt && p.regionId === ctx.player.regionId && relation(p, ctx.player.id) >= minRelation)
+    .sort((a, b) => relation(b, ctx.player.id) - relation(a, ctx.player.id))[0]
+}
+const partnerOf = (ctx: EventContext, d: Decision) => ctx.state.players[d.params.partner]
+/** Fertiger Wein im Tank, den ein Nachbar kaufen könnte */
+const sellableBatch = (ctx: EventContext) =>
+  ctx.player.cellar.filter((b) => !b.barrique && b.monthsUntilReady === 0 && b.hectoliters >= 20).sort((a, b) => b.hectoliters - a.hectoliters)[0]
 
 const bearingHa = (ctx: EventContext) => bearingPlots(ctx).reduce((sum, p) => sum + p.hectares, 0)
 const grapeIds = Object.keys(GRAPES) as GrapeId[]
@@ -225,6 +238,91 @@ export const DECISION_EVENTS: DecisionDef[] = [
       const paid = pay(c, d.params.price)
       c.player.tankCapacityHl += d.params.hl
       return { text: `Schnäppchen: ${d.params.hl} hl gebrauchte Tanks gekauft (${paid}).`, tone: 'good' }
+    },
+  },
+
+  // ── Nachbarschaft: Angebote freundlicher Computergegner ─────────────────────
+  {
+    id: 'kooperation-messestand', rarity: 'gelegentlich', when: (c) => neighbour(c) !== undefined,
+    offer: (c) => {
+      const partner = neighbour(c)!
+      const share = c.between(3000, 5000, 500)
+      return {
+        title: `🤝 Gemeinsamer Messestand mit ${partner.name}`,
+        text: `${partner.name} schlägt vor, auf der Regionalmesse gemeinsam auszustellen. Dein Anteil: ${formatEuro(share)}.`,
+        options: [
+          option('Mitmachen', 'Beide +5 Bekanntheit, das Verhältnis zum Nachbarn wird besser', share),
+          option('Ablehnen', 'Der Nachbar ist ein wenig verstimmt'),
+        ],
+        fallback: 1,
+        params: { share, partner: c.state.players.indexOf(partner) },
+      }
+    },
+    ai: () => 1,
+    resolve: (c, choice, d) => {
+      const partner = partnerOf(c, d)
+      if (choice === 1) {
+        adjustRelation(partner, c.player.id, -5)
+        return { text: `Du lehnst den gemeinsamen Messestand mit ${partner.name} ab.` }
+      }
+      const paid = pay(c, d.params.share)
+      changeReputation(partner, 5)
+      adjustRelation(partner, c.player.id, 15)
+      return { text: `Der gemeinsame Messestand mit ${partner.name} ist ein Erfolg (${paid}, ${reputation(c, 5)}).`, tone: 'good' }
+    },
+  },
+  {
+    id: 'kooperation-weinkauf', rarity: 'gelegentlich', months: [3, 4, 5, 6, 7, 8],
+    when: (c) => neighbour(c) !== undefined && sellableBatch(c) !== undefined,
+    offer: (c) => {
+      const partner = neighbour(c)!
+      const batch = sellableBatch(c)!
+      const hectoliters = Math.min(batch.hectoliters, c.between(20, 40, 5))
+      const price = Math.round(bulkPricePerHl(batch, c.state, c.player) * hectoliters * 1.3)
+      return {
+        title: `🍷 ${partner.name} braucht Wein`,
+        text: `${partner.name} hat zu wenig Wein für seine Kunden und möchte dir ${hectoliters} hl ${wineLabel(batch)} abkaufen – für ${formatEuro(price)}, 30 % über dem Fassweinpreis.`,
+        options: [
+          option('Verkaufen', `+${formatEuro(price)}, das Verhältnis zum Nachbarn wird besser`),
+          option('Ablehnen', 'Der Wein bleibt in deinem Tank'),
+        ],
+        fallback: 1,
+        params: { partner: c.state.players.indexOf(partner), hectoliters, price },
+      }
+    },
+    ai: () => 1,
+    resolve: (c, choice, d) => {
+      const partner = partnerOf(c, d)
+      const batch = sellableBatch(c)
+      if (choice === 1 || !batch) return { text: `Du behältst deinen Wein – ${partner.name} sucht anderswo.` }
+      const hectoliters = Math.min(batch.hectoliters, d.params.hectoliters)
+      const label = wineLabel(batch)
+      partner.cellar.push({ ...structuredClone(batch), id: newId(c.state, 'wine'), hectoliters })
+      removeBatchVolume(c.player, batch, hectoliters)
+      c.player.money += d.params.price
+      adjustRelation(partner, c.player.id, 10)
+      return { text: `${hectoliters} hl ${label} an ${partner.name} verkauft: +${formatEuro(d.params.price)}.`, tone: 'good' }
+    },
+  },
+  {
+    id: 'erntehilfe', rarity: 'selten', months: [9, 10], when: (c) => hasBearing(c) && neighbour(c, 20) !== undefined,
+    offer: (c) => {
+      const partner = neighbour(c, 20)!
+      return {
+        title: `🧺 Erntehilfe von ${partner.name}`,
+        text: `${partner.name} ist mit der Lese fertig und bietet dir seine erfahrenen Erntehelfer an – unentgeltlich, unter Nachbarn.`,
+        options: [option('Gern annehmen', 'Sorgfältige Handlese: +3 Güte für diesen Jahrgang'), option('Danke, nein', 'Es passiert nichts')],
+        fallback: 1,
+        params: { partner: c.state.players.indexOf(partner) },
+      }
+    },
+    ai: () => 1,
+    resolve: (c, choice, d) => {
+      const partner = partnerOf(c, d)
+      if (choice === 1) return { text: `Du dankst ${partner.name} für das Angebot.` }
+      addEffect(c.player, 'quality', 3, 13 - c.state.month, `Erntehilfe von ${partner.name}`)
+      adjustRelation(partner, c.player.id, 5)
+      return { text: `Die Erntehelfer von ${partner.name} lesen sorgfältig mit (+3 Güte für den Jahrgang).`, tone: 'good' }
     },
   },
 
