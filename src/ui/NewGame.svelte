@@ -8,6 +8,7 @@
   import type { AiProfileId, Difficulty, NewGameOptions } from '../engine/types'
   import { deleteSave, listSaves, loadChallengeBest, saveLocation, type SaveSlot } from '../save'
   import LicensesDialog from './LicensesDialog.svelte'
+  import RegionProfile from './RegionProfile.svelte'
   import SeasonScene from './SeasonScene.svelte'
 
   let { onStart, onLoad }: { onStart: (options: NewGameOptions) => void; onLoad: (slot: SaveSlot) => void } = $props()
@@ -46,6 +47,8 @@
   const challengeBest = loadChallengeBest(today)
   let seed = $state(String(Math.floor(Math.random() * 1_000_000)))
   const hasHuman = $derived(seats.some((s) => s.kind === 'human'))
+  /** Gebiete der menschlichen Spieler – ihr Profil steht unter der Aufstellung */
+  const humanRegions = $derived([...new Set(seats.filter((s) => s.kind === 'human').map((s) => s.regionId))])
   const endlessYears = $derived(ENDLESS_YEARS[endlessStep])
 
   // raw: Die geladenen Spielstände gehen unverändert an die Engine, die sie per structuredClone kopiert.
@@ -227,6 +230,9 @@
       {#if seats.length < 4}
         <button type="button" class="ghost add" onclick={addSeat}>+ Weingut hinzufügen</button>
       {/if}
+      {#each humanRegions as regionId (regionId)}
+        <RegionProfile {regionId} />
+      {/each}
       <p class="muted small">
         Mehrere Menschen spielen abwechselnd am selben Gerät (Hot-Seat). Versteigerungen gibt es nur unter Weingütern im
         selben Gebiet – und gegen auswärtige Investoren.

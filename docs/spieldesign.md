@@ -23,7 +23,7 @@ Angelehnt an die Weinbau-Simulationen der 1990er-Jahre. Ziel ist ein kurzweilige
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
 | Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (Traditionswinzer und Biopionier, alle Gebiete, 6 Seeds = 156 Partien je Grad, mit allen Spielsystemen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +6 % / −5 % / −22 % Punkte; pleite gehen 0 %, 2 % bzw. 12 % der Partien. Mit nur drei Seeds schwankte die Pleitequote auf „Schwierig“ zwischen 3 % und 20 % – dieselben Seeds bringen in allen Gebieten ähnliche Wetter- und Marktjahre. |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −10 %, Kosten +5 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (Traditionswinzer und Biopionier, alle Gebiete, 6 Seeds = 156 Partien je Grad, mit allen Spielsystemen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +6 % / −6 % / −17 % Punkte; pleite gehen 0 %, 5 % bzw. 10 % der Partien (seit dem Gebietscharakter; „Schwierig“ wurde dafür von −12 %/+8 % auf −10 %/+5 % entschärft). Mit nur drei Seeds schwankte die Pleitequote auf „Schwierig“ zwischen 3 % und 20 % – dieselben Seeds bringen in allen Gebieten ähnliche Wetter- und Marktjahre. |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
@@ -54,6 +54,32 @@ Es gibt alle 13 deutschen Anbaugebiete, Baden und Württemberg getrennt. Jedes G
 | Saale-Unstrut | 4 | 8 | 2 | Weißburgunder, Müller-Thurgau, Solaris |
 | Sachsen | 4 | 7 | 3 | Müller-Thurgau, Riesling, Solaris |
 | Württemberg | 6 | 4 | 5 | Trollinger, Lemberger |
+
+**Gebietscharakter** (`character` in `src/engine/data/regions.ts`, angezeigt auf der Startseite und im Weinberg):
+
+- **Steillagen-Anteil** (0–1): Pflege der bestockten Fläche × (1 + 0,25 × Anteil), Lesekosten × (1 + 0,35 × Anteil), Güte + 4 × Anteil
+- **Renommee** (−1 Geheimtipp … +2 weltberühmt): Flaschenpreise ±5 % je Stufe
+- **Weintourismus** (0–2): Ab-Hof-Kundschaft +10 % je Stufe
+- **Ertragsniveau**: Faktor auf die Erntemenge
+- **Bodenpreis**: Faktor auf den Bodenwert (Kreditrahmen, Schätzwerte bei Versteigerung und Verkauf)
+
+| Gebiet | Steillagen | Renommee | Tourismus | Ertrag | Boden |
+|---|---|---|---|---|---|
+| Ahr | 60 % | +1 | 2 | 95 % | 110 % |
+| Baden | 20 % | +1 | 1 | 100 % | 100 % |
+| Franken | 30 % | +1 | 1 | 95 % | 90 % |
+| Hessische Bergstraße | 30 % | 0 | 1 | 95 % | 90 % |
+| Mittelrhein | 80 % | +1 | 2 | 90 % | 90 % |
+| Mosel | 70 % | +2 | 2 | 95 % | 110 % |
+| Nahe | 40 % | +1 | 0 | 95 % | 90 % |
+| Pfalz | 5 % | +1 | 2 | 110 % | 100 % |
+| Rheingau | 30 % | +2 | 1 | 95 % | 130 % |
+| Rheinhessen | 5 % | 0 | 0 | 115 % | 90 % |
+| Saale-Unstrut | 40 % | −1 | 1 | 90 % | 85 % |
+| Sachsen | 50 % | 0 | 1 | 90 % | 90 % |
+| Württemberg | 40 % | 0 | 1 | 100 % | 100 % |
+
+Die ersten Entwürfe (Steillagen-Kosten doppelt so hoch, Bodenpreise 60–140 %) ließen in kurzen KI-Partien jede zwölfte Partie in steilen oder nördlichen Gebieten scheitern, vor allem weil niedriger Bodenwert den Kreditrahmen schmälert. Mit den heutigen Werten scheitern in 8-Jahres-Partien (4 Profile × 13 Gebiete × 3 Seeds) 8 von 156 statt 2 ohne Gebietscharakter – schwierige Gebiete sind ein echtes Risiko, flache wie Pfalz und Rheinhessen planbarer.
 
 ## 4. Rebsorten
 

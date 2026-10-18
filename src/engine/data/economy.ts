@@ -32,8 +32,8 @@ export const DIFFICULTIES: Record<
     startMoney: START_MONEY, priceFactor: 0.95, costFactor: 1,
   },
   schwierig: {
-    name: 'Schwierig', icon: '🔥', description: '70.000 € Startkapital, 12 % niedrigere Erlöse, 8 % höhere Kosten',
-    startMoney: 70_000, priceFactor: 0.88, costFactor: 1.08,
+    name: 'Schwierig', icon: '🔥', description: '70.000 € Startkapital, 10 % niedrigere Erlöse, 5 % höhere Kosten',
+    startMoney: 70_000, priceFactor: 0.9, costFactor: 1.05,
   },
 }
 
@@ -129,6 +129,14 @@ export const VINES_VALUE_PER_HA = 15_000
 export const TANK_VALUE_PER_HL = 150
 /** Monate ohne Liquidität bis zur Insolvenz */
 export const INSOLVENCY_MONTHS = 3
+
+/** Gebietscharakter: Steillagen kosten mehr Handarbeit (Pflege und Lese) und bringen mehr Güte; Renommee und
+ * Tourismus wirken auf Preise und Nachfrage. */
+export const SLOPE_UPKEEP_FACTOR = 0.25
+export const SLOPE_HARVEST_FACTOR = 0.35
+export const SLOPE_QUALITY = 4
+export const PRESTIGE_PRICE_PER_LEVEL = 0.05
+export const TOURISM_DEMAND_PER_LEVEL = 0.1
 
 /** Weinbergversteigerung: Abstand zwischen zwei Versteigerungen in Monaten (zufällig) */
 export const AUCTION_INTERVAL: [number, number] = [8, 16]

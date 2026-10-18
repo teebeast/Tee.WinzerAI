@@ -8,6 +8,7 @@ import {
   ROSE_MATURING_MONTHS,
   REPUTATION_SATURATION,
   SITE_QUALITY_BONUS,
+  SLOPE_QUALITY,
 } from './data/economy'
 import { cellarMasterBonus } from './cellarmaster'
 import { BIO_LABELS } from './data/bio'
@@ -74,6 +75,7 @@ export function computeQuality(player: Player, plot: Plot, year: number, oechsle
   const bonus =
     cellarMasterBonus(player, grape.id, oechsle, year) +
     plot.site * SITE_QUALITY_BONUS +
+    REGIONS[player.regionId].character.slope * SLOPE_QUALITY +
     effectValue(player, 'quality') +
     (player.bioLabel ? BIO_LABELS[player.bioLabel].quality : 0)
   const raw =

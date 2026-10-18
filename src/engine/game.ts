@@ -36,6 +36,7 @@ import {
   REGISTER_FEE,
   REGISTER_MIN_BOTTLES,
   REPUTATION_DECAY_RATE,
+  SLOPE_HARVEST_FACTOR,
   START_REPUTATION,
   START_TANK_HL,
   TANK_COST_PER_HL,
@@ -258,8 +259,8 @@ function makePlot(
 }
 
 /** Erlös beim Verkauf eines Weinbergs */
-export function plotSalePrice(plot: Plot, year: number): number {
-  return Math.round((parcelValue(plot, year) * PLOT_SALE_SHARE) / 1000) * 1000
+export function plotSalePrice(player: Player, plot: Plot, year: number): number {
+  return Math.round((parcelValue({ ...plot, regionId: player.regionId }, year) * PLOT_SALE_SHARE) / 1000) * 1000
 }
 
 export interface HarvestPreview {
@@ -274,6 +275,7 @@ export function harvestPreview(state: GameState, player: Player, plot: Plot): Ha
   const hectoliters =
     plot.hectares *
     grape.yieldPerHa *
+    REGIONS[player.regionId].character.yieldFactor *
     plotAgeFactor(plot, state.year) *
     plot.cropFactor *
     (bioInfo(player)?.yieldFactor ?? 1) *
@@ -283,7 +285,8 @@ export function harvestPreview(state: GameState, player: Player, plot: Plot): Ha
     hectoliters: Math.round(hectoliters),
     level: levelForOechsle(plot.oechsle).level,
     quality: computeQuality(player, plot, state.year),
-    cost: plot.hectares * HARVEST_COST_PER_HA,
+    // Steillagen werden von Hand gelesen
+    cost: Math.round(plot.hectares * HARVEST_COST_PER_HA * (1 + REGIONS[player.regionId].character.slope * SLOPE_HARVEST_FACTOR)),
   }
 }
 
@@ -596,7 +599,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       break
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)!
-      const price = plotSalePrice(plot, next.year)
+      const price = plotSalePrice(player, plot, next.year)
       player.money += price
       player.plots = player.plots.filter((p) => p.id !== plot.id)
       addLog(next, player.id, `${plot.name} (${plot.hectares} ha) für ${formatEuro(price)} verkauft.`)

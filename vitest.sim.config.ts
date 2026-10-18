@@ -4,6 +4,7 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     include: ['scripts/**/*.sim.ts'],
-    testTimeout: 300_000,
+    // Der Abschnitt zu den Schwierigkeitsgraden spielt 624 Partien über 15 Jahre
+    testTimeout: 900_000,
   },
 })
