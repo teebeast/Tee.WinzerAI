@@ -91,7 +91,7 @@ Jeder Monat zeigt eine **Aufgabenliste** mit dem, was jetzt sinnvoll ist. Pflich
 | Aug | Reifebeginn, Lese für Sekt-Grundwein möglich | Flaschen/Etiketten bestellen |
 | Sep | **Lese** (frühe Sorten optimal) | Keltern |
 | Okt | **Lese** (Hauptlese) | Keltern |
-| Nov | Lese möglich, **Fäulnisrisiko** steigt stark | **Bundesweinprämierung** |
+| Nov | Lese möglich, **Fäulnisrisiko** steigt stark | **Große Rebenkrone** (bundesweite Prämierung) |
 | Dez | Eiswein-Chance (ab −7 °C) | Jahresabschluss: Zinsen, Gehälter, Bilanz |
 
 ### Leerlauf vermeiden

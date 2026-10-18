@@ -15,6 +15,12 @@ npm run sim      # Balancing-Report: KI-Profile über 15 Jahre
 npm run build    # Produktions-Build inkl. Service Worker
 ```
 
+## Lizenzen und Veröffentlichung
+
+- `npm run licenses` erzeugt `public/third-party-licenses.txt` mit den Lizenztexten aller ausgelieferten Fremdpakete (JavaScript im Web-Bundle und Service Worker, Rust-Crates der Desktop-App; braucht Cargo im PATH). Die Startseite zeigt die Datei unter „Lizenzen“. Nach Updates der Abhängigkeiten neu erzeugen.
+- Weingüter, Personen, Bio-Siegel und Prämierungen im Spiel sind frei erfunden.
+- Die Desktop-App setzt eine strikte Content-Security-Policy (`src-tauri/tauri.conf.json`).
+
 ## Aufbau
 
 - `src/engine/` enthält die Spiellogik ohne UI-Abhängigkeit. `applyAction(state, action)` ist eine reine Funktion, der Zufall ist Seed-basiert.

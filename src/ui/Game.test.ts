@@ -85,7 +85,7 @@ describe('Oberfläche', () => {
         seed: 3,
         players: [
           { name: 'Anna', regionId: 'mosel' },
-          { name: 'Steinbach', regionId: 'mosel', ai: 'tradition' },
+          { name: 'Rebenhain', regionId: 'mosel', ai: 'tradition' },
         ],
       }),
     )
