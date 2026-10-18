@@ -5,7 +5,8 @@ import { availableCredit, creditLimit, monthlyDemand } from './market'
 import type { Action, GameState } from './types'
 
 function start(seed = 42): GameState {
-  return newGame({ seed, players: [{ name: 'Anna', regionId: 'mosel' }] })
+  // Ohne Zufallsereignisse, damit die Mechanik ungestört geprüft wird
+  return newGame({ seed, randomEvents: false, players: [{ name: 'Anna', regionId: 'mosel' }] })
 }
 
 function endMonths(state: GameState, count: number): GameState {
@@ -75,7 +76,7 @@ describe('applyAction', () => {
 
 describe('Jahreslauf', () => {
   it('Trauben reifen ab August und können im Oktober gelesen werden', () => {
-    let state = endMonths(start(), 9) // Oktober
+    let state = endMonths(start(1), 9) // Oktober; Seed 1 ohne Spätfrost und Hagel
     expect(state.month).toBe(10)
     const plot = currentPlayer(state).plots[0]
     expect(plot.oechsle).toBeGreaterThan(60)

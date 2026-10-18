@@ -13,6 +13,8 @@ export interface SimOptions {
   targetPoints?: number
   /** Lässt die KI unter den Bedingungen eines Schwierigkeitsgrads spielen, um dessen Wirkung zu messen */
   difficulty?: Difficulty
+  /** Standard: an */
+  randomEvents?: boolean
 }
 
 export interface PlayerSnapshot {
@@ -44,6 +46,7 @@ export function simulate(options: SimOptions): SimResult {
   let state = newGame({
     seed: options.seed,
     targetPoints: options.targetPoints ?? Number.MAX_SAFE_INTEGER,
+    randomEvents: options.randomEvents,
     players: options.players.map((p, i) => ({ name: p.name ?? `KI ${i + 1}`, regionId: p.regionId, ai: p.ai })),
   })
   if (options.difficulty) {

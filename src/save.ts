@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
+import { scheduleNextAuction } from './engine/auction'
 import type { GameState } from './engine/types'
 
 /**
@@ -7,7 +8,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 6
+const CURRENT_VERSION: GameState['version'] = 7
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -39,9 +40,17 @@ function enqueue<T>(task: () => Promise<T>): Promise<T> {
 function migrate(state: GameState): GameState | null {
   const old = state as unknown as { version: number }
   if (old.version === 5) {
-    state.version = 6
+    old.version = 6
     state.difficulty = 'normal'
     for (const p of state.players) p.difficulty = p.ai ? null : 'normal'
+  }
+  if (old.version === 6) {
+    // Version 7: Live-Versteigerung in zufälligen Abständen und befristete Ereignis-Effekte
+    state.version = 7
+    state.auction = null
+    scheduleNextAuction(state)
+    state.randomEvents = true
+    for (const p of state.players) p.effects = []
   }
   return state.version === CURRENT_VERSION ? state : null
 }

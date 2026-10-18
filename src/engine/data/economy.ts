@@ -32,8 +32,8 @@ export const DIFFICULTIES: Record<
     startMoney: START_MONEY, priceFactor: 0.95, costFactor: 1,
   },
   schwierig: {
-    name: 'Schwierig', icon: '🔥', description: '60.000 € Startkapital, 15 % niedrigere Erlöse, 10 % höhere Kosten',
-    startMoney: 60_000, priceFactor: 0.85, costFactor: 1.1,
+    name: 'Schwierig', icon: '🔥', description: '70.000 € Startkapital, 12 % niedrigere Erlöse, 8 % höhere Kosten',
+    startMoney: 70_000, priceFactor: 0.88, costFactor: 1.08,
   },
 }
 
@@ -124,12 +124,15 @@ export const TANK_VALUE_PER_HL = 150
 /** Monate ohne Liquidität bis zur Insolvenz */
 export const INSOLVENCY_MONTHS = 3
 
-/** Weinbergversteigerung */
-export const AUCTION_MONTH = 2
-/** Mindestgebot als Anteil des Schätzwerts */
-export const AUCTION_MIN_BID_SHARE = 0.8
-/** Spanne des verdeckten Investorengebots als Anteil des Schätzwerts */
-export const AUCTION_OUTSIDE_BID_RANGE: [number, number] = [0.85, 1.35]
+/** Weinbergversteigerung: Abstand zwischen zwei Versteigerungen in Monaten (zufällig) */
+export const AUCTION_INTERVAL: [number, number] = [8, 16]
+/** Ausrufpreis als Anteil des Schätzwerts */
+export const AUCTION_START_SHARE = 0.7
+/** Mindestschritt beim Überbieten als Anteil des Schätzwerts (mindestens 1.000 €) */
+export const AUCTION_INCREMENT_SHARE = 0.04
+/** Höchstgebot auswärtiger Investoren als Anteil des Schätzwerts; nicht bei jedem Los bieten sie mit */
+export const AUCTION_INVESTOR_RANGE: [number, number] = [0.85, 1.35]
+export const AUCTION_INVESTOR_CHANCE = 0.85
 /** Güte-Bonus je Stufe Lagenqualität */
 export const SITE_QUALITY_BONUS = 4
 

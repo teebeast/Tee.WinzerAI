@@ -1,5 +1,5 @@
 import { activeHumans, runAiTurns } from './ai'
-import { AUCTION_MONTH, COMPETITIONS, ICE_WINE_MIN_OECHSLE, REGISTER_MIN_BOTTLES } from './data/economy'
+import { COMPETITIONS, ICE_WINE_MIN_OECHSLE, REGISTER_MIN_BOTTLES } from './data/economy'
 import { applyAction, harvestPreview, MONTH_NAMES } from './game'
 import { qualityInfo } from './data/quality'
 import { HARVEST_MONTHS, PLANT_MONTHS, currentPlayer, plotAgeFactor } from './rules'
@@ -24,8 +24,12 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   if (player.money < 0) add('betrieb', `Konto im Minus – Kredit aufnehmen oder Wein verkaufen.`)
   if (player.monthsInsolvent > 0) add('betrieb', 'Insolvenzgefahr: Es ist kein Kreditrahmen mehr frei!')
   if (player.exportOffer) add('hof', `Exportanfrage aus ${player.exportOffer.country} – nur diesen Monat gültig.`)
-  if (state.month === AUCTION_MONTH && state.auction.some((p) => p.regionId === player.regionId)) {
-    add('hof', 'Weinbergversteigerung: Gebote bis Monatsende.')
+  const lots = state.auction?.lots.filter((l) => l.regionId === player.regionId && l.status !== 'sold' && l.status !== 'unsold') ?? []
+  if (state.auction?.phase === 'announced' && lots.length > 0) {
+    add('hof', `📣 Nächsten Monat werden ${lots.length} Weinberg(e) in deinem Gebiet versteigert – Geld bereithalten.`)
+  }
+  if (state.auction?.phase === 'live' && lots.some((l) => l.awaiting !== null)) {
+    add('hof', '🔨 Live-Versteigerung läuft – jetzt mitbieten!')
   }
   if (PLANT_MONTHS.includes(state.month) && player.plots.some((p) => p.grape === null)) {
     add('weinberg', 'Pflanzzeit: Brachflächen können bestockt werden.')

@@ -1,59 +1,51 @@
 <script lang="ts">
-  import { maxAffordableBid, parcelValue, SITE_LABELS } from '../engine/auction'
+  import { bidderName, maxAffordableBid, SITE_LABELS } from '../engine/auction'
   import { GRAPES } from '../engine/data/grapes'
-  import { formatEuro, validateAction } from '../engine/game'
-  import type { Action, GameState, Player } from '../engine/types'
+  import { formatEuro, MONTH_NAMES } from '../engine/game'
+  import type { GameState, Player } from '../engine/types'
 
-  let { game, player, run }: { game: GameState; player: Player; run: (a: Action) => void } = $props()
+  /** Ankündigung der nächsten Versteigerung bzw. Ergebnisse der laufenden – das Bieten selbst läuft im Live-Fenster. */
+  let { game, player }: { game: GameState; player: Player } = $props()
 
-  const parcels = $derived(game.auction.filter((p) => p.regionId === player.regionId))
-  let amounts = $state<Record<string, number>>({})
+  const auction = $derived(game.auction)
+  const lots = $derived(auction?.lots.filter((l) => l.regionId === player.regionId) ?? [])
 </script>
 
-{#if parcels.length > 0}
+{#if auction && lots.length > 0}
   <section class="card auction">
-    <h2>🔨 Weinbergversteigerung</h2>
-    <p class="muted small">
-      Verdeckte Gebote bis Monatsende. Auswärtige Investoren bieten mit – wer zu knapp bietet, geht leer aus.
-      Finanzierbar sind bis zu {formatEuro(maxAffordableBid(player))}.
-    </p>
-    {#each parcels as parcel (parcel.id)}
-      {@const ownBid = parcel.bids[player.id]}
-      {@const amount = amounts[parcel.id] ?? ownBid ?? parcel.minimumBid}
-      {@const bidAction = { type: 'bid', parcelId: parcel.id, amount } as const}
-      {@const problem = validateAction(game, bidAction)}
+    <h2>
+      🔨 Weinbergversteigerung
+      {auction.phase === 'announced' ? `im ${MONTH_NAMES[auction.month - 1]}` : 'läuft'}
+    </h2>
+    {#if auction.phase === 'announced'}
+      <p class="muted small">
+        Nächsten Monat wird live geboten: Du bietest Runde für Runde gegen Nachbarn und auswärtige Investoren. Wer am
+        meisten zahlt, bekommt den Zuschlag. Finanzierbar sind derzeit bis zu {formatEuro(maxAffordableBid(player))}.
+      </p>
+    {/if}
+    {#each lots as lot (lot.id)}
       <div class="item">
         <div class="item-head">
-          <strong>{parcel.name}</strong>
-          <span class="muted">{parcel.hectares} ha · {SITE_LABELS[parcel.site]}</span>
+          <strong>{lot.name}</strong>
+          <span class="muted">{lot.hectares} ha · {SITE_LABELS[lot.site]}</span>
         </div>
         <div class="muted small">
-          {#if parcel.grape && parcel.plantedYear !== null}
-            {GRAPES[parcel.grape].name}, {game.year - parcel.plantedYear} Jahre alt – trägt sofort
+          {#if lot.grape && lot.plantedYear !== null}
+            {GRAPES[lot.grape].name}, {game.year - lot.plantedYear} Jahre alt – trägt sofort
           {:else}
             Brache – muss erst bepflanzt werden
           {/if}
-          · Schätzwert {formatEuro(parcelValue(parcel, game.year))} · Mindestgebot {formatEuro(parcel.minimumBid)}
-          {#if ownBid}· <strong>Dein Gebot: {formatEuro(ownBid)}</strong>{/if}
+          · Schätzwert {formatEuro(lot.estimate)} · Ausruf {formatEuro(lot.startPrice)}
         </div>
-        <div class="row">
-          <label class="row">
-            <input
-              type="number"
-              min={parcel.minimumBid}
-              step="1000"
-              aria-label="Gebot in Euro"
-              bind:value={() => amount, (v) => (amounts[parcel.id] = v)}
-            />
-            €
-          </label>
-          <button disabled={problem !== null} title={problem ?? ''} onclick={() => run(bidAction)}>
-            {ownBid ? 'Gebot ändern' : 'Bieten'}
-          </button>
-          {#if ownBid}
-            <button class="ghost" onclick={() => run({ type: 'bid', parcelId: parcel.id, amount: 0 })}>Zurückziehen</button>
-          {/if}
-        </div>
+        {#if lot.status === 'sold' && lot.leader}
+          <span class="chip" class:good={lot.leader === player.id}>
+            Zuschlag für {formatEuro(lot.price)} an {lot.leader === player.id ? 'dich' : bidderName(game, lot.leader, true)}
+          </span>
+        {:else if lot.status === 'unsold'}
+          <span class="chip">nicht verkauft</span>
+        {:else if lot.status === 'open'}
+          <span class="chip">wird gerade versteigert</span>
+        {/if}
       </div>
     {/each}
   </section>
@@ -62,8 +54,5 @@
 <style>
   .auction {
     border-color: var(--wine);
-  }
-  input[type='number'] {
-    width: 9em;
   }
 </style>

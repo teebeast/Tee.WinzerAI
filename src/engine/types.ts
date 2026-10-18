@@ -90,8 +90,11 @@ export type AiProfileId = 'tradition' | 'genossenschaft' | 'bio' | 'schlitzohr'
 
 export type Difficulty = 'leicht' | 'normal' | 'schwierig'
 
-/** Ein Weinberg, der im Februar versteigert wird */
-export interface AuctionParcel {
+/** Bieter bei der Versteigerung: Spieler-ID oder auswärtige Investoren ('investor') */
+export type BidderId = string
+
+/** Ein Weinberg, der bei der Live-Versteigerung unter den Hammer kommt */
+export interface AuctionLot {
   id: string
   regionId: RegionId
   name: string
@@ -99,11 +102,44 @@ export interface AuctionParcel {
   grape: GrapeId | null
   plantedYear: number | null
   site: number
-  minimumBid: number
-  /** Verdecktes Gebot auswärtiger Investoren – muss überboten werden */
-  outsideBid: number
-  /** Verdeckte Gebote der Spieler je Spieler-ID */
-  bids: Record<string, number>
+  /** Schätzwert beim Ausruf */
+  estimate: number
+  /** Ausrufpreis = erstes mögliches Gebot */
+  startPrice: number
+  /** Mindestschritt beim Überbieten */
+  increment: number
+  status: 'pending' | 'open' | 'sold' | 'unsold'
+  /** Aktuelles Höchstgebot (0 = noch keins) */
+  price: number
+  leader: BidderId | null
+  /** Menschen, die bei diesem Los noch mitbieten */
+  humansIn: string[]
+  /** Mensch, der als Nächstes bieten oder aussteigen muss */
+  awaiting: string | null
+  /** Verdeckte Höchstgebote der Computergegner und Investoren – die Oberfläche zeigt sie nie an */
+  limits: Record<BidderId, number>
+  /** Gebotsverlauf für den Ticker */
+  bids: { bidder: BidderId; amount: number }[]
+}
+
+export interface AuctionState {
+  /** announced: Lose stehen fest, Versteigerung im Folgemonat · live: Versteigerung läuft */
+  phase: 'announced' | 'live'
+  /** Jahr und Monat der Versteigerung */
+  year: number
+  month: number
+  lots: AuctionLot[]
+}
+
+export type EffectKind = 'demand' | 'price' | 'costs' | 'quality'
+
+/** Befristete Folge eines Ereignisses */
+export interface Effect {
+  label: string
+  kind: EffectKind
+  /** Faktor (demand, price, costs) bzw. Güte-Zuschlag (quality) */
+  value: number
+  monthsLeft: number
 }
 
 export interface Player {
@@ -144,6 +180,8 @@ export interface Player {
   /** Aufeinanderfolgende Monate ohne Liquidität */
   monthsInsolvent: number
   bankrupt: boolean
+  /** Laufende Folgen von Ereignissen */
+  effects: Effect[]
 }
 
 export interface LogEntry {
@@ -151,10 +189,12 @@ export interface LogEntry {
   month: number
   playerId: string | null
   text: string
+  /** Zufallsereignis: gut oder schlecht fürs Geschäft – wird als Neuigkeit hervorgehoben */
+  tone?: 'good' | 'bad'
 }
 
 export interface GameState {
-  version: 6
+  version: 7
   rng: Rng
   year: number
   month: number
@@ -169,8 +209,12 @@ export interface GameState {
   winnerId: string | null
   /** Ende ohne Sieger, wenn alle insolvent sind */
   finished: boolean
-  /** Weinberge, die im laufenden Februar versteigert werden */
-  auction: AuctionParcel[]
+  /** Angekündigte oder laufende Weinbergversteigerung */
+  auction: AuctionState | null
+  /** Monate bis zur Ankündigung der nächsten Versteigerung */
+  monthsToAuction: number
+  /** Zufallsereignisse für die Weingüter (Glücksfälle und Rückschläge) */
+  randomEvents: boolean
   /** Restmonate einer Krise der Großkellereien (Fassweinpreis halbiert) */
   bulkCrisisMonths: number
   /** Jedes Jahr wird es etwas wärmer: frühere Reife, mehr Hitze, weniger Eiswein */
@@ -198,7 +242,9 @@ export type Action =
   | { type: 'cellarMaster'; hire: boolean }
   | { type: 'borrow'; amount: number }
   | { type: 'repay'; amount: number }
-  | { type: 'bid'; parcelId: string; amount: number }
+  | { type: 'auctionLimit'; lotId: string; amount: number }
+  | { type: 'auctionBid'; lotId: string; amount: number }
+  | { type: 'auctionPass'; lotId: string }
   | { type: 'setProtection'; strategy: ProtectionStrategy }
   | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
   | { type: 'makeSekt'; batchId: string; hectoliters: number }
@@ -219,6 +265,8 @@ export interface NewGameOptions {
   challenge?: string | null
   /** Gilt für die menschlichen Spieler, Standard: normal */
   difficulty?: Difficulty
+  /** Standard: an */
+  randomEvents?: boolean
   /** Abweichende Startbedingungen für alle Weingüter (Szenarien der Tages-Challenge) */
   start?: StartSetup
 }

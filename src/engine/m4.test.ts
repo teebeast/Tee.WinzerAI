@@ -7,7 +7,7 @@ import type { GameState, Player } from './types'
 import { resolveIceWine } from './vineyard'
 
 function start(seed = 42, regionId: 'mosel' | 'pfalz' = 'mosel'): GameState {
-  return newGame({ seed, players: [{ name: 'Anna', regionId }] })
+  return newGame({ seed, randomEvents: false, players: [{ name: 'Anna', regionId }] })
 }
 
 function endMonths(state: GameState, count: number): GameState {

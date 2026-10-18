@@ -1,4 +1,15 @@
-import { generateAuction, placeBid, resolveAuction, validateBid } from './auction'
+import {
+  announceAuction,
+  auctionBid,
+  auctionPass,
+  finishAuction,
+  scheduleNextAuction,
+  setAuctionLimit,
+  startLiveAuction,
+  validateAuctionBid,
+  validateAuctionLimit,
+  validateAuctionPass,
+} from './auction'
 import {
   bottle,
   expandBarrique,
@@ -11,7 +22,6 @@ import {
   validateToBarrique,
 } from './cellar'
 import {
-  AUCTION_MONTH,
   COMPETITIONS,
   DIFFICULTIES,
   DIRECT_SALES_COST_SHARE,
@@ -33,7 +43,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
-import { estateEvents, marketEvents } from './events'
+import { estateEvents, marketEvents, tickEffects } from './events'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
 import { adulterate, inspectAtRegistration, randomControl, sabotage, validateAdulterate, validateSabotage } from './intrigue'
 import {
@@ -105,7 +115,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 6,
+    version: 7,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -116,7 +126,9 @@ export function newGame(options: NewGameOptions): GameState {
     targetPoints: options.targetPoints ?? 600,
     winnerId: null,
     finished: false,
-    auction: [],
+    auction: null,
+    monthsToAuction: 0,
+    randomEvents: options.randomEvents ?? true,
     bulkCrisisMonths: 0,
     climateChange: options.climateChange ?? true,
     yearLimit: options.yearLimit ?? null,
@@ -166,8 +178,10 @@ export function newGame(options: NewGameOptions): GameState {
       exportContract: null,
       monthsInsolvent: 0,
       bankrupt: false,
+      effects: [],
     }
   })
+  scheduleNextAuction(state)
   state.forecast = makeForecast(state.rng, state.month, 0.8)
   addLog(
     state,
@@ -328,8 +342,12 @@ export function validateAction(state: GameState, action: Action): string | null 
       if (!Number.isInteger(action.amount) || action.amount <= 0 || action.amount > player.loan) return 'Ungültiger Betrag.'
       if (action.amount > player.money) return 'Nicht genug Geld auf dem Konto.'
       return null
-    case 'bid':
-      return validateBid(state, player, action.parcelId, action.amount)
+    case 'auctionLimit':
+      return validateAuctionLimit(state, player, action.lotId, action.amount)
+    case 'auctionBid':
+      return validateAuctionBid(state, action.lotId, action.amount)
+    case 'auctionPass':
+      return validateAuctionPass(state, action.lotId)
     case 'setProtection':
       return validateProtection(player, action.strategy)
     case 'gambleIceWine':
@@ -449,8 +467,15 @@ export function applyAction(state: GameState, action: Action): GameState {
       player.money -= action.amount
       addLog(next, player.id, `${formatEuro(action.amount)} Kredit getilgt.`)
       break
-    case 'bid':
-      placeBid(next, player, action.parcelId, action.amount)
+    case 'auctionLimit':
+      setAuctionLimit(next, player, action.lotId, action.amount)
+      break
+    // Live-Gebote gelten für den Menschen, der bei der Versteigerung gerade an der Reihe ist – nicht für den Spieler am Zug.
+    case 'auctionBid':
+      auctionBid(next, action.lotId, action.amount)
+      break
+    case 'auctionPass':
+      auctionPass(next, action.lotId)
       break
     case 'setProtection':
       setProtection(next, player, action.strategy)
@@ -542,7 +567,7 @@ function resolveMonth(state: GameState) {
   addLog(state, null, `Wetter im ${MONTH_NAMES[state.month - 1]}: ${WEATHER_LABELS[weather]}.`)
 
   const competition = Object.values(COMPETITIONS).find((c) => c.month === state.month)
-  if (state.month === AUCTION_MONTH) resolveAuction(state)
+  if (state.auction?.phase === 'live') finishAuction(state)
   marketEvents(state)
 
   // Eiswein-Frost wird je Anbaugebiet einmal ausgewürfelt
@@ -563,7 +588,8 @@ function resolveMonth(state: GameState) {
     sellDirect(state, player)
     if (competition) judgeCompetition(state, player, competition)
     randomControl(state, player)
-    estateEvents(state, player)
+    tickEffects(state, player)
+    if (state.randomEvents) estateEvents(state, player)
     payMonthlyCosts(state, player)
     changeReputation(player, -player.reputation * REPUTATION_DECAY_RATE)
     player.marketingThisMonth = []
@@ -585,7 +611,8 @@ function resolveMonth(state: GameState) {
   } else {
     state.month++
   }
-  if (state.month === AUCTION_MONTH) generateAuction(state)
+  if (state.auction?.phase === 'announced') startLiveAuction(state)
+  else if (!state.auction && --state.monthsToAuction <= 0) announceAuction(state)
   state.forecast = makeForecast(state.rng, state.month, 0.8)
 }
 

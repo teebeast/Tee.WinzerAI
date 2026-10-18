@@ -4,7 +4,7 @@
  */
 import type { GameState } from '../engine/types'
 
-export type SoundName = 'click' | 'month' | 'harvest' | 'coin' | 'medal' | 'scandal' | 'frost'
+export type SoundName = 'click' | 'month' | 'harvest' | 'coin' | 'medal' | 'scandal' | 'frost' | 'hammer' | 'bid'
 
 const MUTE_KEY = 'winzer.muted'
 let context: AudioContext | null = null
@@ -34,6 +34,8 @@ const MELODIES: Record<SoundName, [number, number][]> = {
   medal: [[523, 0.1], [659, 0.1], [784, 0.1], [1047, 0.25]],
   scandal: [[311, 0.18], [233, 0.3]],
   frost: [[1568, 0.05], [1760, 0.05], [2093, 0.15]],
+  hammer: [[196, 0.06], [0, 0.08], [196, 0.06], [0, 0.08], [147, 0.2]],
+  bid: [[523, 0.05], [784, 0.08]],
 }
 
 export function play(name: SoundName) {
@@ -42,6 +44,10 @@ export function play(name: SoundName) {
     context ??= new AudioContext()
     let time = context.currentTime
     for (const [frequency, duration] of MELODIES[name]) {
+      if (frequency === 0) {
+        time += duration // Pause
+        continue
+      }
       const osc = context.createOscillator()
       const gain = context.createGain()
       osc.type = name === 'scandal' ? 'sawtooth' : 'triangle'
@@ -59,6 +65,8 @@ export function play(name: SoundName) {
   }
 }
 
+const awaitingBids = (state: GameState) => state.auction?.lots.reduce((sum, l) => sum + l.bids.length, 0) ?? 0
+
 /** Wählt anhand der neuen Logbuch-Einträge den passendsten Klang. */
 export function soundForChange(before: GameState, after: GameState): SoundName | null {
   // Das Logbuch ist begrenzt – neue Einträge beginnen hinter dem letzten bekannten.
@@ -71,8 +79,10 @@ export function soundForChange(before: GameState, after: GameState): SoundName |
   if (any(/Weinskandal|erwischt|insolvent/)) return 'scandal'
   if (any(/Gold|Silber|Bronze|gewinnt|vollständig erfüllt/)) return 'medal'
   if (any(/Klirrender Frost/)) return 'frost'
+  if (any(/^🔨 Zuschlag/)) return 'hammer'
   if (any(/gelesen/)) return 'harvest'
   if (any(/verkauft|Großhandel/) && after.month === before.month) return 'coin'
   if (after.month !== before.month || after.year !== before.year) return 'month'
+  if (awaitingBids(after) > awaitingBids(before)) return 'bid'
   return 'click'
 }
