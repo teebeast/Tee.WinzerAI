@@ -1,11 +1,12 @@
 import { activeHumans, runAiTurns } from './ai'
-import { COMPETITIONS, ICE_WINE_MIN_OECHSLE, REGISTER_MIN_BOTTLES } from './data/economy'
+import { COMPETITIONS, FEDERWEISSER_MONTHS, ICE_WINE_MIN_OECHSLE, REGISTER_MIN_BOTTLES } from './data/economy'
 import { applyAction, formatEuro, harvestPreview, MONTH_NAMES } from './game'
 import { qualityInfo } from './data/quality'
 import { HARVEST_MONTHS, PLANT_MONTHS, currentPlayer, plotAgeFactor } from './rules'
 import { frostCandlesCost, frostChance, insurancePremium, isInsured } from './defense'
 import { BIO_LABELS, gameMonth, monthsUntilEligible, nextBioLabel } from './bio'
 import { eligibleBottles } from './orders'
+import { federweisserCapacity, isFreshMust } from './products'
 import { INSURANCE_MONTHS } from './data/economy'
 import type { GameState, Player } from './types'
 
@@ -47,6 +48,13 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   }
   if (state.auction?.phase === 'live' && lots.some((l) => l.awaiting !== null)) {
     add('hof', '🔨 Live-Versteigerung läuft – jetzt mitbieten!')
+  }
+  if (player.cellar.some((b) => isFreshMust(state, b)) && FEDERWEISSER_MONTHS.includes(state.month) && federweisserCapacity(player) > 0) {
+    add('keller', `🥂 Federweißer-Zeit: Bis zu ${federweisserCapacity(player)} hl frischen Most kannst du diesen Monat direkt verkaufen.`, false)
+  }
+  const sellable = player.bottles.filter((l) => l.monthsUntilReady === 0).reduce((sum, l) => sum + l.bottles, 0)
+  if ([4, 5, 6].includes(state.month) && player.straussYear !== state.year && sellable >= 1000) {
+    add('betrieb', '🌳 Ein guter Zeitpunkt für die Straußwirtschaft: vier Monate mehr Gäste ab Hof.', false)
   }
   const nextLabel = nextBioLabel(player)
   if (nextLabel && monthsUntilEligible(state, player) === 0) {

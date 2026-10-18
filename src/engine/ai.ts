@@ -4,6 +4,7 @@ import { BIO_LABELS, monthsUntilEligible, nextBioLabel } from './bio'
 import { hasSkill } from './cellarmaster'
 import { eligibleBottles, MAX_ORDERS } from './orders'
 import { archEnemy } from './rivals'
+import { federweisserCapacity, isFreshMust } from './products'
 import { droughtChance, frostCandlesCost, frostChance, installCost, insurancePremium } from './defense'
 import {
   BOTTLE_COST,
@@ -12,6 +13,7 @@ import {
   COMPETITIONS,
   MARKETING,
   ONLINE_SHOP_COST,
+  STRAUSS_COST,
   SABOTAGE,
   SABOTAGE_FINE,
   TANK_COST_PER_HL,
@@ -81,6 +83,8 @@ export interface AiProfile {
   barrique: boolean
   /** Sichert sich gegen Wetter ab: Versicherung, Frostkerzen, Bewässerung */
   cautious: boolean
+  /** Keltert bei gutem Markt eine kleine rote Lage als Rosé */
+  rose: boolean
 }
 
 /** Vorgeschlagene Namen der Computer-Weingüter – bewusst erfunden, damit kein echter Betrieb gemeint ist */
@@ -98,7 +102,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['riesling', 'spaetburgunder', 'lemberger', 'weissburgunder'], harvestMonth: 10, minOechsle: 73, bulkShare: 0.1, cashReserve: 20_000,
     keepMonthsOfDemand: 12, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: false,
     marketing: ['social', 'messe'], auctionPremium: 1.3, maxHectares: 25, maxLoanShare: 0.6,
-    protection: 'conventional', iceWine: true, sekt: true, intrigue: false, barrique: true, cautious: true,
+    protection: 'conventional', iceWine: true, sekt: true, intrigue: false, barrique: true, cautious: true, rose: false,
   },
   genossenschaft: {
     id: 'genossenschaft', name: 'Genossenschafts-Typ',
@@ -106,7 +110,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['mueller-thurgau', 'dornfelder', 'silvaner', 'trollinger'], harvestMonth: 9, minOechsle: 68, bulkShare: 0.3, cashReserve: 30_000,
     keepMonthsOfDemand: 6, competitions: ['regional', 'bund'], cellarMaster: false, onlineShop: false,
     marketing: ['social'], auctionPremium: 1.15, maxHectares: 40, maxLoanShare: 0.5,
-    protection: 'conventional', iceWine: false, sekt: false, intrigue: false, barrique: false, cautious: true,
+    protection: 'conventional', iceWine: false, sekt: false, intrigue: false, barrique: false, cautious: true, rose: false,
   },
   bio: {
     id: 'bio', name: 'Biopionier',
@@ -114,7 +118,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['weissburgunder', 'silvaner', 'spaetburgunder', 'riesling', 'regent'], harvestMonth: 10, minOechsle: 70, bulkShare: 0, cashReserve: 15_000,
     keepMonthsOfDemand: 18, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
     marketing: ['social', 'hoffest'], auctionPremium: 1.1, maxHectares: 20, maxLoanShare: 0.5,
-    protection: 'bio', iceWine: false, sekt: true, intrigue: false, barrique: false, cautious: true,
+    protection: 'bio', iceWine: false, sekt: true, intrigue: false, barrique: false, cautious: true, rose: true,
   },
   schlitzohr: {
     id: 'schlitzohr', name: 'Schlitzohr',
@@ -122,7 +126,7 @@ export const AI_PROFILES: Record<AiProfileId, AiProfile> = {
     grapes: ['dornfelder', 'riesling', 'grauburgunder', 'lemberger'], harvestMonth: 10, minOechsle: 65, bulkShare: 0.3, cashReserve: 15_000,
     keepMonthsOfDemand: 8, competitions: ['regional', 'bund'], cellarMaster: true, onlineShop: true,
     marketing: ['social', 'hoffest', 'messe'], auctionPremium: 1.35, maxHectares: 35, maxLoanShare: 0.7,
-    protection: 'conventional', iceWine: true, sekt: false, intrigue: true, barrique: true, cautious: false,
+    protection: 'conventional', iceWine: true, sekt: false, intrigue: true, barrique: true, cautious: false, rose: true,
   },
 }
 
@@ -369,6 +373,11 @@ export function playAiTurn(state: GameState): GameState {
       if (me().money >= profile.cashReserve + ONLINE_SHOP_COST + 20_000) act({ type: 'buyOnlineShop' })
     }
     if (!me().hasVinothek && me().money >= profile.cashReserve + VINOTHEK_COST + 100_000) act({ type: 'buildVinothek' })
+    // Straußwirtschaft im Mai, wenn der Vorrat für eine gut besuchte Saison reicht
+    const stock = me().bottles.reduce((sum, l) => sum + l.bottles, 0)
+    if (profile.keepMonthsOfDemand >= 12 && s.month === 5 && stock >= 4 * monthlyDemand(me())) {
+      if (me().money >= profile.cashReserve + STRAUSS_COST + 20_000) act({ type: 'openStrausswirtschaft' })
+    }
     for (const kind of profile.marketing) {
       if (me().money - MARKETING[kind].cost >= profile.cashReserve + MARKETING_BUFFER[kind]) act({ type: 'marketing', kind })
     }
@@ -412,7 +421,21 @@ export function playAiTurn(state: GameState): GameState {
       const hectoliters = Math.ceil(missing / TANK_STEP) * TANK_STEP
       if (ensureCash(hectoliters * TANK_COST_PER_HL, 0, true)) act({ type: 'expandTank', hectoliters })
     }
-    for (const { plot } of plots) act({ type: 'harvest', plotId: plot.id })
+    // Rosé aus der kleinsten roten Lage, wenn der Markt ihn mag
+    const rosePlot =
+      profile.rose && s.trends.rose.value >= 1
+        ? plots.filter(({ plot }) => GRAPES[plot.grape!].color === 'rot').sort((a, b) => a.plot.hectares - b.plot.hectares)[0]?.plot
+        : undefined
+    for (const { plot } of plots) act({ type: 'harvest', plotId: plot.id, rose: plot.id === rosePlot?.id })
+
+    // Massenorientierte Profile zapfen im Herbst Federweißer – besser bezahlt als Fasswein
+    if (profile.bulkShare >= 0.2) {
+      for (const batch of me().cellar.filter((b) => isFreshMust(s, b)).sort((a, b) => a.quality - b.quality)) {
+        const hectoliters = Math.min(batch.hectoliters, federweisserCapacity(me()))
+        if (hectoliters <= 0) break
+        act({ type: 'sellFederweisser', batchId: batch.id, hectoliters })
+      }
+    }
 
     // Ein Teil des neuen Jahrgangs geht sofort als Fasswein weg – die schwächsten Weine zuerst.
     const fresh = me()

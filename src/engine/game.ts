@@ -62,6 +62,7 @@ import { decide, expireDecision, monthlyEvent, validateDecide } from './decision
 import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
 import { marketEvents, tickEffects } from './events'
 import { monthlyRivalry } from './rivals'
+import { openStrauss, sellFederweisser, validateFederweisser, validateStrauss } from './products'
 import { checkMilestones, emptyStats } from './milestones'
 import { initTrends, updateTrends } from './trends'
 import { answerExport, deliverExport, maybeOfferExport, validateAnswerExport } from './exports'
@@ -136,7 +137,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 15,
+    version: 16,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -203,6 +204,8 @@ export function newGame(options: NewGameOptions): GameState {
       relations: {},
       stats: emptyStats(),
       milestones: {},
+      federweisserThisMonth: 0,
+      straussYear: null,
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -309,6 +312,7 @@ export function validateAction(state: GameState, action: Action): string | null 
       if (plot.harvestedThisYear) return 'Die Parzelle ist in diesem Jahr schon gelesen.'
       // Kein Geldcheck: Die Saisonkräfte werden aus dem Erlös bezahlt, notfalls im Dispo.
       if (plotAgeFactor(plot, state.year) === 0) return 'Die Reben sind noch zu jung.'
+      if (action.rose && GRAPES[plot.grape].color !== 'rot') return 'Rosé gibt es nur aus roten Trauben.'
       return null
     }
     case 'sellBulk': {
@@ -400,6 +404,10 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateFrostCandles(state, player)
     case 'applyBioLabel':
       return validateBioLabel(state, player)
+    case 'sellFederweisser':
+      return validateFederweisser(state, player, action.batchId, action.hectoliters)
+    case 'openStrausswirtschaft':
+      return validateStrauss(state, player)
     case 'acceptOrder':
       return validateAccept(player, action.orderId)
     case 'declineOrder':
@@ -464,7 +472,7 @@ export function applyAction(state: GameState, action: Action): GameState {
       break
     }
     case 'harvest':
-      harvest(next, player, player.plots.find((p) => p.id === action.plotId)!)
+      harvest(next, player, player.plots.find((p) => p.id === action.plotId)!, action.rose ?? false)
       break
     case 'sellBulk': {
       const batch = batchOf(action.batchId)
@@ -570,6 +578,12 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'applyBioLabel':
       applyBioLabel(next, player)
       break
+    case 'sellFederweisser':
+      sellFederweisser(next, player, action.batchId, action.hectoliters)
+      break
+    case 'openStrausswirtschaft':
+      openStrauss(next, player)
+      break
     case 'acceptOrder':
       acceptOrder(next, player, action.orderId)
       break
@@ -650,7 +664,7 @@ export function applyAction(state: GameState, action: Action): GameState {
   return next
 }
 
-function harvest(state: GameState, player: Player, plot: Plot) {
+function harvest(state: GameState, player: Player, plot: Plot, rose = false) {
   const preview = harvestPreview(state, player, plot)
   player.money -= preview.cost
   player.stats.harvests++
@@ -661,7 +675,7 @@ function harvest(state: GameState, player: Player, plot: Plot) {
   addLog(
     state,
     player.id,
-    `${plot.name}: ${preview.hectoliters} hl ${GRAPES[plot.grape!].name} gelesen, ${Math.round(plot.oechsle)} °Oe, ` +
+    `${plot.name}: ${preview.hectoliters} hl ${GRAPES[plot.grape!].name}${rose ? ' für Rosé' : ''} gelesen, ${Math.round(plot.oechsle)} °Oe, ` +
       `${qualityInfo(preview.level).name}, Güte ${preview.quality}.`,
   )
   storeWine(state, player, {
@@ -671,6 +685,7 @@ function harvest(state: GameState, player: Player, plot: Plot) {
     oechsle: Math.round(plot.oechsle),
     level: preview.level,
     quality: preview.quality,
+    ...(rose ? { rose: true } : {}),
   })
 }
 
@@ -729,6 +744,7 @@ function resolveMonth(state: GameState) {
     changeReputation(player, -player.reputation * REPUTATION_DECAY_RATE)
     player.marketingThisMonth = []
     player.frostCandles = false
+    player.federweisserThisMonth = 0
     player.intrigueThisMonth = false
     maybeOfferExport(state, player)
     expireOrders(state, player)

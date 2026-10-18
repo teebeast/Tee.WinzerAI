@@ -14,6 +14,8 @@ import {
   PIWI_PRICE_FACTOR,
   PROTECTION,
   PROTECTION_MONTHS,
+  ROSE_SUMMER_BONUS,
+  ROSE_SUMMER_MONTHS,
   SEKT_BOTTLE_PRICE,
   SEKT_COMPETITION_BONUS,
   SEKT_HIGH_QUALITY,
@@ -69,8 +71,10 @@ export function bottlePrice(lot: BottleLot, player: Player, state: GameState): n
   if (lot.sparkling) base = SEKT_BOTTLE_PRICE * (lot.registered ? 1 : 0.5)
   else base = qualityInfo(lot.registered ? lot.level : 'deutscher-wein').bottlePrice
   const bio = 1 + (bioInfo(player)?.priceBonus ?? 0)
+  // Rosé geht im Sommer besonders gut
+  const roseSeason = lot.rose && !lot.sparkling && ROSE_SUMMER_MONTHS.includes(state.month) ? 1 + ROSE_SUMMER_BONUS : 1
   const piwi = GRAPES[lot.grape].piwi ? PIWI_PRICE_FACTOR : 1
-  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player) * trendFactor(state, lot)
+  const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player) * trendFactor(state, lot) * roseSeason
   return Math.round(price * 100) / 100
 }
 

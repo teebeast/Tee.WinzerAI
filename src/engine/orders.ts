@@ -56,6 +56,7 @@ export function orderEligible(player: Player, order: CustomerOrder): BottleLot[]
     .filter(
       (l) =>
         l.monthsUntilReady === 0 &&
+        !l.rose && // Kunden bestellen Weiß-, Rot- oder Sekt – Rosé ist kein Ersatz
         !player.competitionEntries.includes(l.id) &&
         l.sparkling === order.sparkling &&
         (l.registered || (!order.sparkling && order.minLevel === 'deutscher-wein')) &&

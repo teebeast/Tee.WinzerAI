@@ -5,6 +5,7 @@
 import {
   CLIMATE_WARMTH_PER_YEAR,
   OVERFLOW_PRICE_PER_LITER,
+  ROSE_MATURING_MONTHS,
   REPUTATION_SATURATION,
   SITE_QUALITY_BONUS,
 } from './data/economy'
@@ -95,7 +96,7 @@ export function raiseLevel(level: QualityLevel, steps: number): QualityLevel {
 
 export function wineLabel(wine: WineInfo & { sparkling?: boolean }): string {
   const kind = wine.sparkling ? 'Sekt' : qualityInfo(wine.level).name
-  return `${GRAPES[wine.grape].name} ${kind} (Jg. ${wine.vintage})`
+  return `${GRAPES[wine.grape].name} ${wine.rose ? 'Rosé ' : ''}${kind} (Jg. ${wine.vintage})`
 }
 
 /** Ändert die Bekanntheit; Zuwächse schrumpfen, je bekannter das Weingut schon ist. Liefert die tatsächliche Änderung. */
@@ -133,7 +134,10 @@ export function storeWine(
       ...wine,
       id: newId(state, 'wine'),
       hectoliters: storedHl,
-      monthsUntilReady: qualityInfo(wine.level).maturingMonths,
+      // Rosé ist schnell trinkfertig
+      monthsUntilReady: wine.rose
+        ? Math.min(ROSE_MATURING_MONTHS, qualityInfo(wine.level).maturingMonths)
+        : qualityInfo(wine.level).maturingMonths,
       adulterated: null,
       barrique: false,
     })

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { barriqueBonus, bottleCost, sektCost } from '../../engine/cellar'
   import { hasSkill } from '../../engine/cellarmaster'
+  import { federweisserCapacity, federweisserName, federweisserPricePerHl, isFreshMust } from '../../engine/products'
   import {
     ADULTERATION,
     BARRIQUE_MONTHS,
@@ -130,6 +131,8 @@
       {@const method = methodChoice[batch.id] ?? 'zucker'}
       {@const fakeAction = { type: 'adulterate', batchId: batch.id, method } as const}
       {@const barriqueAction = { type: 'toBarrique', batchId: batch.id } as const}
+      {@const federHl = Math.min(amount, federweisserCapacity(player))}
+      {@const federAction = { type: 'sellFederweisser', batchId: batch.id, hectoliters: federHl } as const}
       <article class="tile">
         <div class="tile-body">
           <div class="visual">
@@ -160,6 +163,17 @@
               hl = {hlToBottles(amount).toLocaleString('de-DE')} Fl.
             </label>
             <div class="action-grid">
+              {#if isFreshMust(game, batch) && (game.month === 9 || game.month === 10)}
+                <button
+                  {...button(federAction)}
+                  onclick={() => run(federAction)}
+                  title={validateAction(game, federAction) ??
+                    `Frischer Most direkt an die Kundschaft – diesen Monat noch ${federweisserCapacity(player)} hl`}
+                >
+                  🥂 {federweisserName(batch)} {federHl} hl
+                  <span class="muted small">+{formatEuro(federweisserPricePerHl(player) * federHl)}</span>
+                </button>
+              {/if}
               <button {...button(bottleAction)} onclick={() => run(bottleAction)}>
                 🍾 Abfüllen <span class="muted small">{formatEuro(hlToBottles(amount) * bottleCost(player))}</span>
               </button>

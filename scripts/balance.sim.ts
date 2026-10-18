@@ -11,6 +11,11 @@ import type { AiProfileId, Difficulty } from '../src/engine/types'
 
 const YEARS = 15
 const SEEDS = [1, 2, 3]
+/**
+ * Für die Schwierigkeitsgrade mehr Seeds: Dieselben Seeds wirken in allen Gebieten ähnlich (Wetter, Ereignisse, Trends),
+ * mit nur drei schwankten Pleiten zwischen 2 und 16 von 78 Partien.
+ */
+const DIFFICULTY_SEEDS = [1, 2, 3, 4, 5, 6]
 const profiles = Object.keys(AI_PROFILES) as AiProfileId[]
 const regions = Object.keys(REGIONS) as RegionId[]
 
@@ -68,7 +73,7 @@ it('Schwierigkeitsgrade (KI unter den Bedingungen der Menschen)', () => {
     const finals: { j10: number; j15: number; worth: number; bankrupt: boolean }[] = []
     for (const ai of ['tradition', 'bio'] as AiProfileId[]) {
       for (const regionId of regions) {
-        for (const seed of SEEDS) {
+        for (const seed of DIFFICULTY_SEEDS) {
           const { snapshots } = simulate({ seed, years: YEARS, difficulty, players: [{ regionId, ai }] })
           const at = (year: number) => snapshots[year - 1]?.players[0]
           finals.push({

@@ -217,6 +217,15 @@
                   <span class="muted small">({formatEuro(preview.cost)})</span>
                 </button>
               {/if}
+              {#if GRAPES[plot.grape].color === 'rot' && validateAction(game, harvestAction) === null}
+                <button
+                  class="ghost wide"
+                  title="Hell gekeltert: nach drei Monaten trinkfertig, eigener Markttrend, im Sommer 15 % teurer"
+                  onclick={() => run({ type: 'harvest', plotId: plot.id, rose: true })}
+                >
+                  🌸 Als Rosé lesen
+                </button>
+              {/if}
               {#if validateAction(game, gambleAction) === null}
                 <button
                   class="ghost wide"
