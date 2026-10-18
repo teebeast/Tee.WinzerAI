@@ -51,7 +51,7 @@
     "targets": ["nsis"],
     "publisher": "WinzerAI",
     "shortDescription": "Rundenbasierte Weingut-Simulation",
-    "longDescription": "Rundenbasierte Weingut-Simulation – nachempfunden dem 90er-Klassiker Winzer.",
+    "longDescription": "Rundenbasierte Weingut-Simulation, angelehnt an die Weinbau-Simulationen der 1990er-Jahre.",
     "category": "SimulationGame",
     "icon": [
       "icons/32x32.png",

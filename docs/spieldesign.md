@@ -1,6 +1,6 @@
-# Spieldesign – Arbeitstitel „Winzer“
+# Spieldesign – WinzerAI
 
-Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweiliges, rundenbasiertes Wirtschaftsspiel rund um ein deutsches Weingut. Es bleibt einfach zugänglich und nimmt die bekannten Schwächen des Originals (Menüwüste, Leerlauf, nötiges Fachwissen) bewusst ins Visier.
+Angelehnt an die Weinbau-Simulationen der 1990er-Jahre. Ziel ist ein kurzweiliges, rundenbasiertes Wirtschaftsspiel rund um ein deutsches Weingut. Es bleibt einfach zugänglich und vermeidet die typischen Schwächen des Genres (Menüwüste, Leerlauf, nötiges Fachwissen).
 
 > Alle Zahlen sind **Startwerte fürs Balancing**. Sie liegen zentral in `src/engine/data/` und werden per Simulation (KI gegen KI) justiert.
 
@@ -11,7 +11,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 1. **Eine Entscheidung pro Monat ist genug.** Monate ohne Entscheidung laufen per „Vorspulen“ automatisch durch.
 2. **Kein Vorwissen nötig.** Tooltips, ein Lexikon und die Vorschau „Was passiert, wenn…“ ersetzen das Handbuch.
 3. **Kalkuliertes Risiko statt Würfelglück.** Das Wetter kommt mit Prognose und Wahrscheinlichkeit, damit z. B. das Pokern auf Eiswein eine bewusste Wette ist.
-4. **Liquidität ist der Kern.** Massenwein bringt schnell Geld, Spitzenwein bringt Punkte und Ruhm, kostet aber Zeit. Diese Spannung aus dem Original bleibt erhalten.
+4. **Liquidität ist der Kern.** Massenwein bringt schnell Geld, Spitzenwein bringt Punkte und Ruhm, kostet aber Zeit. Diese Spannung trägt das Spiel.
 5. **Augenzwinkern.** Panschen und Sabotage bleiben im Spiel, sind aber riskant.
 
 ## 2. Rahmen
@@ -32,7 +32,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 
 ## 3. Anbaugebiete
 
-Es gibt alle 13 deutschen Anbaugebiete. Damit ist auch der Fehler im Original behoben, wo „Württemberg“ ganz Baden-Württemberg umfasste. Jedes Gebiet hat diese Werte:
+Es gibt alle 13 deutschen Anbaugebiete, Baden und Württemberg getrennt. Jedes Gebiet hat diese Werte:
 
 - **Wärme** (0–10): bestimmt den Reifezuwachs
 - **Frostrisiko** (0–10): Spätfrost im Frühjahr, aber auch Chance auf Eiswein
@@ -411,4 +411,7 @@ Eine Simulation mit einfacher, vernünftiger Strategie lief 12 Jahre lang in all
 
 ## 19. Rechtliches
 
-„Winzer“ ist nur der Arbeitstitel. Vor einer Veröffentlichung braucht das Spiel einen eigenen Namen. Grafiken, Musik und Texte des Originals werden nicht übernommen; nur das Spielprinzip wird nachempfunden.
+- **Lizenz:** MIT (siehe `LICENSE`). Die Lizenzhinweise der verwendeten Fremdpakete erzeugt `npm run licenses` nach `public/third-party-licenses.txt`; die Startseite verlinkt sie.
+- **Eigenständigkeit:** Code, Grafiken, Klänge und Texte sind eigene Arbeit. Spielprinzipien sind nicht urheberrechtlich geschützt; Namen, Logos, Grafiken und Texte anderer Spiele werden nicht übernommen, und kein anderes Spiel wird namentlich genannt.
+- **Erfundene Namen:** Weingüter, Personen, Bio-Siegel (Grünblatt, Terravita, Lunaris) und Prämierungen (Große Rebenkrone) sind frei erfunden. Echte Anbaugebiete, Rebsorten, Lagenbezeichnungen und Fachbegriffe werden beschreibend verwendet.
+- **Name:** „WinzerAI“ – vor einer größeren Veröffentlichung im Markenregister (DPMA, EUIPO) prüfen.
