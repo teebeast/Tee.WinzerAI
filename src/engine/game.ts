@@ -46,6 +46,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
+import { applyBioLabel, bioInfo, chargeBioFees, validateBioLabel } from './bio'
 import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
 import { decide, expireDecision, monthlyEvent, validateDecide } from './decisions'
 import { insure, install, setFrostCandles, validateFrostCandles, validateInstall, validateInsurance } from './defense'
@@ -122,7 +123,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 11,
+    version: 12,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -181,7 +182,9 @@ export function newGame(options: NewGameOptions): GameState {
       marketingThisMonth: [],
       competitionEntries: [],
       protection: 'conventional',
-      bioSinceYear: null,
+      bioSince: null,
+      bioLabel: null,
+      bioLabelSince: null,
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -252,6 +255,7 @@ export function harvestPreview(state: GameState, player: Player, plot: Plot): Ha
     grape.yieldPerHa *
     plotAgeFactor(plot, state.year) *
     plot.cropFactor *
+    (bioInfo(player)?.yieldFactor ?? 1) *
     (HARVEST_TIMING[state.month] ?? 0) *
     (0.6 + 0.4 * plot.health)
   return {
@@ -376,6 +380,8 @@ export function validateAction(state: GameState, action: Action): string | null 
       return validateInsurance(state, player)
     case 'frostCandles':
       return validateFrostCandles(state, player)
+    case 'applyBioLabel':
+      return validateBioLabel(state, player)
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)
       if (!plot) return 'Unbekannte Parzelle.'
@@ -536,6 +542,9 @@ export function applyAction(state: GameState, action: Action): GameState {
     case 'frostCandles':
       setFrostCandles(next, player)
       break
+    case 'applyBioLabel':
+      applyBioLabel(next, player)
+      break
     case 'sellPlot': {
       const plot = player.plots.find((p) => p.id === action.plotId)!
       const price = plotSalePrice(plot, next.year)
@@ -691,6 +700,7 @@ function resolveMonth(state: GameState) {
     }
     addLog(state, null, `Jahr ${state.year} beginnt.`)
     refreshCandidates(state)
+    for (const player of state.players) if (!player.bankrupt) chargeBioFees(state, player)
   } else {
     state.month++
   }

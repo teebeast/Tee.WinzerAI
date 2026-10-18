@@ -33,6 +33,9 @@ export type AdulterationMethod = 'wasser' | 'zucker' | 'glykol'
 
 export type ProtectionStrategy = 'none' | 'conventional' | 'bio'
 
+/** Bio-Siegel in aufsteigender Strenge */
+export type BioLabel = 'basis' | 'verband' | 'biodynamisch'
+
 export type SabotageKind = 'geruecht' | 'weinberg'
 
 /** Gemeinsame Eigenschaften von Wein im Tank und in der Flasche */
@@ -220,7 +223,12 @@ export interface Player {
   competitionEntries: string[]
   protection: ProtectionStrategy
   /** Jahr der Umstellung auf Bio; zertifiziert nach drei Jahren */
-  bioSinceYear: number | null
+  /** Beginn der Bio-Umstellung als fortlaufender Spielmonat (Jahr 1 Januar = 1) */
+  bioSince: number | null
+  /** Erreichtes Bio-Siegel */
+  bioLabel: BioLabel | null
+  /** Spielmonat, seit dem das aktuelle Siegel gilt */
+  bioLabelSince: number | null
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -248,7 +256,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 11
+  version: 12
   rng: Rng
   year: number
   month: number
@@ -311,6 +319,7 @@ export type Action =
   | { type: 'installIrrigation'; plotId: string }
   | { type: 'insureHarvest' }
   | { type: 'frostCandles' }
+  | { type: 'applyBioLabel' }
   | { type: 'setProtection'; strategy: ProtectionStrategy }
   | { type: 'gambleIceWine'; plotId: string; gamble: boolean }
   | { type: 'makeSekt'; batchId: string; hectoliters: number }

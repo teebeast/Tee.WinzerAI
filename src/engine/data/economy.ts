@@ -188,9 +188,8 @@ export const PROTECTION: Record<ProtectionStrategy, { name: string; costPerHa: n
   bio: { name: 'Bio', costPerHa: 900, protection: 0.7 },
 }
 export const PROTECTION_MONTHS = [5, 6, 7, 8]
-export const BIO_CONVERSION_YEARS = 3
-/** Aufschlag im Direktverkauf für zertifizierte Bio-Weine */
-export const BIO_PRICE_BONUS = 0.1
+/** Bio-Umstellung: so viele Monate nach Bio-Vorgaben, bevor das erste Siegel beantragt werden kann */
+export const BIO_CONVERSION_MONTHS = 24
 
 /** Wetterabwehr */
 export const FROST_MONTHS = [4, 5]

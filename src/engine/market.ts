@@ -1,7 +1,5 @@
 import {
   BARRIQUE_VALUE_PER_HL,
-  BIO_CONVERSION_YEARS,
-  BIO_PRICE_BONUS,
   BOTTLES_PER_HL,
   COMPETITIONS,
   DIFFICULTIES,
@@ -36,6 +34,7 @@ import {
 } from './data/economy'
 import { GRAPES } from './data/grapes'
 import { qualityInfo } from './data/quality'
+import { bioInfo } from './data/bio'
 import { effectValue } from './rules'
 import { trendFactor } from './trends'
 import type { BottleLot, GameState, Player, WineBatch } from './types'
@@ -56,8 +55,9 @@ export function bulkPricePerHl(batch: WineBatch, state: GameState, player: Playe
   return qualityInfo(batch.level).bulkPricePerLiter * 100 * (0.7 + batch.quality / 200) * crisis * priceFactor(player) * trendFactor(state, batch)
 }
 
-export function isBioCertified(player: Player, year: number): boolean {
-  return player.protection === 'bio' && player.bioSinceYear !== null && year - player.bioSinceYear >= BIO_CONVERSION_YEARS
+/** Trägt das Weingut ein Bio-Siegel? */
+export function isBioCertified(player: Player): boolean {
+  return player.bioLabel !== null
 }
 
 /**
@@ -68,7 +68,7 @@ export function bottlePrice(lot: BottleLot, player: Player, state: GameState): n
   let base: number
   if (lot.sparkling) base = SEKT_BOTTLE_PRICE * (lot.registered ? 1 : 0.5)
   else base = qualityInfo(lot.registered ? lot.level : 'deutscher-wein').bottlePrice
-  const bio = isBioCertified(player, state.year) ? 1 + BIO_PRICE_BONUS : 1
+  const bio = 1 + (bioInfo(player)?.priceBonus ?? 0)
   const piwi = GRAPES[lot.grape].piwi ? PIWI_PRICE_FACTOR : 1
   const price = base * (0.5 + lot.quality / 100) * (0.8 + player.reputation / 250) * bio * piwi * priceFactor(player) * trendFactor(state, lot)
   return Math.round(price * 100) / 100
@@ -94,6 +94,7 @@ export function monthlyDemand(player: Player): number {
   let demand = FARM_SHOP_BASE_DEMAND + player.reputation * FARM_SHOP_DEMAND_PER_REPUTATION
   if (player.hasOnlineShop) demand += player.reputation * ONLINE_DEMAND_PER_REPUTATION
   if (player.hasVinothek) demand *= VINOTHEK_DEMAND_FACTOR
+  demand *= 1 + (bioInfo(player)?.demandBonus ?? 0)
   return Math.round(demand * effectValue(player, 'demand'))
 }
 
@@ -161,7 +162,8 @@ export function monthlyCosts(player: Player, month: number): MonthlyCosts {
     0,
   )
   const protection = PROTECTION_MONTHS.includes(month)
-    ? (plantedHectares(player) * PROTECTION[player.protection].costPerHa) / PROTECTION_MONTHS.length
+    ? (plantedHectares(player) * PROTECTION[player.protection].costPerHa * (bioInfo(player)?.protectionCostFactor ?? 1)) /
+      PROTECTION_MONTHS.length
     : 0
   const overdraft = player.money < 0 ? -player.money * OVERDRAFT_INTEREST_RATE : 0
   const interest = (player.loan * LOAN_INTEREST_RATE + overdraft) / 12

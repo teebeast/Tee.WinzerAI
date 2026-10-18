@@ -10,7 +10,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 11
+const CURRENT_VERSION: GameState['version'] = 12
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -79,10 +79,24 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 10) {
     // Version 11: Wetterabwehr (Versicherung, Frostkerzen; Netze und Bewässerung sind optional je Parzelle)
-    state.version = 11
+    old.version = 11
     for (const p of state.players) {
       p.insuredYear = null
       p.frostCandles = false
+    }
+  }
+  if (old.version === 11) {
+    // Version 12: Bio-Siegel in Stufen. Wer bisher schon zertifiziert war (drei Jahre Bio), trägt jetzt Grünblatt.
+    state.version = 12
+    const now = (state.year - 1) * 12 + state.month
+    for (const p of state.players) {
+      const legacy = p as unknown as { bioSinceYear?: number | null }
+      const sinceYear = legacy.bioSinceYear ?? null
+      delete legacy.bioSinceYear
+      p.bioSince = p.protection === 'bio' && sinceYear !== null ? (sinceYear - 1) * 12 + 1 : null
+      const certified = p.bioSince !== null && state.year - sinceYear! >= 3
+      p.bioLabel = certified ? 'basis' : null
+      p.bioLabelSince = certified ? now : null
     }
   }
   return state.version === CURRENT_VERSION ? state : null

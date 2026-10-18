@@ -15,6 +15,7 @@ import { nextFloat } from './rng'
 import { changeReputation, plotAgeFactor, raiseLevel, wineLabel } from './rules'
 import type { AdulterationMethod, BottleLot, GameState, Player, SabotageKind } from './types'
 import { addLog, formatEuro } from './util'
+import { loseBio } from './bio'
 
 export function validateAdulterate(player: Player, batchId: string, method: AdulterationMethod): string | null {
   const batch = player.cellar.find((b) => b.id === batchId)
@@ -67,6 +68,7 @@ function scandal(state: GameState, player: Player, where: string) {
   player.money -= SCANDAL_FINE
   player.points = Math.max(0, player.points - SCANDAL_POINTS)
   changeReputation(player, -SCANDAL_REPUTATION)
+  loseBio(state, player, 'Weinskandal')
   addLog(
     state,
     null,

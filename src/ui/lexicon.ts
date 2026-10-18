@@ -22,8 +22,12 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Edelsüßer Wein ab 110 °Oechsle, meist nur möglich, wenn Edelfäule die Beeren konzentriert hat.',
   },
   {
+    term: 'Bio-Siegel',
+    text: 'Nach zwei Jahren Umstellung lässt sich das Grünblatt-Siegel beantragen, danach die strengeren Verbandssiegel Terravita und Lunaris (biodynamisch). Höhere Stufen bringen bessere Preise und treue Kundschaft, kosten aber Antrags- und Jahresgebühren.',
+  },
+  {
     term: 'Bio-Weinbau',
-    text: 'Verzicht auf synthetische Pflanzenschutzmittel. Der Schutz ist etwas schwächer und teurer, nach drei Jahren Umstellung gilt das Weingut aber als zertifiziert und erzielt im Direktverkauf 10 % mehr.',
+    text: 'Verzicht auf synthetische Pflanzenschutzmittel. Der Schutz ist etwas schwächer und teurer. Mit dem Wechsel beginnt die zweijährige Umstellung – danach kann das erste Bio-Siegel beantragt werden.',
   },
   {
     term: 'Edelfäule (Botrytis)',

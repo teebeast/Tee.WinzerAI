@@ -4,6 +4,7 @@ import { applyAction, formatEuro, harvestPreview, MONTH_NAMES } from './game'
 import { qualityInfo } from './data/quality'
 import { HARVEST_MONTHS, PLANT_MONTHS, currentPlayer, plotAgeFactor } from './rules'
 import { frostCandlesCost, frostChance, insurancePremium, isInsured } from './defense'
+import { BIO_LABELS, monthsUntilEligible, nextBioLabel } from './bio'
 import { INSURANCE_MONTHS } from './data/economy'
 import type { GameState, Player } from './types'
 
@@ -33,6 +34,11 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   }
   if (state.auction?.phase === 'live' && lots.some((l) => l.awaiting !== null)) {
     add('hof', '🔨 Live-Versteigerung läuft – jetzt mitbieten!')
+  }
+  const nextLabel = nextBioLabel(player)
+  if (nextLabel && monthsUntilEligible(state, player) === 0) {
+    const info = BIO_LABELS[nextLabel]
+    add('weinberg', `${info.icon} Das ${info.name}-Siegel kann jetzt beantragt werden (${formatEuro(info.fee)}).`)
   }
   const frost = frostChance(state, player)
   if (frost > 0 && !player.frostCandles && bearing.length > 0) {

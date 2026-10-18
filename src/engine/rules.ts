@@ -9,6 +9,7 @@ import {
   SITE_QUALITY_BONUS,
 } from './data/economy'
 import { cellarMasterBonus } from './cellarmaster'
+import { BIO_LABELS } from './data/bio'
 import { GRAPES } from './data/grapes'
 import { QUALITY_LEVELS, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS } from './data/regions'
@@ -70,7 +71,10 @@ export function computeQuality(player: Player, plot: Plot, year: number, oechsle
   const grape = GRAPES[plot.grape!]
   const suitability = REGIONS[player.regionId].suitability[grape.id]
   const bonus =
-    cellarMasterBonus(player, grape.id, oechsle, year) + plot.site * SITE_QUALITY_BONUS + effectValue(player, 'quality')
+    cellarMasterBonus(player, grape.id, oechsle, year) +
+    plot.site * SITE_QUALITY_BONUS +
+    effectValue(player, 'quality') +
+    (player.bioLabel ? BIO_LABELS[player.bioLabel].quality : 0)
   const raw =
     20 + grape.qualityPotential * 4 + suitability * 6 + (oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 + bonus
   return Math.max(0, Math.min(100, Math.round(raw)))

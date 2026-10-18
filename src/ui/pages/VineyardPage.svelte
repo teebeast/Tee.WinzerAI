@@ -1,9 +1,11 @@
 <script lang="ts">
-  import { BIO_CONVERSION_YEARS, CLEARING_COST_PER_HA, PROTECTION } from '../../engine/data/economy'
+  import { CLEARING_COST_PER_HA, PROTECTION } from '../../engine/data/economy'
+  import { BIO_LABELS, monthsUntilEligible } from '../../engine/bio'
+  import BioCertification from '../BioCertification.svelte'
   import { GRAPES, type GrapeId } from '../../engine/data/grapes'
   import { QUALITY_LEVELS, qualityInfo } from '../../engine/data/quality'
   import { formatEuro, harvestPreview, plotAgeFactor, plotSalePrice, validateAction } from '../../engine/game'
-  import { isBioCertified, plantedHectares, totalHectares } from '../../engine/market'
+  import { plantedHectares, totalHectares } from '../../engine/market'
   import type { Action, GameState, Player, ProtectionStrategy } from '../../engine/types'
   import { trendDirection } from '../../engine/trends'
   import {
@@ -26,6 +28,17 @@
   /** Lagenqualität −1 bis +2 als Sterne */
   const stars = (site: number) => '★'.repeat(site + 2) + '☆'.repeat(2 - site)
   let plantChoice = $state<Record<string, GrapeId>>({})
+
+  function changeProtection(strategy: ProtectionStrategy) {
+    if (player.protection === strategy) return
+    const label = player.bioLabel ? BIO_LABELS[player.bioLabel].name : null
+    const leavingBio = player.protection === 'bio' && player.bioSince !== null
+    const warning = label
+      ? `Ohne Bio-Pflanzenschutz verlierst du das ${label}-Siegel und die Umstellungszeit. Trotzdem wechseln?`
+      : 'Ohne Bio-Pflanzenschutz beginnt die Umstellung später wieder von vorn. Trotzdem wechseln?'
+    if (leavingBio && !confirm(warning)) return
+    run({ type: 'setProtection', strategy })
+  }
   const ARROWS = { up: '↗', down: '↘', flat: '→' } as const
   /** Markttrend als kurzer Zusatz in der Sortenauswahl */
   const trendLabel = (id: GrapeId) =>
@@ -75,21 +88,23 @@
             aria-pressed={player.protection === id}
             class:active={player.protection === id}
             title="{Math.round(PROTECTION[id].protection * 100)} % Schutz, {formatEuro(PROTECTION[id].costPerHa)}/ha im Mai–August"
-            onclick={() => player.protection !== id && run({ type: 'setProtection', strategy: id })}
+            onclick={() => changeProtection(id)}
           >
             {STRATEGY_ICONS[id]} {id === 'none' ? 'Keiner' : PROTECTION[id].name}
           </button>
         {/each}
       </div>
       <span class="small" class:warning={player.protection === 'none'} class:muted={player.protection !== 'none'}>
-        {#if player.protection === 'bio' && player.bioSinceYear !== null}
-          {isBioCertified(player, game.year)
-            ? 'Bio-zertifiziert: +10 % im Direktverkauf'
-            : `In Umstellung – zertifiziert ab Jahr ${player.bioSinceYear + BIO_CONVERSION_YEARS}`}
-        {:else if player.protection === 'none'}
-          Ohne Schutz drohen bei Nässe und Hitze schwere Ausfälle.
+        {#if player.protection === 'bio' && player.bioLabel}
+          {BIO_LABELS[player.bioLabel].icon} {BIO_LABELS[player.bioLabel].name}-zertifiziert
+        {:else if player.protection === 'bio'}
+          {monthsUntilEligible(game, player) === 0
+            ? '🌱 Umstellung abgeschlossen – das Grünblatt-Siegel kann beantragt werden'
+            : `🌱 In Umstellung – noch ${monthsUntilEligible(game, player)} Monate bis zum Grünblatt-Siegel`}
+        {:else if player.protection === 'conventional'}
+          {Math.round(PROTECTION.conventional.protection * 100)} % Schutz vor Pilzen und Schädlingen · Bio-Siegel nur mit Bio-Pflanzenschutz
         {:else}
-          {Math.round(PROTECTION[player.protection].protection * 100)} % Schutz vor Pilzen und Schädlingen
+          Ohne Schutz drohen bei Nässe und Hitze schwere Ausfälle.
         {/if}
       </span>
     </div>
@@ -264,6 +279,11 @@
       </article>
     {/each}
   </div>
+
+  <!-- Die Stufenleiter erscheint erst mit Bio-Pflanzenschutz; vorher genügt der Hinweis beim Pflanzenschutz. -->
+  {#if player.protection === 'bio'}
+    <BioCertification {game} {player} {run} />
+  {/if}
 </div>
 
 <style>
