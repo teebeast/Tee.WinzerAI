@@ -12,7 +12,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { QUALITY_LEVELS, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS } from './data/regions'
-import type { BottleLot, GameState, Player, Plot, WineBatch, WineInfo } from './types'
+import type { BottleLot, EffectKind, GameState, Player, Plot, WineBatch, WineInfo } from './types'
 import { addLog, formatEuro, newId } from './util'
 
 export const PLANT_MONTHS = [3, 4]
@@ -58,10 +58,19 @@ export function climateWarming(state: GameState): number {
 }
 
 /** Güte 0–100 bei der Lese – `oechsle` überschreibt das Mostgewicht (z. B. für Eiswein). */
+/** Gemeinsamer Faktor aller laufenden Ereignis-Effekte einer Art; bei `quality` die Summe der Zuschläge */
+export function effectValue(player: Player, kind: EffectKind): number {
+  const matching = player.effects.filter((e) => e.kind === kind)
+  return kind === 'quality'
+    ? matching.reduce((sum, e) => sum + e.value, 0)
+    : matching.reduce((product, e) => product * e.value, 1)
+}
+
 export function computeQuality(player: Player, plot: Plot, oechsle = plot.oechsle): number {
   const grape = GRAPES[plot.grape!]
   const suitability = REGIONS[player.regionId].suitability[grape.id]
-  const bonus = (player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0) + plot.site * SITE_QUALITY_BONUS
+  const bonus =
+    (player.hasCellarMaster ? CELLAR_MASTER_QUALITY_BONUS : 0) + plot.site * SITE_QUALITY_BONUS + effectValue(player, 'quality')
   const raw =
     20 + grape.qualityPotential * 4 + suitability * 6 + (oechsle - 70) * 0.6 + (plot.health - 0.5) * 20 + bonus
   return Math.max(0, Math.min(100, Math.round(raw)))

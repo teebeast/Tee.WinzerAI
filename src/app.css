@@ -10,6 +10,7 @@
   --sun: #e9b949;
   --cloud: #9aa5b1;
   --rain: #4a7fb5;
+  --good: #2f7a2b;
   color-scheme: light;
 }
 
@@ -23,6 +24,7 @@
     --wine: #d987a8;
     --wine-contrast: #1b1417;
     --danger: #ff8a80;
+    --good: #8fd889;
     color-scheme: dark;
   }
 }
@@ -36,6 +38,7 @@
   --wine: #d987a8;
   --wine-contrast: #1b1417;
   --danger: #ff8a80;
+  --good: #8fd889;
   color-scheme: dark;
 }
 

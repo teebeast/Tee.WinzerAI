@@ -4,7 +4,7 @@
   import { formatEuro, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, usedTankHl } from '../../engine/game'
   import { creditLimit, netWorth } from '../../engine/market'
   import { climateWarming } from '../../engine/rules'
-  import type { Action, GameState, Player } from '../../engine/types'
+  import type { Action, Effect, GameState, Player } from '../../engine/types'
   import { iceWineChance } from '../../engine/vineyard'
   import { WEATHER_KINDS, WEATHER_LABELS } from '../../engine/weather'
   import AuctionCard from '../AuctionCard.svelte'
@@ -29,6 +29,23 @@
   const place = $derived(ranking.findIndex((p) => p.id === player.id) + 1)
   const bottles = $derived(player.bottles.reduce((sum, l) => sum + l.bottles, 0))
   const limit = $derived(creditLimit(player))
+  /** Ereignisse des zuletzt abgeschlossenen Monats */
+  const news = $derived.by(() => {
+    const month = game.month === 1 ? 12 : game.month - 1
+    const year = game.month === 1 ? game.year - 1 : game.year
+    return game.log.filter(
+      (e) => e.tone && e.month === month && e.year === year && (e.playerId === null || e.playerId === player.id),
+    )
+  })
+
+  function effectText(effect: Effect): { text: string; good: boolean } {
+    if (effect.kind === 'quality') return { text: `${effect.value > 0 ? '+' : ''}${effect.value} Güte`, good: effect.value > 0 }
+    const percent = Math.round((effect.value - 1) * 100)
+    const sign = percent > 0 ? '+' : '−'
+    const what = { demand: 'Nachfrage', price: 'Preise', costs: 'Kosten' }[effect.kind]
+    return { text: `${sign}${Math.abs(percent)} % ${what}`, good: effect.kind === 'costs' ? percent < 0 : percent > 0 }
+  }
+
   const recentLog = $derived(
     game.log
       .filter((e) => e.playerId === null || e.playerId === player.id)
@@ -106,7 +123,7 @@
           {/each}
         </ul>
       </section>
-      <AuctionCard {game} {player} {run} />
+      <AuctionCard {game} {player} />
       <ExportCard {player} {run} />
       <section class="card">
         <h2>Wetter im {MONTH_NAMES[game.month - 1]}</h2>
@@ -132,12 +149,40 @@
     </div>
 
     <div class="col">
+      <section class="card">
+        <h2>📰 Neuigkeiten</h2>
+        {#if news.length === 0}
+          <p class="muted small">Keine besonderen Vorkommnisse im letzten Monat.</p>
+        {:else}
+          <ul class="news">
+            {#each news as entry, i (i)}
+              <li class={entry.tone}>
+                <span class="news-icon" aria-hidden="true">{entry.tone === 'good' ? '👍' : '⚠️'}</span>
+                <span>{entry.text}</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+        {#if player.effects.length > 0}
+          <h3 class="small">Laufende Folgen</h3>
+          <ul class="effects">
+            {#each player.effects as effect, i (i)}
+              {@const info = effectText(effect)}
+              <li>
+                <span>{effect.label}</span>
+                <span class="chip" class:good={info.good} class:bad={!info.good}>{info.text}</span>
+                <span class="muted small">noch {effect.monthsLeft} Mon.</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
 
       <section class="card">
         <h2>Logbuch</h2>
         <ul class="log">
           {#each recentLog as entry, i (i)}
-            <li><span class="muted">{entry.month}/{entry.year}</span> {entry.text}</li>
+            <li class={entry.tone ?? ''}><span class="muted">{entry.month}/{entry.year}</span> {entry.text}</li>
           {/each}
         </ul>
       </section>
@@ -270,6 +315,45 @@
   }
   .log li {
     padding: 3px 0;
+  }
+  .log li.good {
+    color: var(--good);
+  }
+  .log li.bad {
+    color: var(--danger);
+  }
+  .news,
+  .effects {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .news li {
+    display: flex;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border-left: 4px solid var(--good);
+    background: color-mix(in srgb, var(--good) 10%, transparent);
+  }
+  .news li.bad {
+    border-left-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 9%, transparent);
+  }
+  .effects li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+  }
+  .effects li > :first-child {
+    flex: 1;
+  }
+  h3 {
+    margin: 12px 0 6px;
   }
   @media (max-width: 560px) {
     .kpis {

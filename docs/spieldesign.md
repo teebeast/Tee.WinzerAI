@@ -23,7 +23,7 @@ Nachempfunden dem Starbyte-Klassiker *Winzer* (1991/92). Ziel ist ein kurzweilig
 | Start | Januar, Jahr 1 |
 | Ziel | Wer zuerst die Siegpunkte erreicht, gewinnt. Wählbar: Kurz 300 / Normal 600 / Klassisch 1000 |
 | Endlosspiel | Ohne Punkteziel. Per Schieberegler 5, 10, 25 oder 50 Jahre – dann gewinnt die höchste Punktzahl – oder ganz ohne Zeitlimit: Die Partie läuft, bis man sie beendet oder pleitegeht. Die Rangliste zeigt den laufenden Stand. |
-| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 60.000 €, Erlöse −15 %, Kosten +10 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report holt die KI unter diesen Bedingungen nach 15 Jahren rund +9 % / −7 % / −32 % Punkte. |
+| Schwierigkeitsgrad | Nur im freien Spiel, gilt für die menschlichen Spieler: **Leicht** 100.000 € Startkapital, Erlöse +5 %, laufende Kosten −5 % · **Normal** 80.000 €, Erlöse −5 % · **Schwierig** 70.000 €, Erlöse −12 %, Kosten +8 %. Computergegner spielen immer ohne Auf- oder Abschlag (entspricht dem früheren Spielgefühl zwischen Leicht und Normal). Im Balancing-Report (mit Zufallsereignissen) holt die KI unter diesen Bedingungen nach 15 Jahren rund +7 % / −7 % / −24 % Punkte; pleite gehen 0, 3 bzw. 11 von 78 Partien. |
 | Tages-Challenge | Alle spielen am selben Tag dieselbe Partie: gleiches Szenario, Gebiet, Wetter und dieselben KI-Gegner (2–3, täglich ausgelost). Die Szenarien wechseln täglich: Klassisches Duell, Schuldenberg, Das große Erbe, Neuanfang auf der Brache, Fünf-Jahres-Sprint, Bekannter Name, Wie in alten Zeiten (ohne Klimawandel), Marathon. Sie geben Laufzeit (5–15 Jahre) und Startbedingungen für alle Weingüter vor. Gewertet werden die Punkte am Ende, der Bestwert wird auf dem Gerät gespeichert. Schwierigkeitsgrad: Normal. |
 | Niederlage | Ein Spieler ist insolvent, wenn er Kontostand < 0 und Kreditlimit ausgeschöpft hat und das 3 Monate in Folge so bleibt |
 | Zufall | Seed-basiert, damit jede Partie reproduzierbar ist (Tages-Challenge, Fehlersuche) |
@@ -82,7 +82,7 @@ Jeder Monat zeigt eine **Aufgabenliste** mit dem, was jetzt sinnvoll ist. Pflich
 | Monat | Weinberg | Keller & Markt |
 |---|---|---|
 | Jan | Rebschnitt (Pflicht, sonst −15 % Qualität), Eiswein-Chance | Abfüllen, Weinprüfung (AP) beantragen |
-| Feb | Rebschnitt, **Versteigerung von Weinbergen** | Abfüllen, Verkauf |
+| Feb | Rebschnitt | Abfüllen, Verkauf |
 | Mär | Pflanzen möglich | Messe (Reputation) |
 | Apr | Pflanzen möglich, **Spätfrostrisiko** | |
 | Mai | Pflanzenschutz läuft (Kosten Mai–August), Spätfrostrisiko | |
@@ -210,16 +210,26 @@ Der Hofladen verkauft geprüfte Weine und Deutschen Wein, ältere Posten zuerst.
 | Spätfrost | April, Mai | 1 % × Frostrisiko pro Monat | −40 % Menge aller tragenden Parzellen |
 | Hagel | Juni–August | 4 % pro Monat | eine Parzelle −50 % Menge, −10 % Gesundheit |
 | Hitzewelle | Juli, August bei Sonne | 15 % | −10 % Menge, +4 °Oe |
-| Medienbericht | jederzeit | 2 % pro Monat | +5 Bekanntheit |
-| Erbschaft | jederzeit | 0,4 % pro Monat | 1–2 ha, bestockt oder Brache |
 | Kellerei-Insolvenz | jederzeit, für alle | 1,5 % pro Monat | 6 Monate halber Fassweinpreis |
 
-**Weinbergversteigerung (Februar):**
-- Je Anbaugebiet, in dem noch jemand wirtschaftet, kommen 1–2 Weinberge à 1–5 ha unter den Hammer. Rund 60 % davon sind bereits bestockt (3–27 Jahre alt) und tragen sofort, der Rest ist Brache.
-- Die Lagenqualität reicht von −1 bis +2 und bringt je Stufe ±4 Güte. Ein Schätzwert wird angezeigt: Boden 25.000 €/ha plus Reben 15.000 €/ha, je Lagenstufe ±15 %. Das Mindestgebot liegt bei 80 % des Schätzwerts.
-- Mitbieten darf, wer im selben Gebiet wirtschaftet. Die Gebote sind verdeckt und können bis Monatsende geändert oder zurückgezogen werden. Ein Gebot muss über Konto und freien Kreditrahmen finanzierbar sein.
-- Auswärtige Investoren bieten verdeckt 85–135 % des Schätzwerts. Das höchste Spielergebot gewinnt nur, wenn es darüber liegt. So gibt es auch im Einzelspiel Bietspannung, und der Investorenpreis wird hinterher veröffentlicht.
-- Ein Fehlbetrag beim Kauf wird automatisch über den Kredit gedeckt.
+**Ereigniskatalog** (`src/engine/events.ts`, in den Einstellungen abschaltbar): Jedes Weingut erlebt in 35 % der Monate ein Ereignis. Welches, entscheidet das Gewicht der Seltenheitsstufe, eingeschränkt auf Ereignisse, die zu Monat und Betrieb passen (Ernteschäden nur mit tragenden Reben, Diebstahl nur mit vollem Lager usw.).
+
+| Stufe | Gewicht | Anzahl | Beispiele |
+|---|---|---|---|
+| Alltag | 10 | 15 | Wandergruppe (+150–500 €), defekte Pumpe, Lokalblatt (+1 Bekanntheit), Stare und Wildschweine (−4–6 % Ernte), Weinfest (+20 % Nachfrage für einen Monat) |
+| Gelegentlich | 3 | 14 | Firmenfeier (+2.000–5.000 €), Weinführer-Empfehlung, Influencerin (+30 % Nachfrage), Förderprogramm (+3.000–8.000 €), Wasserschaden im Keller, höhere Energiepreise (+8 % Kosten für ein halbes Jahr), Rebschnitt-Profi (+3 Güte für den Jahrgang) |
+| Selten | 1 | 11 | Orkan (−6.000–12.000 €), Filmdreh auf dem Hof (+10.000–20.000 €), Erbschaft, Winzer des Jahres (+15 Punkte), Reblaus, Listung bei einer Handelskette (+50 % Nachfrage für ein halbes Jahr), Preiskampf der Discounter |
+| Sehr selten | 0,15 | 7 | Jahrhundertunwetter (−70 % Ernte), Kellerbrand, 100 Punkte vom Weinpapst (+40 Punkte, doppelte Nachfrage), Vermögen geerbt (+150.000 €), Hangrutsch (eine Lage verloren), Weinskandal im Gebiet, Exportboom |
+
+Ein bestimmtes Alltagsereignis trifft ein Weingut etwa zweimal in zehn Jahren, ein bestimmtes sehr seltenes in weniger als einem von hundert Spieljahren. Im ersten Jahr bleiben seltene und sehr seltene Rückschläge aus, solange die Kasse am knappsten ist. Geldbeträge sind so gewählt, dass Glücksfälle und Rückschläge sich im Mittel etwa die Waage halten. Befristete Folgen (Nachfrage, Preise, Kosten, Güte) stehen auf der Hof-Seite unter „Neuigkeiten“, seltene und sehr seltene Ereignisse erfahren alle am Tisch.
+
+**Weinbergversteigerung (Live-Event):**
+- Alle 8–16 Monate (zufällig) wird eine Versteigerung angekündigt und im Folgemonat abgehalten. Je Anbaugebiet, in dem noch jemand wirtschaftet, kommen 1–3 Weinberge à 1–5 ha unter den Hammer. Rund 60 % davon sind bereits bestockt (3–27 Jahre alt) und tragen sofort, der Rest ist Brache.
+- Die Lagenqualität reicht von −1 bis +2 und bringt je Stufe ±4 Güte. Schätzwert: Boden 25.000 €/ha plus Reben 15.000 €/ha, je Lagenstufe ±15 %. Ausrufpreis 70 % des Schätzwerts, Mindestschritt 4 % (mindestens 1.000 €).
+- Zu Monatsbeginn öffnet sich das Live-Fenster: Die Lose kommen nacheinander dran, Menschen bieten Runde für Runde (Mindestgebot, Sprunggebote, eigener Betrag) oder steigen aus. Mehrere Menschen im selben Gebiet bieten abwechselnd.
+- Computergegner hinterlegen im Ankündigungsmonat ein verdecktes Höchstgebot (Schätzwert × Profilaufschlag), auswärtige Investoren bieten bei 85 % der Lose bis 85–135 % des Schätzwerts. Sie überbieten jeweils um einen Schritt, solange ihr Limit reicht; untereinander steigt der Preis bis knapp über das zweithöchste Limit.
+- Wer mehr bietet als alle Limits, bekommt den Zuschlag sicher – auch weit über dem Schätzwert. Ein Gebot muss über Konto und freien Kreditrahmen finanzierbar sein, ein Fehlbetrag wird beim Zuschlag automatisch über den Kredit gedeckt.
+- Bleibt ein Mensch bis Monatsende untätig, gilt das als Aussteigen; ein bereits führendes Gebot bleibt bestehen.
 
 ## 13. Panschen & Sabotage
 

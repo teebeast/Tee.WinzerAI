@@ -37,16 +37,17 @@ import {
 } from './data/economy'
 import { GRAPES } from './data/grapes'
 import { qualityInfo } from './data/quality'
+import { effectValue } from './rules'
 import type { BottleLot, GameState, Player, WineBatch } from './types'
 
-/** Auf- oder Abschlag auf Verkaufserlöse durch den Schwierigkeitsgrad */
+/** Auf- oder Abschlag auf Verkaufserlöse durch Schwierigkeitsgrad und laufende Ereignisse */
 export function priceFactor(player: Player): number {
-  return player.difficulty ? DIFFICULTIES[player.difficulty].priceFactor : 1
+  return (player.difficulty ? DIFFICULTIES[player.difficulty].priceFactor : 1) * effectValue(player, 'price')
 }
 
-/** Auf- oder Abschlag auf die laufenden Kosten durch den Schwierigkeitsgrad */
+/** Auf- oder Abschlag auf die laufenden Kosten durch Schwierigkeitsgrad und laufende Ereignisse */
 export function costFactor(player: Player): number {
-  return player.difficulty ? DIFFICULTIES[player.difficulty].costFactor : 1
+  return (player.difficulty ? DIFFICULTIES[player.difficulty].costFactor : 1) * effectValue(player, 'costs')
 }
 
 /** Fasswein-Erlös je hl – in einer Krise der Großkellereien nur die Hälfte */
@@ -93,7 +94,7 @@ export function monthlyDemand(player: Player): number {
   let demand = FARM_SHOP_BASE_DEMAND + player.reputation * FARM_SHOP_DEMAND_PER_REPUTATION
   if (player.hasOnlineShop) demand += player.reputation * ONLINE_DEMAND_PER_REPUTATION
   if (player.hasVinothek) demand *= VINOTHEK_DEMAND_FACTOR
-  return Math.round(demand)
+  return Math.round(demand * effectValue(player, 'demand'))
 }
 
 export function hlToBottles(hectoliters: number): number {

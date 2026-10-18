@@ -109,4 +109,8 @@ export const LEXICON: LexiconEntry[] = [
     term: 'Vinothek',
     text: 'Verkaufs- und Probierraum direkt am Weingut. Lockt Gäste an und steigert den Ab-Hof-Verkauf.',
   },
+  {
+    term: 'Weinbergversteigerung',
+    text: 'Alle 8–16 Monate kommen Weinberge unter den Hammer, angekündigt einen Monat vorher. Geboten wird live gegen Nachbarn und auswärtige Investoren: Wer bereit ist, am meisten zu zahlen, bekommt den Zuschlag.',
+  },
 ]

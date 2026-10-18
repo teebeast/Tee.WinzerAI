@@ -1,7 +1,6 @@
-import { maxAffordableBid, parcelValue } from './auction'
+import { maxAffordableBid } from './auction'
 import { barriqueBonus, SEKT_COST_PER_BOTTLE } from './cellar'
 import {
-  AUCTION_MONTH,
   BOTTLE_COST,
   COMPETITIONS,
   MARKETING,
@@ -196,20 +195,20 @@ export function playAiTurn(state: GameState): GameState {
   const hasYoungVines = me().plots.some((p) => p.grape !== null && plotAgeFactor(p, s.year) === 0)
   const hasFallow = me().plots.some((p) => p.grape === null)
 
-  // 2. Versteigerung
-  if (s.month === AUCTION_MONTH && !hasYoungVines && !hasFallow) {
+  // 2. Versteigerung: Im Ankündigungsmonat ein verdecktes Höchstgebot hinterlegen
+  if (s.auction?.phase === 'announced' && !hasYoungVines && !hasFallow) {
     let committed = 0
-    const parcels = s.auction
-      .filter((p) => p.regionId === me().regionId)
-      .sort((a, b) => parcelValue(b, s.year) - parcelValue(a, s.year))
+    const lots = s.auction.lots
+      .filter((l) => l.regionId === me().regionId && l.status === 'pending' && l.limits[me().id] === undefined)
+      .sort((a, b) => b.estimate - a.estimate)
     let hectares = totalHectares(me())
-    for (const parcel of parcels) {
-      if (hectares + parcel.hectares > profile.maxHectares) continue
-      const bid = Math.round((parcelValue(parcel, s.year) * profile.auctionPremium) / 1000) * 1000
-      if (bid < parcel.minimumBid || !canExpand(committed + bid) || bid > maxAffordableBid(me())) continue
-      if (act({ type: 'bid', parcelId: parcel.id, amount: bid })) {
-        committed += bid
-        hectares += parcel.hectares
+    for (const lot of lots) {
+      if (hectares + lot.hectares > profile.maxHectares) continue
+      const limit = Math.round((lot.estimate * profile.auctionPremium) / 1000) * 1000
+      if (limit < lot.startPrice || !canExpand(committed + limit) || limit > maxAffordableBid(me())) continue
+      if (act({ type: 'auctionLimit', lotId: lot.id, amount: limit })) {
+        committed += limit
+        hectares += lot.hectares
       }
     }
   }

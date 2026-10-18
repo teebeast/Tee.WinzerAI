@@ -1,10 +1,12 @@
 <script lang="ts">
   import { fastForward, monthHints } from '../engine/advisor'
+  import { awaitingLot } from '../engine/auction'
   import { activeHumans, runAiTurns } from '../engine/ai'
   import { REGIONS } from '../engine/data/regions'
   import { applyAction, currentPlayer, formatEuro, hasPointTarget as pointTarget, isEndless, MONTH_NAMES, RuleError } from '../engine/game'
   import type { Action, GameState } from '../engine/types'
   import { loadChallengeBest, recordChallengeResult } from '../save'
+  import AuctionLive from './AuctionLive.svelte'
   import LexiconDialog from './LexiconDialog.svelte'
   import { PAGES, type Page } from './pages'
   import CellarPage from './pages/CellarPage.svelte'
@@ -51,6 +53,8 @@
   const winner = $derived(game.players.find((p) => p.id === game.winnerId))
   const humansLeft = $derived(activeHumans(game).length > 0)
   const over = $derived(!!winner || game.finished || !humansLeft)
+  /** Live-Versteigerung, bei der gerade ein Mensch bieten muss */
+  const liveLot = $derived(over ? undefined : awaitingLot(game))
   const hasPointTarget = $derived(pointTarget(game))
   const tabs = $derived(PAGES.filter((p) => p.id !== 'rangliste' || multiplayer))
   /** Offene wichtige Aufgaben je Unterseite – als Zähler an den Reitern */
@@ -123,6 +127,10 @@
 </script>
 
 <LexiconDialog bind:open={lexiconOpen} />
+
+{#if liveLot && !handover}
+  <AuctionLive {game} lot={liveLot} {run} />
+{/if}
 
 {#if handover}
   <div class="card handover">

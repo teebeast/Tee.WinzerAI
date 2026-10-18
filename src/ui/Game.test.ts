@@ -75,10 +75,15 @@ describe('Oberfläche', () => {
         ],
       }),
     )
-    game = runAiTurns(applyAction(game, { type: 'endTurn' })) // Februar
-    expect(game.auction.length).toBeGreaterThan(0)
+    while (game.auction?.phase !== 'announced') game = runAiTurns(applyAction(game, { type: 'endTurn' }))
+    const announced = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } }).body
+    for (const text of ['Weinbergversteigerung im', 'Ausruf', 'Rangliste', 'Monat beenden']) {
+      expect(announced).toContain(text)
+    }
+
+    game = runAiTurns(applyAction(game, { type: 'endTurn' }))
     const { body } = render(Game, { props: { game, onChange: () => {}, onQuit: () => {} } })
-    for (const text of ['Weinbergversteigerung', 'Mindestgebot', 'Rangliste', 'Monat beenden']) {
+    for (const text of ['Live-Versteigerung', 'Bieten', 'Aussteigen', 'Schätzwert']) {
       expect(body).toContain(text)
     }
     const ranking = render(Game, { props: { game, onChange: () => {}, onQuit: () => {}, initialPage: 'rangliste' } })

@@ -39,6 +39,7 @@
   let endlessStep = $state(ENDLESS_YEARS.length - 1)
   let difficulty = $state<Difficulty>('normal')
   let climateChange = $state(true)
+  let randomEvents = $state(true)
   const today = todayKey()
   const daily = dailyChallenge(today)
   const challengeBest = loadChallengeBest(today)
@@ -75,6 +76,7 @@
       targetPoints: length === 'endless' ? NO_POINT_TARGET : length,
       yearLimit: length === 'endless' ? endlessYears : null,
       climateChange,
+      randomEvents,
       difficulty,
       players: seats.map((s, i) => ({
         name: s.name.trim() || `Spieler ${i + 1}`,
@@ -294,6 +296,13 @@
         <span>
           <strong>🌡️ Klimawandel</strong>
           <span class="muted small">Jedes Jahr etwas wärmer: frühere Reife, mehr Hitze, seltener Eiswein.</span>
+        </span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" bind:checked={randomEvents} />
+        <span>
+          <strong>🎲 Zufallsereignisse</strong>
+          <span class="muted small">Glücksfälle und Rückschläge – von der Wandergruppe bis zum Kellerbrand.</span>
         </span>
       </label>
 
