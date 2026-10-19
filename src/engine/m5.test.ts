@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { fastForward, monthHints } from './advisor'
+import { advance, importantHints, monthHints } from './advisor'
 import { playAiTurn } from './ai'
 import { CHALLENGE_SCENARIOS, dailyChallenge } from './challenge'
-import { DIFFICULTIES, VINOTHEK_COST } from './data/economy'
+import { AUTO_SKIP_MONTHS, DIFFICULTIES, VINOTHEK_COST } from './data/economy'
+import { gameMonth } from './bio'
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
 import { applyAction, currentPlayer, isEndless, newGame } from './game'
@@ -194,16 +195,19 @@ describe('Ratgeber und Vorspulen', () => {
 
   it('spult über ruhige Monate bis zur nächsten Entscheidung', () => {
     const may = endMonths(start(), 4)
-    const { state, months, reasons } = fastForward(may)
-    expect(months).toBeGreaterThan(1)
-    expect(state.month).toBeGreaterThan(may.month)
-    // Die Gründe für den Halt sind genau die wichtigen Hinweise des erreichten Monats
-    expect(reasons.length).toBeGreaterThan(0)
-    expect(reasons).toEqual(monthHints(state, currentPlayer(state)).filter((h) => h.important))
+    const state = advance(applyAction(may, { type: 'autoSkip' }))
+    expect(gameMonth(state) - gameMonth(may)).toBeGreaterThan(1)
+    // Angehalten, weil etwas Wichtiges ansteht – das Vorspulen ist damit beendet
+    expect(currentPlayer(state).autoSkip).toBeNull()
+    expect(importantHints(state).length).toBeGreaterThan(0)
+    expect(importantHints(state)).toEqual(monthHints(state, currentPlayer(state)).filter((h) => h.important))
   })
 
   it('spult höchstens ein Jahr', () => {
-    expect(fastForward(start(), 3).months).toBeLessThanOrEqual(3)
+    const s = start()
+    const state = advance(applyAction(s, { type: 'autoSkip' }))
+    expect(gameMonth(state) - gameMonth(s)).toBeLessThanOrEqual(AUTO_SKIP_MONTHS)
+    expect(currentPlayer(state).autoSkip).toBeNull()
   })
 })
 

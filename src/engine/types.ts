@@ -286,6 +286,8 @@ export interface Player {
   federweisserThisMonth: number
   /** Jahr, in dem zuletzt die Straußwirtschaft geöffnet hatte */
   straussYear: number | null
+  /** Vorspulen: Die Züge dieses Menschen laufen von selbst durch – seit/bis zu diesem Spielmonat (fortlaufend gezählt) */
+  autoSkip: { since: number; until: number } | null
   /** Panschen oder Sabotage ist höchstens einmal pro Monat möglich */
   intrigueThisMonth: boolean
   exportOffer: ExportOffer | null
@@ -313,7 +315,7 @@ export interface LogEntry {
 }
 
 export interface GameState {
-  version: 16
+  version: 17
   rng: Rng
   year: number
   month: number
@@ -392,6 +394,8 @@ export type Action =
   | { type: 'toBarrique'; batchId: string }
   | { type: 'buildVinothek' }
   | { type: 'endTurn' }
+  /** Vorspulen: Zug beenden und die eigenen Züge durchlaufen lassen, bis etwas Wichtiges ansteht */
+  | { type: 'autoSkip' }
 
 export interface NewGameOptions {
   seed: number

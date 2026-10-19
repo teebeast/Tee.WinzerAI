@@ -113,27 +113,28 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   return hints
 }
 
-export interface FastForwardResult {
-  state: GameState
-  months: number
-  /** Die wichtigen Hinweise, die das Vorspulen angehalten haben; leer, wenn die Höchstdauer oder das Spielende erreicht ist */
-  reasons: Hint[]
+/** Wichtige Hinweise des Spielers am Zug – sie beenden sein Vorspulen */
+export function importantHints(state: GameState): Hint[] {
+  return monthHints(state, currentPlayer(state)).filter((h) => h.important)
 }
 
 /**
- * Beendet Züge, bis ein Mensch etwas Wichtiges zu tun hat, das Spiel endet oder `maxMonths` vergangen sind.
- * Mit mehreren Menschen am Tisch laufen auch deren ruhige Züge durch: Angehalten wird bei dem, der zuerst
- * gefragt ist – etwa weil er sabotiert wurde und reagieren kann. Die KI zieht wie gewohnt mit.
+ * Nach einem Zugende: Die KI zieht, und wer vorspult, dessen Züge laufen von selbst durch – bis bei ihm etwas
+ * Wichtiges ansteht (auch eine Sabotage, auf die er reagieren kann), ein Jahr um ist oder das Spiel endet.
+ * Jeder Mensch spult für sich: Wer nicht vorspult, kommt wie gewohnt jeden Monat dran.
  */
-export function fastForward(state: GameState, maxMonths = 12): FastForwardResult {
-  const start = gameMonth(state)
-  let s = state
-  let reasons: Hint[] = []
-  while (gameMonth(s) - start < maxMonths && !s.winnerId && !s.finished && activeHumans(s).length > 0) {
+export function advance(state: GameState): GameState {
+  let s = runAiTurns(state)
+  for (let guard = 0; guard < 10_000; guard++) {
+    if (s.winnerId || s.finished || activeHumans(s).length === 0) return s
+    const skip = currentPlayer(s).autoSkip
+    if (!skip) return s
+    if (gameMonth(s) >= skip.until || importantHints(s).length > 0) {
+      s = structuredClone(s)
+      currentPlayer(s).autoSkip = null
+      return s
+    }
     s = runAiTurns(applyAction(s, { type: 'endTurn' }))
-    if (s.winnerId || s.finished || activeHumans(s).length === 0) break
-    reasons = monthHints(s, currentPlayer(s)).filter((h) => h.important)
-    if (reasons.length > 0) break
   }
-  return { state: s, months: gameMonth(s) - start, reasons }
+  return s
 }

@@ -11,7 +11,7 @@ import type { GameState } from './engine/types'
  * im Browser liegen sie in localStorage.
  */
 
-const CURRENT_VERSION: GameState['version'] = 16
+const CURRENT_VERSION: GameState['version'] = 17
 const SLOT_PREFIX = 'winzer.slot.'
 /** Früher gab es nur einen Spielstand – er wird beim ersten Laden zu einem Speicherplatz. */
 const LEGACY_KEY = 'winzer.save.v1'
@@ -124,12 +124,17 @@ function migrate(state: GameState): GameState | null {
   }
   if (old.version === 15) {
     // Version 16: Rosé (eigener Trend), Federweißer und Straußwirtschaft
-    state.version = 16
+    old.version = 16
     ensureTrends(state)
     for (const p of state.players) {
       p.federweisserThisMonth = 0
       p.straussYear = null
     }
+  }
+  if (old.version === 16) {
+    // Version 17: Vorspulen merkt sich jeder Mensch selbst
+    state.version = 17
+    for (const p of state.players) p.autoSkip = null
   }
   return state.version === CURRENT_VERSION ? state : null
 }
