@@ -23,6 +23,7 @@ import {
   validateToBarrique,
 } from './cellar'
 import {
+  AUTO_SKIP_MONTHS,
   CLEARING_COST_PER_HA,
   COMPETITIONS,
   DIFFICULTIES,
@@ -47,7 +48,7 @@ import {
 import { GRAPES } from './data/grapes'
 import { levelForOechsle, qualityInfo, type QualityLevel } from './data/quality'
 import { REGIONS, type RegionId } from './data/regions'
-import { applyBioLabel, bioInfo, chargeBioFees, validateBioLabel } from './bio'
+import { applyBioLabel, bioInfo, chargeBioFees, gameMonth, validateBioLabel } from './bio'
 import { fire, hire, refreshCandidates, validateHire } from './cellarmaster'
 import {
   acceptOrder,
@@ -138,7 +139,7 @@ export class RuleError extends Error {}
 
 export function newGame(options: NewGameOptions): GameState {
   const state: GameState = {
-    version: 16,
+    version: 17,
     rng: { state: options.seed },
     year: 1,
     month: 1,
@@ -207,6 +208,7 @@ export function newGame(options: NewGameOptions): GameState {
       milestones: {},
       federweisserThisMonth: 0,
       straussYear: null,
+      autoSkip: null,
       intrigueThisMonth: false,
       exportOffer: null,
       exportContract: null,
@@ -451,6 +453,8 @@ export function validateAction(state: GameState, action: Action): string | null 
       return null
     case 'endTurn':
       return null
+    case 'autoSkip':
+      return player.ai !== null ? 'Computergegner spulen nicht vor.' : null
   }
 }
 
@@ -661,6 +665,10 @@ export function applyAction(state: GameState, action: Action): GameState {
       addLog(next, null, `${player.name} eröffnet eine Vinothek mit Probierstube.`)
       break
     case 'endTurn':
+      endTurn(next)
+      break
+    case 'autoSkip':
+      player.autoSkip = { since: gameMonth(next), until: gameMonth(next) + AUTO_SKIP_MONTHS }
       endTurn(next)
       break
   }

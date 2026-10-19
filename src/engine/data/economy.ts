@@ -281,6 +281,8 @@ export const SABOTAGE_VINEYARD_LOSS = 0.3
 export const SABOTAGE_DETECTION = 0.3
 export const SABOTAGE_FINE = 25_000
 export const SABOTAGE_REPUTATION = 30
+/** Vorspulen läuft höchstens so viele Monate am Stück */
+export const AUTO_SKIP_MONTHS = 12
 /** Reaktion des Opfers: geschätzter Schaden, den eine Klage oder die Entlarvung als Schadensersatz einbringt */
 export const SABOTAGE_DAMAGES: Record<SabotageKind, number> = { geruecht: 8_000, weinberg: 15_000 }
 export const DETECTIVE_COST = 4_000

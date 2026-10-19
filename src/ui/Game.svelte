@@ -1,9 +1,9 @@
 <script lang="ts">
   import { tick } from 'svelte'
-  import { fastForward, monthHints, type Hint } from '../engine/advisor'
+  import { advance, importantHints, monthHints, type Hint } from '../engine/advisor'
   import { awaitingLot } from '../engine/auction'
   import { gameMonth } from '../engine/bio'
-  import { activeHumans, runAiTurns } from '../engine/ai'
+  import { activeHumans } from '../engine/ai'
   import { qualityInfo } from '../engine/data/quality'
   import { exportEligible } from '../engine/exports'
   import { REGIONS } from '../engine/data/regions'
@@ -59,6 +59,8 @@
   /** Live-Versteigerung, bei der gerade ein Mensch bieten muss */
   const liveLot = $derived(over ? undefined : awaitingLot(game))
   const hasPointTarget = $derived(pointTarget(game))
+  /** Andere Menschen am Tisch, deren Züge gerade von selbst durchlaufen */
+  const othersSkipping = $derived(game.players.filter((p) => p.ai === null && p.autoSkip && p.id !== player.id))
   const tabs = PAGES
   /** Offene wichtige Aufgaben je Unterseite – als Zähler an den Reitern */
   const badges = $derived.by(() => {
@@ -104,12 +106,23 @@
   function run(action: Action) {
     try {
       const before = player
-      if (action.type === 'endTurn') markSeen(game, before.id)
-      // Nach einem Zug ziehen die Computergegner, bis wieder ein Mensch dran ist.
-      const next = action.type === 'endTurn' ? runAiTurns(applyAction(game, action)) : applyAction(game, action)
-      commit(next, action.type === 'endTurn')
-      // Mehrere Menschen am Gerät: Die Übersicht verdeckt den Wechsel und zeigt dem Nächsten, was ansteht
-      if (action.type === 'endTurn' && hotSeat && currentPlayer(next).id !== before.id && !isOver(next)) {
+      const endsTurn = action.type === 'endTurn' || action.type === 'autoSkip'
+      if (endsTurn) markSeen(game, before.id)
+      if (action.type === 'autoSkip') skipping.set(before.id, gameMonth(game))
+      // Nach einem Zug ziehen die Computergegner und die Züge der Vorspulenden laufen durch, bis ein Mensch dran ist.
+      const next = endsTurn ? advance(applyAction(game, action)) : applyAction(game, action)
+      commit(next, endsTurn)
+      if (!endsTurn) return
+      const now = currentPlayer(next)
+      // Wer jetzt dran ist und vorgespult hat, ist fertig damit – oder das Spiel endete während des Vorspulens
+      const skipper = skipping.has(now.id) && !now.autoSkip ? now.id : isOver(next) && skipping.has(before.id) ? before.id : null
+      if (skipper) {
+        // Übersicht über die übersprungenen Monate und den Grund für den Halt
+        const since = skipping.get(skipper)!
+        skipping.delete(skipper)
+        showSummary(next, before.id, gameMonth(next) - since, isOver(next) ? [] : importantHints(next), true)
+      } else if (hotSeat && now.id !== before.id && !isOver(next)) {
+        // Mehrere Menschen am Gerät: Die Übersicht verdeckt den Wechsel und zeigt dem Nächsten, was ansteht
         showSummary(next, before.id, 0, importantHints(next), false)
       }
     } catch (e) {
@@ -124,7 +137,8 @@
   const timeOf = (e: { year: number; month: number }) => e.year * 12 + e.month
   const logKey = (e: LogEntry) => `${timeOf(e)}|${e.playerId}|${e.text}`
   const isOver = (s: GameState) => !!s.winnerId || s.finished || activeHumans(s).length === 0
-  const importantHints = (s: GameState) => monthHints(s, currentPlayer(s)).filter((h) => h.important)
+  /** Wer gerade vorspult – seit welchem Spielmonat –, um ihm danach die Übersicht zu zeigen */
+  const skipping = new Map<string, number>()
 
   /** Was jeder Mensch zuletzt gesehen hat: ab welchem Monat und welche Meldungen dieses Monats er schon kennt */
   const seen = new Map<string, { from: number; keys: Set<string> }>()
@@ -152,18 +166,6 @@
       entries: newsSince(state, now.id),
       over: isOver(state),
       skipped,
-    }
-  }
-
-  function skipAhead() {
-    try {
-      const before = player
-      markSeen(game, before.id)
-      const { state, months, reasons } = fastForward(game)
-      commit(state, true)
-      showSummary(state, before.id, months, reasons, true)
-    } catch (e) {
-      showError(e)
     }
   }
 
@@ -206,7 +208,8 @@
         {MONTH_NAMES[game.month - 1]} · Jahr {game.year}{game.yearLimit ? ` von ${game.yearLimit}` : ''}
       </strong>
       <span class="muted">
-        {player.name} · {region.name}{game.challenge ? ` · 🎯 Tages-Challenge ${game.challenge}` : ''}{isEndless(game) ? ' · ∞ Endlosspiel' : ''}
+        {player.name} · {region.name}{game.challenge ? ` · 🎯 Tages-Challenge ${game.challenge}` : ''}{isEndless(game) ? ' · ∞ Endlosspiel' : ''}{#each othersSkipping as other (other.id)}
+          · ⏩ {other.name} spult vor{/each}
       </span>
     </div>
     <div class="stats">
@@ -329,10 +332,10 @@
     <div class="row">
       <button
         disabled={over}
-        onclick={skipAhead}
+        onclick={() => run({ type: 'autoSkip' })}
         aria-label="Vorspulen"
         title={hotSeat
-          ? 'Züge beenden, bis jemand am Tisch etwas Wichtiges zu tun hat (höchstens ein Jahr) – die anderen warten so lange'
+          ? 'Deine Züge laufen von selbst durch, bis bei dir etwas Wichtiges ansteht (höchstens ein Jahr) – die anderen spielen normal weiter'
           : 'Monate beenden, bis eine wichtige Entscheidung ansteht (höchstens ein Jahr)'}
       >
         ⏩ <span class="wide-only">Vorspulen</span>

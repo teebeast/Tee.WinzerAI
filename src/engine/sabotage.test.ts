@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fastForward } from './advisor'
+import { advance, importantHints } from './advisor'
 import { gameMonth } from './bio'
 import { SABOTAGE_DAMAGES } from './data/economy'
 import { applyAction, currentPlayer, newGame } from './game'
@@ -86,16 +86,41 @@ describe('Reaktion auf Sabotage', () => {
 })
 
 describe('Vorspulen mit mehreren Menschen', () => {
-  it('läuft über die ruhigen Züge aller und hält beim Sabotage-Opfer an', () => {
-    const s = sabotaged(false)
-    const { state, reasons } = fastForward(s)
-    expect(currentPlayer(state).id).toBe('p2')
-    expect(reasons.some((r) => r.text.includes('Sabotage'))).toBe(true)
+  /** Anna spult vor, Ben spielt normal */
+  function annaSkips(): GameState {
+    return advance(applyAction(duo(), { type: 'autoSkip' }))
+  }
+
+  it('jeder spult für sich: Wer nicht vorspult, kommt jeden Monat dran', () => {
+    let s = annaSkips()
+    expect(currentPlayer(s).id).toBe('p2')
+    expect(s.players[0].autoSkip).not.toBeNull()
+    for (let i = 0; i < 3; i++) {
+      const month = gameMonth(s)
+      s = advance(applyAction(s, { type: 'endTurn' }))
+      if (currentPlayer(s).id === 'p1') {
+        // Annas Vorspulen endet nur, wenn bei ihr etwas Wichtiges ansteht
+        expect(s.players[0].autoSkip).toBeNull()
+        expect(importantHints(s).length).toBeGreaterThan(0)
+        return
+      }
+      // Annas Zug lief von selbst durch – Ben ist im nächsten Monat wieder dran
+      expect(gameMonth(s)).toBe(month + 1)
+    }
   })
 
-  it('spult ohne Anlass gemeinsam vorwärts', () => {
-    const { state, months } = fastForward(duo(), 3)
-    expect(months).toBeGreaterThan(0)
-    expect(gameMonth(state)).toBe(1 + months)
+  it('eine Sabotage beendet das Vorspulen des Opfers', () => {
+    let s = annaSkips()
+    if (currentPlayer(s).id !== 'p2') throw new Error('Ben sollte am Zug sein')
+    s = applyAction(s, { type: 'sabotage', targetId: 'p1', kind: 'geruecht' })
+    s = advance(applyAction(s, { type: 'endTurn' }))
+    expect(currentPlayer(s).id).toBe('p1')
+    expect(s.players[0].autoSkip).toBeNull()
+    expect(importantHints(s).some((h) => h.text.includes('Sabotage'))).toBe(true)
+  })
+
+  it('Computergegner spulen nicht vor', () => {
+    const s = newGame({ seed: 1, players: [{ name: 'KI', regionId: 'mosel', ai: 'tradition' }, { name: 'Anna', regionId: 'mosel' }] })
+    expect(() => applyAction(s, { type: 'autoSkip' })).toThrow()
   })
 })

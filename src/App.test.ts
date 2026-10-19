@@ -139,10 +139,18 @@ describe('Bedienung', () => {
     expect(target.textContent).toContain('Zug beenden')
   })
 
-  it('Hot-Seat: Vorspulen geht auch zu mehreren', () => {
+  it('Hot-Seat: Jeder spult für sich – die anderen spielen normal weiter', () => {
     twoHumans()
     click('Vorspulen')
-    expect(summary()?.querySelector('h2')!.textContent).toMatch(/Jetzt: /)
+    // Spieler 1 spult vor, Spieler 2 ist ganz normal dran
+    expect(summary()?.textContent).toContain('Spieler 2 ist am Zug')
+    click('Los geht')
+    expect(target.textContent).toContain('Spieler 1 spult vor')
+    click('Zug beenden')
+    // Entweder lief der Zug von Spieler 1 durch (Spieler 2 ist im Februar wieder dran) oder sein Vorspulen ist vorbei
+    const text = summary()?.textContent ?? target.textContent!
+    if (text.includes('Spieler 1 ist am Zug')) expect(text).toContain('Die Arbeit ruft')
+    else expect(target.textContent).toContain('Februar · Jahr 1')
   })
 
   it('Pflanzenschutz lässt sich umstellen', () => {
