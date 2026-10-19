@@ -116,16 +116,33 @@ describe('Bedienung', () => {
     expect(target.textContent).toContain('Erfolge')
   })
 
-  it('Hot-Seat zeigt bei mehreren Menschen den Übergabebildschirm', () => {
+  /** Zweiter Platz am Tisch wird ebenfalls von einem Menschen gespielt */
+  function twoHumans() {
     const kind = target.querySelectorAll<HTMLSelectElement>('select[aria-label="Gesteuert von"]')[1]
     kind.value = 'human'
     kind.dispatchEvent(new Event('change', { bubbles: true })) // wie im Browser – Svelte delegiert Events
     flushSync()
     click('Spiel starten')
+  }
+
+  const summary = () => target.querySelector('[aria-labelledby="skip-title"]')
+
+  it('Hot-Seat zeigt beim Spielerwechsel die Übersicht', () => {
+    twoHumans()
     click('Zug beenden')
-    expect(target.textContent).toContain('ist am Zug')
+    expect(summary()?.textContent).toContain('Spielerwechsel')
+    expect(summary()?.textContent).toContain('Spieler 2 ist am Zug')
+    expect(summary()?.textContent).toContain('Die Arbeit ruft')
     click('Los geht')
+    expect(summary()).toBeNull()
+    expect(target.textContent).toContain('Spieler 2')
     expect(target.textContent).toContain('Zug beenden')
+  })
+
+  it('Hot-Seat: Vorspulen geht auch zu mehreren', () => {
+    twoHumans()
+    click('Vorspulen')
+    expect(summary()?.querySelector('h2')!.textContent).toMatch(/Jetzt: /)
   })
 
   it('Pflanzenschutz lässt sich umstellen', () => {

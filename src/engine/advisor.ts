@@ -28,7 +28,10 @@ export function monthHints(state: GameState, player: Player): Hint[] {
 
   if (player.money < 0) add('betrieb', `Konto im Minus – Kredit aufnehmen oder Wein verkaufen.`)
   if (player.monthsInsolvent > 0) add('betrieb', 'Insolvenzgefahr: Es ist kein Kreditrahmen mehr frei!')
-  if (player.decision) add('hof', `Entscheidung gefragt: ${player.decision.title} – bis Monatsende.`)
+  if (player.decision) {
+    const nextMonth = (player.decision.deadline ?? 0) > gameMonth(state)
+    add('hof', `Entscheidung gefragt: ${player.decision.title} – bis ${nextMonth ? 'Ende nächsten Monats' : 'Monatsende'}.`)
+  }
   const deliverable = player.orders.filter((o) => eligibleBottles(player, o) >= o.bottles)
   if (deliverable.length > 0) {
     add('auftraege', `📦 ${deliverable.length} Auftrag/Aufträge können jetzt geliefert werden.`)
@@ -118,18 +121,19 @@ export interface FastForwardResult {
 }
 
 /**
- * Beendet Monate, bis eine wichtige Entscheidung ansteht, das Spiel endet oder `maxMonths` vergangen sind.
- * Nur sinnvoll mit genau einem Menschen am Tisch – die KI zieht wie gewohnt mit.
+ * Beendet Züge, bis ein Mensch etwas Wichtiges zu tun hat, das Spiel endet oder `maxMonths` vergangen sind.
+ * Mit mehreren Menschen am Tisch laufen auch deren ruhige Züge durch: Angehalten wird bei dem, der zuerst
+ * gefragt ist – etwa weil er sabotiert wurde und reagieren kann. Die KI zieht wie gewohnt mit.
  */
 export function fastForward(state: GameState, maxMonths = 12): FastForwardResult {
+  const start = gameMonth(state)
   let s = state
-  let months = 0
   let reasons: Hint[] = []
-  while (months < maxMonths && !s.winnerId && !s.finished && activeHumans(s).length === 1) {
+  while (gameMonth(s) - start < maxMonths && !s.winnerId && !s.finished && activeHumans(s).length > 0) {
     s = runAiTurns(applyAction(s, { type: 'endTurn' }))
-    months++
+    if (s.winnerId || s.finished || activeHumans(s).length === 0) break
     reasons = monthHints(s, currentPlayer(s)).filter((h) => h.important)
     if (reasons.length > 0) break
   }
-  return { state: s, months, reasons }
+  return { state: s, months: gameMonth(s) - start, reasons }
 }

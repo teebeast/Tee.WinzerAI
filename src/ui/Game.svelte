@@ -2,6 +2,7 @@
   import { tick } from 'svelte'
   import { fastForward, monthHints, type Hint } from '../engine/advisor'
   import { awaitingLot } from '../engine/auction'
+  import { gameMonth } from '../engine/bio'
   import { activeHumans, runAiTurns } from '../engine/ai'
   import { qualityInfo } from '../engine/data/quality'
   import { exportEligible } from '../engine/exports'
@@ -11,7 +12,7 @@
   import { loadChallengeBest, recordChallengeResult } from '../save'
   import AuctionLive from './AuctionLive.svelte'
   import LexiconDialog from './LexiconDialog.svelte'
-  import SkipSummary from './SkipSummary.svelte'
+  import TurnSummary, { type Summary } from './TurnSummary.svelte'
   import { PAGES, type Page } from './pages'
   import CellarPage from './pages/CellarPage.svelte'
   import EstatePage from './pages/EstatePage.svelte'
@@ -44,8 +45,6 @@
   })
 
   let error = $state('')
-  /** Bei Hot-Seat wird der Bildschirm verdeckt, bis der nächste Spieler bereit ist. */
-  let handover = $state(false)
   let lexiconOpen = $state(false)
   let muted = $state(isMuted())
   let challengeMessage = $state('')
@@ -90,10 +89,7 @@
 
   function commit(next: GameState, endedTurn: boolean) {
     error = ''
-    if (endedTurn && hotSeat && currentPlayer(next).id !== player.id) {
-      handover = true
-      go('hof')
-    }
+    if (endedTurn && hotSeat && currentPlayer(next).id !== player.id) go('hof')
     if (next.finished && next.challenge && !game.finished) {
       const me = next.players.find((p) => p.ai === null)!
       const best = loadChallengeBest(next.challenge)
@@ -107,28 +103,65 @@
 
   function run(action: Action) {
     try {
+      const before = player
+      if (action.type === 'endTurn') markSeen(game, before.id)
       // Nach einem Zug ziehen die Computergegner, bis wieder ein Mensch dran ist.
       const next = action.type === 'endTurn' ? runAiTurns(applyAction(game, action)) : applyAction(game, action)
       commit(next, action.type === 'endTurn')
+      // Mehrere Menschen am Gerät: Die Übersicht verdeckt den Wechsel und zeigt dem Nächsten, was ansteht
+      if (action.type === 'endTurn' && hotSeat && currentPlayer(next).id !== before.id && !isOver(next)) {
+        showSummary(next, before.id, 0, importantHints(next), false)
+      }
     } catch (e) {
       showError(e)
     }
   }
 
-  /** Zusammenfassung nach dem Vorspulen – sonst gehen Ereignisse unter, wenn man nicht auf dem Hof steht */
-  let skipSummary = $state<{ months: number; entries: LogEntry[]; reasons: Hint[]; over: boolean } | null>(null)
-  /** Meldungen, die in der Zusammenfassung erscheinen: Ereignisse sowie Versteigerung */
+  /** Übersicht nach dem Vorspulen und beim Spielerwechsel – sonst gehen Ereignisse unter, wenn man nicht auf dem Hof steht */
+  let summary = $state<Summary | null>(null)
+  /** Meldungen, die in der Übersicht erscheinen: Ereignisse sowie Versteigerung */
   const isNews = (e: LogEntry) => e.tone !== undefined || e.text.startsWith('📣') || e.text.startsWith('🔨')
+  const timeOf = (e: { year: number; month: number }) => e.year * 12 + e.month
+  const logKey = (e: LogEntry) => `${timeOf(e)}|${e.playerId}|${e.text}`
+  const isOver = (s: GameState) => !!s.winnerId || s.finished || activeHumans(s).length === 0
+  const importantHints = (s: GameState) => monthHints(s, currentPlayer(s)).filter((h) => h.important)
+
+  /** Was jeder Mensch zuletzt gesehen hat: ab welchem Monat und welche Meldungen dieses Monats er schon kennt */
+  const seen = new Map<string, { from: number; keys: Set<string> }>()
+
+  function markSeen(state: GameState, playerId: string) {
+    const from = timeOf(state)
+    seen.set(playerId, { from, keys: new Set(state.log.filter((e) => timeOf(e) === from).map(logKey)) })
+  }
+
+  /** Neuigkeiten für einen Spieler seit seinem letzten Zug */
+  function newsSince(state: GameState, playerId: string): LogEntry[] {
+    const mark = seen.get(playerId) ?? { from: timeOf(state) - 1, keys: new Set<string>() }
+    return state.log.filter(
+      (e) => (e.playerId === null || e.playerId === playerId) && isNews(e) && timeOf(e) >= mark.from && !mark.keys.has(logKey(e)),
+    )
+  }
+
+  function showSummary(state: GameState, previousId: string, months: number, reasons: Hint[], skipped: boolean) {
+    const now = currentPlayer(state)
+    summary = {
+      playerName: now.name,
+      changed: hotSeat && now.id !== previousId,
+      months,
+      reasons,
+      entries: newsSince(state, now.id),
+      over: isOver(state),
+      skipped,
+    }
+  }
 
   function skipAhead() {
     try {
-      const start = game.year * 12 + game.month
+      const before = player
+      markSeen(game, before.id)
       const { state, months, reasons } = fastForward(game)
-      const entries = state.log.filter(
-        (e) => e.year * 12 + e.month >= start && (e.playerId === null || e.playerId === player.id) && isNews(e),
-      )
       commit(state, true)
-      skipSummary = { months, entries, reasons, over: !!state.winnerId || state.finished }
+      showSummary(state, before.id, months, reasons, true)
     } catch (e) {
       showError(e)
     }
@@ -153,27 +186,20 @@
 
 <LexiconDialog bind:open={lexiconOpen} />
 
-{#if skipSummary}
-  <SkipSummary
+{#if summary}
+  <TurnSummary
     {game}
-    {...skipSummary}
-    onClose={() => (skipSummary = null)}
+    {summary}
+    onClose={() => (summary = null)}
     onGoto={(area) => {
-      skipSummary = null
+      summary = null
       go(area)
     }}
   />
-{:else if liveLot && !handover}
+{:else if liveLot}
   <AuctionLive {game} lot={liveLot} {run} />
 {/if}
 
-{#if handover}
-  <div class="card handover">
-    <p class="muted">{MONTH_NAMES[game.month - 1]}, Jahr {game.year}</p>
-    <h2>{player.name} ist am Zug</h2>
-    <button class="primary" onclick={() => (handover = false)}>Los geht's</button>
-  </div>
-{:else}
   <header class="topbar">
     <div class="title">
       <strong>
@@ -239,7 +265,7 @@
       <aside class="offer decision" role="alert" aria-label="Entscheidung">
         <span class="offer-text">
           <strong>{decision.title}</strong>
-          <span class="small">{decision.text} <em>Gilt bis Monatsende.</em></span>
+          <span class="small">{decision.text} <em>Gilt bis {(decision.deadline ?? 0) > gameMonth(game) ? 'Ende nächsten Monats' : 'Monatsende'}.</em></span>
         </span>
         <span class="choices">
           {#each decision.options as choice, i (i)}
@@ -301,22 +327,21 @@
       ← <span class="wide-only">Hauptmenü</span>
     </button>
     <div class="row">
-      {#if !hotSeat}
-        <button
-          disabled={over}
-          onclick={skipAhead}
-          aria-label="Vorspulen"
-          title="Monate beenden, bis eine wichtige Entscheidung ansteht (höchstens ein Jahr)"
-        >
-          ⏩ <span class="wide-only">Vorspulen</span>
-        </button>
-      {/if}
+      <button
+        disabled={over}
+        onclick={skipAhead}
+        aria-label="Vorspulen"
+        title={hotSeat
+          ? 'Züge beenden, bis jemand am Tisch etwas Wichtiges zu tun hat (höchstens ein Jahr) – die anderen warten so lange'
+          : 'Monate beenden, bis eine wichtige Entscheidung ansteht (höchstens ein Jahr)'}
+      >
+        ⏩ <span class="wide-only">Vorspulen</span>
+      </button>
       <button class="primary" disabled={over} onclick={() => run({ type: 'endTurn' })}>
         {hotSeat ? 'Zug beenden' : 'Monat beenden'} →
       </button>
     </div>
   </footer>
-{/if}
 
 <style>
   .topbar,
@@ -486,11 +511,6 @@
       top: 2px;
       right: 4px;
     }
-  }
-  .handover {
-    max-width: 420px;
-    margin: 20vh auto 0;
-    text-align: center;
   }
   .banner,
   .error {

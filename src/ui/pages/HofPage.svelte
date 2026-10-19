@@ -39,6 +39,7 @@
   })
 
   function effectText(effect: Effect): { text: string; good: boolean } {
+    if (effect.kind === 'guard') return { text: 'Schutz vor Sabotage', good: true }
     if (effect.kind === 'quality') return { text: `${effect.value > 0 ? '+' : ''}${effect.value} Güte`, good: effect.value > 0 }
     const percent = Math.round((effect.value - 1) * 100)
     const sign = percent > 0 ? '+' : '−'

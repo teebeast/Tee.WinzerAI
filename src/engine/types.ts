@@ -201,7 +201,8 @@ export interface AuctionState {
   lots: AuctionLot[]
 }
 
-export type EffectKind = 'demand' | 'price' | 'costs' | 'quality'
+/** guard: Nachtwache gegen Sabotage (ohne Faktor) */
+export type EffectKind = 'demand' | 'price' | 'costs' | 'quality' | 'guard'
 
 /** Eine Möglichkeit bei einem Entscheidungsereignis */
 export interface DecisionOption {
@@ -223,6 +224,8 @@ export interface Decision {
   fallback: number
   /** Ausgewürfelte Werte (Mengen, Preise), die beim Auflösen gebraucht werden */
   params: Record<string, number>
+  /** Letzter Spielmonat für die Antwort (fortlaufend gezählt); ohne Angabe nur der laufende Monat */
+  deadline?: number
 }
 
 /** Befristete Folge eines Ereignisses */

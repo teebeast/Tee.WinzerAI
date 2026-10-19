@@ -352,6 +352,11 @@ Solange gepanschter Wein im Betrieb lagert, kontrolliert die Weinaufsicht zusät
 
 Das Entdeckungsrisiko liegt bei 30 %. Wer erwischt wird, zahlt 25.000 € Strafe, verliert −30 Bekanntheit, und die Sabotage misslingt. Das Ganze ist öffentlich. Panschen und Sabotage teilen sich das Limit von einer Intrige pro Monat. Weinberg-Sabotage wirkt nur bis zur nächsten Lese.
 
+**Reaktion des Opfers** (nur Menschen; Computergegner merken sich Sabotage über ihr Verhältnis): Jede Sabotage gegen einen Menschen löst die Entscheidung „🕵️ Sabotage!“ aus. Sie gilt bis Ende des Folgemonats, damit das Opfer auch dann reagieren kann, wenn der Täter erst nach ihm am Zug war; eine offene Entscheidung wird dafür mit ihrer vorsichtigen Wahl abgeschlossen.
+- Täter unbekannt: **Detektei** (4.000 €, 60 %: Täter zahlt 25.000 € Strafe, −30 Bekanntheit und Schadensersatz – 8.000 € bei Gerüchten, 15.000 € beim Weinberg), **Nachtwache** oder **Hinnehmen**.
+- Täter erwischt: **Klage auf Entschädigung** (2.000 €, 80 %: die Hälfte des Schadensersatzes), **Nachtwache** oder **großmütig verzeihen** (+2 Bekanntheit).
+- **Nachtwache:** 3.000 €, 12 Monate; Saboteure werden dann zu 90 % erwischt.
+
 ## 14. Finanzen
 
 - **Laufende Kosten pro Monat:** 2.500 € je Vollzeitkraft, eine je 10 ha, mindestens eine, dazwischen anteilig (11 ha = 1,1 Kräfte). Kellermeister je nach Talent und Fähigkeiten 3.500–6.100 €, Vinothek 1.000 €, Pflanzenschutz siehe §12.
@@ -396,9 +401,9 @@ Ab M5 kommen hinzu:
 - **Hauptbildschirm (Dashboard)** mit Monat/Jahr, Wetter samt Prognose, Kontostand, Punkten und Rangliste
 - **Weinberg-Karte:** Parzellen als Kacheln zeigen Sorte, Alter, Reife und Gesundheit
 - **Aufgabenliste** „Diesen Monat“: Der Ratgeber (`advisor.ts`) zeigt, was ansteht, etwa Lese, Pflanzzeit, abfüllbereiter Wein, Prüfung, Prämierung, Versteigerung, Exportanfrage, Eiswein-Entscheidung oder ein Minus auf dem Konto.
-- **Vorspulen** (nur mit einem Menschen am Tisch): Monate laufen durch, bis eine wichtige Entscheidung ansteht, höchstens ein Jahr. Die KI zieht wie gewohnt mit. Danach zeigt ein Overlay den erreichten Monat, die wichtigen Hinweise, die den Halt ausgelöst haben (mit Sprung zur passenden Seite), und die Ereignisse unterwegs.
+- **Vorspulen:** Züge laufen durch, bis ein Mensch am Tisch eine wichtige Aufgabe hat, höchstens ein Jahr. Mit mehreren Menschen laufen auch deren ruhige Züge mit – die anderen warten, bis das Vorspulen abgelaufen ist; angehalten wird bei dem, der zuerst gefragt ist, etwa nach einer Sabotage. Die KI zieht wie gewohnt mit. Danach zeigt die Übersicht den erreichten Monat, unter „Die Arbeit ruft“ die wichtigen Hinweise (mit Sprung zur passenden Seite) und die Ereignisse unterwegs.
 - **Keller** als Liste der Chargen (Stufe, Güte, Menge, Reife), **Verkauf** und **Finanzen**
-- **Hot-Seat:** Übergabebildschirm „Spieler 2 ist dran“, damit niemand die Werte der anderen sieht. Er erscheint nur, wenn mehrere Menschen mitspielen; KI-Züge laufen ohne Unterbrechung.
+- **Hot-Seat:** Beim Wechsel zu einem anderen Menschen erscheint dieselbe Übersicht wie nach dem Vorspulen – mit hervorgehobenem „🔄 Spielerwechsel: Spieler 2 ist am Zug“, seinen anstehenden Aufgaben und den Neuigkeiten seit seinem letzten Zug. Der Hintergrund ist dabei stark abgedunkelt, damit niemand die Werte des Vorgängers sieht. KI-Züge laufen ohne Unterbrechung.
 - **Rangliste** mit Punkten, Bekanntheit, Rebfläche und Vermögen aller Weingüter
 - **Lexikon:** 26 Fachbegriffe von Oechsle bis Vinothek, mit Suche. Dazu Tooltips an den Aktionsknöpfen, die erklären, warum etwas gerade nicht geht.
 - **Grafik:** eine kleine SVG-Landschaft im Kopf, die mit Jahreszeit und Wetter wechselt (kahle Reben im Winter, Trauben ab Juli, Herbstlaub). Im Weinberg zeigen Reifebalken das Mostgewicht.
