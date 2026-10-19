@@ -10,6 +10,10 @@ export const LEXICON: LexiconEntry[] = [
     text: 'Jeder Qualitätswein muss vor dem Verkauf eine amtliche Prüfung bestehen. Erst dann darf er seine Stufe (Kabinett, Spätlese …) tragen. Im Spiel bringt die Prüfung Siegpunkte und ist Voraussetzung für Großhandel, Export und Prämierungen. Ab 5 hl (665 Flaschen).',
   },
   {
+    term: 'Sabotage',
+    text: 'Gerüchte streuen oder Rebstöcke beschädigen – riskant, denn in 30 % der Fälle fliegt der Täter auf. Wer sabotiert wird, kann reagieren: eine Detektei auf den unbekannten Täter ansetzen, einen erwischten Täter auf Entschädigung verklagen oder eine Nachtwache anheuern, die Saboteure ein Jahr lang fast immer erwischt.',
+  },
+  {
     term: 'Auslese',
     text: 'Prädikatswein aus vollreifen Trauben ab 90 °Oechsle. Oft von Hand selektiert, edel und gesucht.',
   },

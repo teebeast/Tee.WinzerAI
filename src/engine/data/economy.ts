@@ -281,6 +281,16 @@ export const SABOTAGE_VINEYARD_LOSS = 0.3
 export const SABOTAGE_DETECTION = 0.3
 export const SABOTAGE_FINE = 25_000
 export const SABOTAGE_REPUTATION = 30
+/** Reaktion des Opfers: geschätzter Schaden, den eine Klage oder die Entlarvung als Schadensersatz einbringt */
+export const SABOTAGE_DAMAGES: Record<SabotageKind, number> = { geruecht: 8_000, weinberg: 15_000 }
+export const DETECTIVE_COST = 4_000
+export const DETECTIVE_SUCCESS = 0.6
+export const LAWSUIT_COST = 2_000
+export const LAWSUIT_SUCCESS = 0.8
+/** Nachtwache: Monate Schutz; Saboteure werden dann fast immer erwischt */
+export const GUARD_COST = 3_000
+export const GUARD_MONTHS = 12
+export const GUARD_DETECTION = 0.9
 
 /** Export: Anfragen ab dieser Bekanntheit, Bonus bei vollständiger Erfüllung, Strafe je fehlender Flasche */
 export const EXPORT_MIN_REPUTATION = 20

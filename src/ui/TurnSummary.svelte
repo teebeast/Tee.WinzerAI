@@ -1,57 +1,69 @@
+<script lang="ts" module>
+  import type { Hint } from '../engine/advisor'
+  import type { LogEntry } from '../engine/types'
+
+  export interface Summary {
+    /** Wer jetzt am Zug ist */
+    playerName: string
+    /** Ein anderer Mensch ist jetzt dran – wird hervorgehoben */
+    changed: boolean
+    /** Vorgespulte Monate (0 beim einfachen Spielerwechsel) */
+    months: number
+    /** Wichtige Hinweise, die jetzt anstehen – beim Vorspulen der Grund für den Halt */
+    reasons: Hint[]
+    /** Neuigkeiten seit dem letzten Zug dieses Spielers */
+    entries: LogEntry[]
+    over: boolean
+    /** Nach dem Vorspulen (sonst Spielerwechsel nach „Zug beenden“) */
+    skipped: boolean
+  }
+</script>
+
 <script lang="ts">
-  import type { Hint, HintArea } from '../engine/advisor'
+  import type { HintArea } from '../engine/advisor'
   import { MONTH_NAMES } from '../engine/game'
-  import type { GameState, LogEntry } from '../engine/types'
+  import type { GameState } from '../engine/types'
   import { pageInfo } from './pages'
 
-  /** Nach dem Vorspulen: Wo steht man jetzt, warum wurde angehalten und was ist unterwegs passiert? */
-  let {
-    game,
-    months,
-    entries,
-    reasons,
-    over,
-    onClose,
-    onGoto,
-  }: {
-    game: GameState
-    months: number
-    entries: LogEntry[]
-    reasons: Hint[]
-    over: boolean
-    onClose: () => void
-    onGoto: (area: HintArea) => void
-  } = $props()
+  /** Übersicht nach dem Vorspulen und beim Spielerwechsel: Wer ist dran, was steht an, was ist passiert? */
+  let { game, summary, onClose, onGoto }: { game: GameState; summary: Summary; onClose: () => void; onGoto: (area: HintArea) => void } =
+    $props()
 
   /** Nach Monat gruppiert, älteste zuerst */
   const groups = $derived.by(() => {
     const map = new Map<string, LogEntry[]>()
-    for (const entry of entries) {
+    for (const entry of summary.entries) {
       const key = `${MONTH_NAMES[entry.month - 1]}, Jahr ${entry.year}`
       if (!map.has(key)) map.set(key, [])
       map.get(key)!.push(entry)
     }
     return [...map.entries()]
   })
-  const good = $derived(entries.filter((e) => e.tone === 'good').length)
-  const bad = $derived(entries.filter((e) => e.tone === 'bad').length)
+  const good = $derived(summary.entries.filter((e) => e.tone === 'good').length)
+  const bad = $derived(summary.entries.filter((e) => e.tone === 'bad').length)
 </script>
 
-<div class="backdrop">
+<div class="backdrop" class:handover={summary.changed}>
   <div class="card summary" role="dialog" aria-modal="true" aria-labelledby="skip-title">
+    {#if summary.changed}
+      <div class="player-change">
+        <span class="muted small">🔄 Spielerwechsel</span>
+        <strong>{summary.playerName} ist am Zug</strong>
+      </div>
+    {/if}
     <header>
-      <h2 id="skip-title">⏩ Jetzt: {MONTH_NAMES[game.month - 1]}, Jahr {game.year}</h2>
+      <h2 id="skip-title">{summary.skipped ? '⏩ ' : ''}Jetzt: {MONTH_NAMES[game.month - 1]}, Jahr {game.year}</h2>
       <span class="muted small">
-        {entries.length === 0
-          ? 'Unterwegs keine besonderen Vorkommnisse.'
-          : `Unterwegs: ${good} gute und ${bad} schlechte Nachrichten`}
+        {summary.entries.length === 0
+          ? `${summary.changed ? 'Seit deinem letzten Zug' : 'Unterwegs'} keine besonderen Vorkommnisse.`
+          : `${summary.changed ? 'Seit deinem letzten Zug' : 'Unterwegs'}: ${good} gute und ${bad} schlechte Nachrichten`}
       </span>
     </header>
     <section class="reasons" aria-label="Die Arbeit ruft">
       <h3>Die Arbeit ruft</h3>
-      {#if reasons.length > 0}
+      {#if summary.reasons.length > 0}
         <ul>
-          {#each reasons as reason, i (i)}
+          {#each summary.reasons as reason, i (i)}
             <li class="reason">
               <span>{reason.text}</span>
               {#if reason.area !== 'hof'}
@@ -60,10 +72,12 @@
             </li>
           {/each}
         </ul>
-      {:else if over}
+      {:else if summary.over}
         <p class="muted small">Das Spiel ist zu Ende.</p>
+      {:else if summary.skipped}
+        <p class="muted small">Höchstens {summary.months} Monate am Stück – es stand keine wichtige Entscheidung an.</p>
       {:else}
-        <p class="muted small">Höchstens {months} Monate am Stück – es stand keine wichtige Entscheidung an.</p>
+        <p class="muted small">Nichts Dringendes – Zeit für Marketing oder Investitionen.</p>
       {/if}
     </section>
     <div class="list">
@@ -79,7 +93,7 @@
         </ul>
       {/each}
     </div>
-    <button class="primary" onclick={onClose}>Weiter</button>
+    <button class="primary" onclick={onClose}>{summary.changed ? "Los geht's" : 'Weiter'}</button>
   </div>
 </div>
 
@@ -93,6 +107,29 @@
     padding: 16px;
     background: rgb(20 10 14 / 0.7);
     backdrop-filter: blur(2px);
+  }
+  /* Beim Spielerwechsel bleibt verdeckt, was der Vorgänger zuletzt angesehen hat */
+  .backdrop.handover {
+    background: rgb(20 10 14 / 0.92);
+    backdrop-filter: blur(8px);
+  }
+  .player-change {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: -4px -4px 0;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--wine);
+    color: #fff;
+    text-align: center;
+  }
+  .player-change .muted {
+    color: rgb(255 255 255 / 0.8);
+  }
+  .player-change strong {
+    font-size: 1.35rem;
   }
   .summary {
     width: min(620px, 100%);

@@ -3,7 +3,18 @@
  * oder Preis. Die Entscheidung gilt bis Monatsende, danach greift die vorsichtige Wahl. Computergegner entscheiden sofort.
  */
 import { parcelValue, SITE_LABELS } from './auction'
-import { TANK_COST_PER_HL } from './data/economy'
+import {
+  DETECTIVE_COST,
+  DETECTIVE_SUCCESS,
+  GUARD_COST,
+  GUARD_MONTHS,
+  LAWSUIT_COST,
+  LAWSUIT_SUCCESS,
+  SABOTAGE_DAMAGES,
+  SABOTAGE_FINE,
+  SABOTAGE_REPUTATION,
+  TANK_COST_PER_HL,
+} from './data/economy'
 import { GRAPES, type GrapeId } from './data/grapes'
 import { REGIONS } from './data/regions'
 import {
@@ -22,7 +33,7 @@ import {
 import { availableCredit, bottlePrice, bulkPricePerHl } from './market'
 import { adjustRelation, relation } from './rivals'
 import { changeReputation, removeBatchVolume, usedTankHl, wineLabel } from './rules'
-import type { Decision, DecisionOption, GameState, Player } from './types'
+import type { Decision, DecisionOption, GameState, Player, SabotageKind } from './types'
 import { addLog, formatEuro, newId } from './util'
 
 type Outcome = { text: string; tone?: 'good' | 'bad' }
@@ -430,6 +441,102 @@ export const DECISION_EVENTS: DecisionDef[] = [
   },
 ]
 
+// ── Reaktion auf Sabotage ──────────────────────────────────────────────────────
+// Kein Zufallsereignis: Sie wird angeboten, wenn ein Mensch sabotiert wurde, und gilt bis Ende des Folgemonats –
+// so kann das Opfer reagieren, auch wenn der Täter erst nach ihm am Zug war.
+
+const SABOTAGE_KINDS: SabotageKind[] = ['geruecht', 'weinberg']
+const culpritOf = (ctx: EventContext, d: Decision) => ctx.state.players[d.params.culprit]
+
+/** Täter zahlt dem Opfer Schadensersatz (notfalls ins Minus) */
+function compensate(ctx: EventContext, culprit: Player, amount: number) {
+  culprit.money -= amount
+  ctx.player.money += amount
+}
+
+function guard(ctx: EventContext): string {
+  addEffect(ctx.player, 'guard', 1, GUARD_MONTHS, 'Nachtwache im Weinberg')
+  return `Eine Nachtwache bewacht ab sofort ${GUARD_MONTHS} Monate lang dein Gut (${pay(ctx, GUARD_COST)}).`
+}
+
+const SABOTAGE_REACTION: DecisionDef = {
+  id: 'sabotage-reaktion',
+  rarity: 'selten',
+  when: () => false,
+  offer: () => {
+    throw new Error('wird über offerSabotageReaction angeboten')
+  },
+  ai: (_c, d) => d.fallback,
+  resolve: (c, choice, d) => {
+    const culprit = culpritOf(c, d)
+    const damage = d.params.damage
+    const known = d.params.detected === 1
+    if (choice === 1) return { text: guard(c), tone: 'good' }
+    if (choice === 2) {
+      if (!known) return { text: 'Du nimmst die Sabotage hin und blickst nach vorn.' }
+      return { text: `Du verzichtest großmütig auf eine Klage gegen ${culprit.name} (${reputation(c, 2)}).`, tone: 'good' }
+    }
+    if (known) {
+      const paid = pay(c, LAWSUIT_COST)
+      if (c.roll() >= LAWSUIT_SUCCESS) return { text: `Die Klage gegen ${culprit.name} wird abgewiesen (${paid} Anwaltskosten).`, tone: 'bad' }
+      compensate(c, culprit, damage)
+      addLog(c.state, culprit.id, `${c.player.name} hat dich wegen der Sabotage verklagt: ${formatEuro(damage)} Entschädigung.`, 'bad')
+      return { text: `Das Gericht gibt dir recht: ${culprit.name} zahlt ${formatEuro(damage)} Entschädigung (${paid} Anwaltskosten).`, tone: 'good' }
+    }
+    const paid = pay(c, DETECTIVE_COST)
+    if (c.roll() >= DETECTIVE_SUCCESS) return { text: `Die Detektei findet keine verwertbare Spur (${paid}).`, tone: 'bad' }
+    culprit.money -= SABOTAGE_FINE
+    changeReputation(culprit, -SABOTAGE_REPUTATION)
+    compensate(c, culprit, damage)
+    adjustRelation(culprit, c.player.id, -20)
+    addLog(
+      c.state,
+      null,
+      `Eine Detektei überführt ${culprit.name} der Sabotage gegen ${c.player.name}: ${formatEuro(SABOTAGE_FINE)} Strafe und ${formatEuro(damage)} Schadensersatz.`,
+    )
+    return { text: `Die Detektei hat ${culprit.name} überführt – du erhältst ${formatEuro(damage)} Schadensersatz (${paid}).`, tone: 'good' }
+  },
+}
+
+/**
+ * Ein Mensch wurde sabotiert: Er darf reagieren – Detektei oder Klage, Nachtwache oder hinnehmen.
+ * Eine noch offene Entscheidung wird dafür mit ihrer vorsichtigen Wahl abgeschlossen.
+ */
+export function offerSabotageReaction(state: GameState, victim: Player, culprit: Player, kind: SabotageKind, detected: boolean) {
+  if (victim.ai !== null) return // Computergegner merken sich so etwas über ihr Verhältnis
+  if (victim.decision) expireDecision(state, victim, true)
+  // Erwischte Täter haben nichts angerichtet – eine Klage bringt dann nur eine Entschädigung für den Ärger
+  const damage = detected ? SABOTAGE_DAMAGES[kind] / 2 : SABOTAGE_DAMAGES[kind]
+  const what = kind === 'geruecht' ? 'Üble Gerüchte über dein Weingut' : 'Beschädigte Rebstöcke'
+  const options = detected
+    ? [
+        option('Auf Entschädigung klagen', `${Math.round(LAWSUIT_SUCCESS * 100)} % Aussicht auf ${formatEuro(damage)} von ${culprit.name}`, LAWSUIT_COST),
+        option('Nachtwache anheuern', `${GUARD_MONTHS} Monate Schutz: Saboteure werden fast sicher erwischt`, GUARD_COST),
+        option('Großmütig verzeihen', '+2 Bekanntheit'),
+      ]
+    : [
+        option(
+          'Detektei beauftragen',
+          `${Math.round(DETECTIVE_SUCCESS * 100)} % Aussicht, den Täter zu überführen: Strafe für ihn, ${formatEuro(damage)} Schadensersatz für dich`,
+          DETECTIVE_COST,
+        ),
+        option('Nachtwache anheuern', `${GUARD_MONTHS} Monate Schutz: Saboteure werden fast sicher erwischt`, GUARD_COST),
+        option('Hinnehmen', 'Es passiert nichts.'),
+      ]
+  victim.decision = {
+    eventId: SABOTAGE_REACTION.id,
+    title: '🕵️ Sabotage!',
+    text: detected
+      ? `${culprit.name} wollte dir schaden (${kind === 'geruecht' ? 'Gerüchte' : 'Rebstöcke beschädigen'}), wurde aber erwischt und muss Strafe zahlen. Willst du nachlegen?`
+      : `${what} – jemand will dir schaden. Wer, ist unklar. Wie reagierst du?`,
+    options,
+    fallback: 2,
+    params: { culprit: state.players.indexOf(culprit), kind: SABOTAGE_KINDS.indexOf(kind), damage, detected: detected ? 1 : 0 },
+    deadline: (state.year - 1) * 12 + state.month + 1,
+  }
+  addLog(state, victim.id, 'Entscheidung gefragt: Reaktion auf die Sabotage.', 'bad')
+}
+
 /** Entscheidungen, die gerade angeboten werden können */
 export function possibleDecisions(state: GameState, player: Player): DecisionDef[] {
   if (player.decision) return []
@@ -452,7 +559,7 @@ export function offerDecision(state: GameState, player: Player, def: DecisionDef
 }
 
 function applyDecision(state: GameState, player: Player, decision: Decision, choice: number) {
-  const def = DECISION_EVENTS.find((d) => d.id === decision.eventId)!
+  const def = [...DECISION_EVENTS, SABOTAGE_REACTION].find((d) => d.id === decision.eventId)!
   const outcome = def.resolve(context(state, player), choice, decision)
   addLog(state, player.id, outcome.text, outcome.tone)
 }
@@ -472,10 +579,11 @@ export function decide(state: GameState, player: Player, choice: number) {
   applyDecision(state, player, decision, choice)
 }
 
-/** Monatsende: Ohne Antwort gilt die vorsichtige Wahl. */
-export function expireDecision(state: GameState, player: Player) {
+/** Monatsende: Ohne Antwort gilt die vorsichtige Wahl. `force` schließt auch eine Entscheidung mit späterer Frist ab. */
+export function expireDecision(state: GameState, player: Player, force = false) {
   const decision = player.decision
   if (!decision) return
+  if (!force && decision.deadline !== undefined && decision.deadline > (state.year - 1) * 12 + state.month) return
   player.decision = null
   addLog(state, player.id, `Keine Antwort auf „${decision.title.replace(/^\S+\s/, '')}“ – es gilt: ${decision.options[decision.fallback].label}.`)
   applyDecision(state, player, decision, decision.fallback)

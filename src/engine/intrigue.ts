@@ -2,6 +2,7 @@ import {
   ADULTERATION,
   CONTROL_CHANCE,
   SABOTAGE,
+  GUARD_DETECTION,
   SABOTAGE_DETECTION,
   SABOTAGE_FINE,
   SABOTAGE_REPUTATION,
@@ -17,6 +18,7 @@ import type { AdulterationMethod, BottleLot, GameState, Player, SabotageKind } f
 import { addLog, formatEuro } from './util'
 import { loseBio } from './bio'
 import { adjustRegionRelations, adjustRelation } from './rivals'
+import { offerSabotageReaction } from './decisions'
 
 export function validateAdulterate(player: Player, batchId: string, method: AdulterationMethod): string | null {
   const batch = player.cellar.find((b) => b.id === batchId)
@@ -99,11 +101,18 @@ export function sabotage(state: GameState, player: Player, targetId: string, kin
   player.money -= SABOTAGE[kind].cost
   player.intrigueThisMonth = true
 
-  if (nextFloat(state.rng) < SABOTAGE_DETECTION) {
+  // Eine Nachtwache erwischt Saboteure fast immer
+  const guarded = target.effects.some((e) => e.kind === 'guard')
+  if (nextFloat(state.rng) < (guarded ? GUARD_DETECTION : SABOTAGE_DETECTION)) {
     player.money -= SABOTAGE_FINE
     changeReputation(player, -SABOTAGE_REPUTATION)
-    addLog(state, null, `${player.name} wurde bei einer Sabotage gegen ${target.name} erwischt: ${formatEuro(SABOTAGE_FINE)} Strafe.`)
+    addLog(
+      state,
+      null,
+      `${player.name} wurde ${guarded ? 'von der Nachtwache ' : ''}bei einer Sabotage gegen ${target.name} erwischt: ${formatEuro(SABOTAGE_FINE)} Strafe.`,
+    )
     adjustRelation(target, player.id, -60) // das vergisst so schnell niemand
+    offerSabotageReaction(state, target, player, kind, true)
     return
   }
   if (kind === 'geruecht') {
@@ -116,4 +125,5 @@ export function sabotage(state: GameState, player: Player, targetId: string, kin
     addLog(state, target.id, `Unbekannte haben Rebstöcke in ${plot.name} beschädigt (−${SABOTAGE_VINEYARD_LOSS * 100} % Ertrag).`)
   }
   addLog(state, player.id, `${SABOTAGE[kind].name} gegen ${target.name} ist unbemerkt geglückt.`)
+  offerSabotageReaction(state, target, player, kind, false)
 }
