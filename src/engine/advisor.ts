@@ -6,6 +6,7 @@ import { HARVEST_MONTHS, PLANT_MONTHS, currentPlayer, plotAgeFactor } from './ru
 import { frostCandlesCost, frostChance, insurancePremium, isInsured } from './defense'
 import { BIO_LABELS, gameMonth, monthsUntilEligible, nextBioLabel } from './bio'
 import { eligibleBottles } from './orders'
+import { competitionEntryProblem } from './market'
 import { federweisserCapacity, isFreshMust } from './products'
 import { INSURANCE_MONTHS } from './data/economy'
 import type { GameState, Player } from './types'
@@ -106,7 +107,8 @@ export function monthHints(state: GameState, player: Player): Hint[] {
   if (unregistered.length > 0) add('keller', `${unregistered.length} Posten warten auf die amtliche Prüfung.`)
 
   const competition = Object.values(COMPETITIONS).find((c) => c.month === state.month)
-  if (competition && player.bottles.some((l) => l.registered && !l.awards.some((a) => a.competition === competition.id))) {
+  // Nur wenn sich wirklich noch ein Wein anmelden lässt – nicht, wenn alle Plätze belegt oder die Weine schon dabei sind
+  if (competition && player.bottles.some((l) => competitionEntryProblem(player, l, competition) === null)) {
     add('keller', `${competition.name} am Monatsende – Weine anmelden?`)
   }
   if (hints.length === 0) add('betrieb', `Ruhiger ${MONTH_NAMES[state.month - 1]} – Zeit für Marketing oder Investitionen.`, false)
