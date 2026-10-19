@@ -113,6 +113,8 @@ export function monthHints(state: GameState, player: Player): Hint[] {
 export interface FastForwardResult {
   state: GameState
   months: number
+  /** Die wichtigen Hinweise, die das Vorspulen angehalten haben; leer, wenn die Höchstdauer oder das Spielende erreicht ist */
+  reasons: Hint[]
 }
 
 /**
@@ -122,10 +124,12 @@ export interface FastForwardResult {
 export function fastForward(state: GameState, maxMonths = 12): FastForwardResult {
   let s = state
   let months = 0
+  let reasons: Hint[] = []
   while (months < maxMonths && !s.winnerId && !s.finished && activeHumans(s).length === 1) {
     s = runAiTurns(applyAction(s, { type: 'endTurn' }))
     months++
-    if (monthHints(s, currentPlayer(s)).some((h) => h.important)) break
+    reasons = monthHints(s, currentPlayer(s)).filter((h) => h.important)
+    if (reasons.length > 0) break
   }
-  return { state: s, months }
+  return { state: s, months, reasons }
 }

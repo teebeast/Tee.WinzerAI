@@ -1,9 +1,27 @@
 <script lang="ts">
+  import type { Hint, HintArea } from '../engine/advisor'
   import { MONTH_NAMES } from '../engine/game'
-  import type { LogEntry } from '../engine/types'
+  import type { GameState, LogEntry } from '../engine/types'
+  import { pageInfo } from './pages'
 
-  /** Nach dem Vorspulen: Was ist in den übersprungenen Monaten passiert? */
-  let { months, entries, onClose }: { months: number; entries: LogEntry[]; onClose: () => void } = $props()
+  /** Nach dem Vorspulen: Wo steht man jetzt, warum wurde angehalten und was ist unterwegs passiert? */
+  let {
+    game,
+    months,
+    entries,
+    reasons,
+    over,
+    onClose,
+    onGoto,
+  }: {
+    game: GameState
+    months: number
+    entries: LogEntry[]
+    reasons: Hint[]
+    over: boolean
+    onClose: () => void
+    onGoto: (area: HintArea) => void
+  } = $props()
 
   /** Nach Monat gruppiert, älteste zuerst */
   const groups = $derived.by(() => {
@@ -22,11 +40,32 @@
 <div class="backdrop">
   <div class="card summary" role="dialog" aria-modal="true" aria-labelledby="skip-title">
     <header>
-      <h2 id="skip-title">⏩ {months} {months === 1 ? 'Monat' : 'Monate'} vorgespult</h2>
+      <h2 id="skip-title">⏩ Jetzt: {MONTH_NAMES[game.month - 1]}, Jahr {game.year}</h2>
       <span class="muted small">
-        {entries.length === 0 ? 'Keine besonderen Vorkommnisse.' : `${good} gute und ${bad} schlechte Nachrichten`}
+        {entries.length === 0
+          ? 'Unterwegs keine besonderen Vorkommnisse.'
+          : `Unterwegs: ${good} gute und ${bad} schlechte Nachrichten`}
       </span>
     </header>
+    <section class="reasons" aria-label="Die Arbeit ruft">
+      <h3>Die Arbeit ruft</h3>
+      {#if reasons.length > 0}
+        <ul>
+          {#each reasons as reason, i (i)}
+            <li class="reason">
+              <span>{reason.text}</span>
+              {#if reason.area !== 'hof'}
+                <button class="go" onclick={() => onGoto(reason.area)}>{pageInfo(reason.area).label} →</button>
+              {/if}
+            </li>
+          {/each}
+        </ul>
+      {:else if over}
+        <p class="muted small">Das Spiel ist zu Ende.</p>
+      {:else}
+        <p class="muted small">Höchstens {months} Monate am Stück – es stand keine wichtige Entscheidung an.</p>
+      {/if}
+    </section>
     <div class="list">
       {#each groups as [month, items] (month)}
         <h3>{month}</h3>
@@ -107,5 +146,22 @@
   }
   .primary {
     align-self: flex-end;
+  }
+  .reasons h3 {
+    margin-top: 0;
+  }
+  .reasons p {
+    margin: 0;
+  }
+  li.reason {
+    align-items: center;
+    justify-content: space-between;
+    border-left-color: var(--wine);
+    background: color-mix(in srgb, var(--wine) 7%, transparent);
+  }
+  .go {
+    flex-shrink: 0;
+    padding: 2px 10px;
+    font-size: 0.85rem;
   }
 </style>

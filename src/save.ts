@@ -153,17 +153,26 @@ export function newSaveId(date = new Date()): string {
   )
 }
 
-export function writeSave(id: string, state: GameState): Promise<void> {
+/** Sichert den Stand; false, wenn das nicht gelang (Speicher voll, Storage gesperrt, Dateifehler). */
+export function writeSave(id: string, state: GameState): Promise<boolean> {
   const content = JSON.stringify({ format: 1, savedAt: Date.now(), state } satisfies SaveFile)
   if (isDesktop()) {
-    return enqueue(() => invoke<void>('write_save', { id, content })).catch((e) => console.error('Speichern fehlgeschlagen', e))
+    return enqueue(() => invoke<void>('write_save', { id, content })).then(
+      () => true,
+      (e) => {
+        console.error('Speichern fehlgeschlagen', e)
+        return false
+      },
+    )
   }
   try {
     localStorage.setItem(SLOT_PREFIX + id, content)
-  } catch {
-    // Speichern ist Komfort – ohne Storage läuft das Spiel trotzdem.
+    return Promise.resolve(true)
+  } catch (e) {
+    // Das Spiel läuft weiter, die Oberfläche weist aber darauf hin.
+    console.error('Speichern fehlgeschlagen', e)
+    return Promise.resolve(false)
   }
-  return Promise.resolve()
 }
 
 export function deleteSave(id: string): Promise<void> {
@@ -210,6 +219,20 @@ export async function listSaves(): Promise<SaveSlot[]> {
     .map((f) => parse(f.id, f.content))
     .filter((s): s is SaveSlot => s !== null)
     .sort((a, b) => b.savedAt - a.savedAt)
+}
+
+/**
+ * Im Browser: dauerhaften Speicher anfordern, damit der Browser die Spielstände bei Platzmangel nicht räumt.
+ * Liefert, ob die Ablage dauerhaft ist; null in der Desktop-App oder wenn der Browser das nicht kennt.
+ * Gegen „Websitedaten beim Schließen löschen“ hilft das nicht – das ist eine Browsereinstellung.
+ */
+export async function requestPersistentStorage(): Promise<boolean | null> {
+  if (isDesktop() || typeof navigator === 'undefined' || !navigator.storage?.persist) return null
+  try {
+    return (await navigator.storage.persisted()) || (await navigator.storage.persist())
+  } catch {
+    return null
+  }
 }
 
 /** Ablageort für die Anzeige; null im Browser */

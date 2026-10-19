@@ -6,7 +6,7 @@
   import { REGIONS, type RegionId } from '../engine/data/regions'
   import { MONTH_NAMES, NO_POINT_TARGET } from '../engine/game'
   import type { AiProfileId, Difficulty, NewGameOptions } from '../engine/types'
-  import { deleteSave, listSaves, loadChallengeBest, saveLocation, type SaveSlot } from '../save'
+  import { deleteSave, listSaves, loadChallengeBest, requestPersistentStorage, saveLocation, type SaveSlot } from '../save'
   import LicensesDialog from './LicensesDialog.svelte'
   import RegionProfile from './RegionProfile.svelte'
   import SeasonScene from './SeasonScene.svelte'
@@ -55,10 +55,13 @@
   let licensesOpen = $state(false)
   let saves = $state.raw<SaveSlot[] | null>(null)
   let saveDir = $state<string | null>(null)
+  /** Nur im Browser: hat der Browser dauerhaften Speicher zugesagt? */
+  let persistent = $state<boolean | null>(null)
 
   onMount(() => {
     listSaves().then((list) => (saves = list))
     saveLocation().then((path) => (saveDir = path))
+    requestPersistentStorage().then((granted) => (persistent = granted))
   })
 
   function addSeat() {
@@ -187,6 +190,12 @@
       {/if}
       {#if saveDir}
         <p class="muted small location" title={saveDir}>Ablage: {saveDir}</p>
+      {:else if persistent !== null}
+        <p class="muted small location">
+          Ablage: im Speicher dieses Browsers{persistent ? ' (dauerhaft zugesagt)' : ''}. Löscht der Browser beim Schließen die
+          Websitedaten (Cookies und Websitedaten), sind die Spielstände danach weg – für diese Seite eine Ausnahme eintragen
+          oder die Desktop-App nutzen.
+        </p>
       {/if}
     </section>
   </div>

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { flushSync, mount, unmount } from 'svelte'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
 import { dailyChallenge, todayKey } from './engine/challenge'
 import { newGame } from './engine/game'
@@ -54,6 +54,24 @@ describe('Bedienung', () => {
     ;(found as HTMLButtonElement).click()
     flushSync()
   }
+
+  it('warnt, wenn der Browser nicht speichern kann', async () => {
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('voll', 'QuotaExceededError')
+    })
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      click('Spiel starten')
+      await settle()
+      expect(target.querySelector('.save-failed')?.textContent).toContain('nicht gespeichert')
+      setItem.mockRestore()
+      click('Monat beenden')
+      await settle()
+      expect(target.querySelector('.save-failed')).toBeNull()
+    } finally {
+      vi.restoreAllMocks()
+    }
+  })
 
   it('startet ein Spiel und beendet Monate per Klick', () => {
     click('Spiel starten')
@@ -136,7 +154,10 @@ describe('Bedienung', () => {
     click('Vorspulen')
     expect(target.textContent).not.toContain('Januar · Jahr 1')
     // Zusammenfassung der übersprungenen Monate als Overlay
-    expect(target.querySelector('[aria-labelledby="skip-title"]')?.textContent).toMatch(/Monate? vorgespult/)
+    const summary = target.querySelector('[aria-labelledby="skip-title"]')!
+    expect(summary.querySelector('h2')!.textContent).toMatch(/Jetzt: \p{L}+, Jahr \d/u)
+    // Der Grund für den Halt steht dabei – hier die Pflanzzeit auf der Brache oder eine andere wichtige Aufgabe
+    expect(summary.querySelectorAll('li.reason').length).toBeGreaterThan(0)
     click('Weiter')
     expect(target.querySelector('[aria-labelledby="skip-title"]')).toBeNull()
     expect(target.textContent).toContain('Jetzt zu tun')

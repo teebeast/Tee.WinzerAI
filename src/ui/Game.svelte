@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte'
-  import { fastForward, monthHints } from '../engine/advisor'
+  import { fastForward, monthHints, type Hint } from '../engine/advisor'
   import { awaitingLot } from '../engine/auction'
   import { activeHumans, runAiTurns } from '../engine/ai'
   import { qualityInfo } from '../engine/data/quality'
@@ -116,19 +116,19 @@
   }
 
   /** Zusammenfassung nach dem Vorspulen – sonst gehen Ereignisse unter, wenn man nicht auf dem Hof steht */
-  let skipSummary = $state<{ months: number; entries: LogEntry[] } | null>(null)
+  let skipSummary = $state<{ months: number; entries: LogEntry[]; reasons: Hint[]; over: boolean } | null>(null)
   /** Meldungen, die in der Zusammenfassung erscheinen: Ereignisse sowie Versteigerung */
   const isNews = (e: LogEntry) => e.tone !== undefined || e.text.startsWith('📣') || e.text.startsWith('🔨')
 
   function skipAhead() {
     try {
       const start = game.year * 12 + game.month
-      const { state, months } = fastForward(game)
+      const { state, months, reasons } = fastForward(game)
       const entries = state.log.filter(
         (e) => e.year * 12 + e.month >= start && (e.playerId === null || e.playerId === player.id) && isNews(e),
       )
       commit(state, true)
-      skipSummary = { months, entries }
+      skipSummary = { months, entries, reasons, over: !!state.winnerId || state.finished }
     } catch (e) {
       showError(e)
     }
@@ -154,7 +154,15 @@
 <LexiconDialog bind:open={lexiconOpen} />
 
 {#if skipSummary}
-  <SkipSummary months={skipSummary.months} entries={skipSummary.entries} onClose={() => (skipSummary = null)} />
+  <SkipSummary
+    {game}
+    {...skipSummary}
+    onClose={() => (skipSummary = null)}
+    onGoto={(area) => {
+      skipSummary = null
+      go(area)
+    }}
+  />
 {:else if liveLot && !handover}
   <AuctionLive {game} lot={liveLot} {run} />
 {/if}
