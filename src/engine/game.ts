@@ -78,6 +78,7 @@ import {
   monthlyCosts,
   monthlyDemand,
   registrationPoints,
+  competitionEntryProblem,
   upcomingCompetition,
   wholesalePrice,
 } from './market'
@@ -352,15 +353,7 @@ export function validateAction(state: GameState, action: Action): string | null 
     case 'enterCompetition': {
       const lot = findLot(action.lotId)
       if (!lot) return 'Unbekannter Flaschenposten.'
-      const competition = upcomingCompetition(state.month)
-      if (!lot.registered) return 'Nur amtlich geprüfte Weine dürfen teilnehmen.'
-      if (player.competitionEntries.includes(lot.id)) return 'Der Wein ist bereits angemeldet.'
-      if (lot.awards.some((a) => a.competition === competition.id)) return 'Der Wein wurde hier schon prämiert.'
-      if (player.competitionEntries.length >= competition.maxEntries) {
-        return `Höchstens ${competition.maxEntries} Weine pro Prämierung.`
-      }
-      if (player.money < competition.fee) return 'Nicht genug Geld für die Teilnahmegebühr.'
-      return null
+      return competitionEntryProblem(player, lot, upcomingCompetition(state.month))
     }
     case 'marketing': {
       const info = MARKETING[action.kind]

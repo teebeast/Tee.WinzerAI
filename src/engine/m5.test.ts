@@ -193,6 +193,29 @@ describe('Ratgeber und Vorspulen', () => {
     expect(hints.some((h) => h.important && h.text.startsWith('Lesezeit'))).toBe(true)
   })
 
+  it('erinnert an die Prämierung nur, solange sich noch ein Wein anmelden lässt', () => {
+    const s = start()
+    s.month = 6
+    const player = currentPlayer(s)
+    const lot = (id: string): BottleLot => ({
+      id, grape: 'riesling', vintage: 1, oechsle: 85, level: 'kabinett', quality: 80, adulterated: null,
+      bottles: 1000, sparkling: false, monthsUntilReady: 0, registered: true, awards: [],
+    })
+    player.bottles.push(lot('a'), lot('b'))
+    const reminded = () => monthHints(s, player).some((h) => h.text.includes('Weinprämierung'))
+    expect(reminded()).toBe(true)
+    // Ein Wein angemeldet, der zweite ginge noch
+    player.competitionEntries = ['a']
+    expect(reminded()).toBe(true)
+    // Beide angemeldet: nichts mehr zu tun
+    player.competitionEntries = ['a', 'b']
+    expect(reminded()).toBe(false)
+    // Alle Plätze belegt (höchstens drei Weine), auch wenn noch ein weiterer im Lager liegt
+    player.bottles.push(lot('c'), lot('d'))
+    player.competitionEntries = ['a', 'b', 'c']
+    expect(reminded()).toBe(false)
+  })
+
   it('spult über ruhige Monate bis zur nächsten Entscheidung', () => {
     const may = endMonths(start(), 4)
     const state = advance(applyAction(may, { type: 'autoSkip' }))

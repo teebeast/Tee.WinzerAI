@@ -144,6 +144,16 @@ export function upcomingCompetition(month: number): CompetitionInfo {
   return COMPETITIONS.bund
 }
 
+/** Warum ein Wein nicht zur Prämierung angemeldet werden kann – null, wenn es geht */
+export function competitionEntryProblem(player: Player, lot: BottleLot, competition: CompetitionInfo): string | null {
+  if (!lot.registered) return 'Nur amtlich geprüfte Weine dürfen teilnehmen.'
+  if (player.competitionEntries.includes(lot.id)) return 'Der Wein ist bereits angemeldet.'
+  if (lot.awards.some((a) => a.competition === competition.id)) return 'Der Wein wurde hier schon prämiert.'
+  if (player.competitionEntries.length >= competition.maxEntries) return `Höchstens ${competition.maxEntries} Weine pro Prämierung.`
+  if (player.money < competition.fee) return 'Nicht genug Geld für die Teilnahmegebühr.'
+  return null
+}
+
 export function competitionBaseScore(lot: BottleLot): number {
   return lot.quality + (lot.sparkling ? SEKT_COMPETITION_BONUS : qualityInfo(lot.level).competitionBonus)
 }
