@@ -194,10 +194,12 @@ describe('Ratgeber und Vorspulen', () => {
 
   it('spult über ruhige Monate bis zur nächsten Entscheidung', () => {
     const may = endMonths(start(), 4)
-    const { state, months } = fastForward(may)
+    const { state, months, reasons } = fastForward(may)
     expect(months).toBeGreaterThan(1)
     expect(state.month).toBeGreaterThan(may.month)
-    expect(monthHints(state, currentPlayer(state)).some((h) => h.important)).toBe(true)
+    // Die Gründe für den Halt sind genau die wichtigen Hinweise des erreichten Monats
+    expect(reasons.length).toBeGreaterThan(0)
+    expect(reasons).toEqual(monthHints(state, currentPlayer(state)).filter((h) => h.important))
   })
 
   it('spult höchstens ein Jahr', () => {

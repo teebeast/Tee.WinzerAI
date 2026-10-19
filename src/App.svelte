@@ -9,15 +9,21 @@
   // $state.raw: Der Spielstand wird nie verändert, sondern bei jedem Zug ersetzt. Ein tief reaktiver
   // Proxy wäre überflüssig – und die Engine könnte ihn nicht per structuredClone kopieren.
   let current = $state.raw<{ saveId: string; game: GameState } | null>(null)
+  /** Letzte Sicherung gescheitert – sonst merkt man erst beim nächsten Start, dass der Stand fehlt */
+  let saveFailed = $state(false)
+
+  function save(id: string, game: GameState) {
+    writeSave(id, game).then((ok) => (saveFailed = !ok))
+  }
 
   function update(next: GameState) {
     current = { saveId: current!.saveId, game: next }
-    writeSave(current.saveId, next)
+    save(current.saveId, next)
   }
 
   function start(options: NewGameOptions) {
     current = { saveId: newSaveId(), game: runAiTurns(newGame(options)) }
-    writeSave(current.saveId, current.game)
+    save(current.saveId, current.game)
   }
 
   function load(slot: SaveSlot) {
@@ -31,8 +37,32 @@
   }
 </script>
 
+{#if current && saveFailed}
+  <div class="save-failed" role="alert">
+    ⚠️ Der Spielstand konnte nicht gespeichert werden – vermutlich ist der Speicher des Browsers voll oder gesperrt.
+    Lösche alte Spielstände im Hauptmenü oder prüfe die Browsereinstellungen.
+  </div>
+{/if}
+
 {#if current}
   <Game game={current.game} onChange={update} onQuit={quit} />
 {:else}
   <NewGame onStart={start} onLoad={load} />
 {/if}
+
+<style>
+  .save-failed {
+    position: fixed;
+    left: 50%;
+    bottom: 12px;
+    z-index: 30;
+    transform: translateX(-50%);
+    width: min(640px, calc(100% - 24px));
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 0.92rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  }
+</style>

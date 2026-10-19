@@ -396,7 +396,7 @@ Ab M5 kommen hinzu:
 - **Hauptbildschirm (Dashboard)** mit Monat/Jahr, Wetter samt Prognose, Kontostand, Punkten und Rangliste
 - **Weinberg-Karte:** Parzellen als Kacheln zeigen Sorte, Alter, Reife und Gesundheit
 - **Aufgabenliste** „Diesen Monat“: Der Ratgeber (`advisor.ts`) zeigt, was ansteht, etwa Lese, Pflanzzeit, abfüllbereiter Wein, Prüfung, Prämierung, Versteigerung, Exportanfrage, Eiswein-Entscheidung oder ein Minus auf dem Konto.
-- **Vorspulen** (nur mit einem Menschen am Tisch): Monate laufen durch, bis eine wichtige Entscheidung ansteht, höchstens ein Jahr. Die KI zieht wie gewohnt mit.
+- **Vorspulen** (nur mit einem Menschen am Tisch): Monate laufen durch, bis eine wichtige Entscheidung ansteht, höchstens ein Jahr. Die KI zieht wie gewohnt mit. Danach zeigt ein Overlay den erreichten Monat, die wichtigen Hinweise, die den Halt ausgelöst haben (mit Sprung zur passenden Seite), und die Ereignisse unterwegs.
 - **Keller** als Liste der Chargen (Stufe, Güte, Menge, Reife), **Verkauf** und **Finanzen**
 - **Hot-Seat:** Übergabebildschirm „Spieler 2 ist dran“, damit niemand die Werte der anderen sieht. Er erscheint nur, wenn mehrere Menschen mitspielen; KI-Züge laufen ohne Unterbrechung.
 - **Rangliste** mit Punkten, Bekanntheit, Rebfläche und Vermögen aller Weingüter
@@ -412,7 +412,7 @@ Ab M5 kommen hinzu:
   - `GameState` ist ein serialisierbares Objekt
   - `applyAction(state, action)` ist eine reine Funktion; der Monatsabschluss läuft über die Aktion `endTurn` des letzten Spielers
   - Ein Seed-basierter Zufallsgenerator (Zustand liegt im GameState)
-- **Spielstände:** Jede Partie hat einen eigenen Speicherplatz und wird nach jedem Zug gesichert; im Hauptmenü lassen sich alle Spielstände laden oder löschen. Die Desktop-App legt sie als JSON-Dateien unter `%LOCALAPPDATA%WinzerAISpielstände` ab (Tauri-Befehle in `src-tauri/src/lib.rs`), im Browser liegen sie in localStorage. Die Bestwerte der Tages-Challenge bleiben in localStorage.
+- **Spielstände:** Jede Partie hat einen eigenen Speicherplatz und wird nach jedem Zug gesichert; im Hauptmenü lassen sich alle Spielstände laden oder löschen. Die Desktop-App legt sie als JSON-Dateien unter `%LOCALAPPDATA%WinzerAISpielstände` ab (Tauri-Befehle in `src-tauri/src/lib.rs`), im Browser liegen sie in localStorage. Dort fordert das Hauptmenü dauerhaften Speicher an (`navigator.storage.persist()`), damit der Browser die Stände bei Platzmangel nicht räumt, und weist darauf hin, dass die Browsereinstellung „Cookies und Websitedaten beim Schließen löschen“ sie trotzdem entfernt (auch auf localhost). Scheitert eine Sicherung, blendet das Spiel eine Warnung ein. Die Bestwerte der Tages-Challenge bleiben in localStorage.
 - **Tests** mit Vitest: Engine-Tests, ein serverseitiger Render-Smoke-Test und Klick-Tests im simulierten Browser (jsdom).
 - **Balancing-Report:** `npm run sim` lässt jedes KI-Profil in jedem der 13 Gebiete 3 Partien über 15 Jahre spielen und danach alle Profile gegeneinander antreten (`scripts/balance.sim.ts`).
 - **Später:** asynchroner Online-Mehrspieler. Durch die reine Engine reicht es, Aktionen zu synchronisieren.
