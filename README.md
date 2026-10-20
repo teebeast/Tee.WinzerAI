@@ -15,6 +15,18 @@ npm run sim      # Balancing-Report: KI-Profile über 15 Jahre
 npm run build    # Produktions-Build inkl. Service Worker
 ```
 
+## Pipeline und Releases
+
+- **CI** (`.github/workflows/ci.yml`): Bei jedem Push auf `main` und jedem Pull Request laufen Typprüfung, Tests und der Web-Build – ohne Installer.
+- **Release** (`.github/workflows/release.yml`): Ein Versions-Tag ist die Freigabe. Die Version steht nur in `package.json` (Tauri liest sie von dort):
+
+  ```sh
+  npm version minor        # oder patch/major: hebt die Version (z. B. 0.2.0 → 0.3.0), committet und setzt das Tag v0.3.0
+  git push --follow-tags   # baut die Windows-Installer und legt einen Release-Entwurf an
+  ```
+
+  Der Entwurf enthält je einen Installer für x64 und ARM64 (quer kompiliert auf dem x64-Runner) sowie die Browser-Version als ZIP und wird erst mit „Publish release“ auf GitHub öffentlich. Von Hand gestartet (Actions → Release → Run workflow) entstehen nur Test-Installer als Artefakte. Lokal: `npm run desktop:build` bzw. `npm run desktop:build:arm64`.
+
 ## Lizenzen und Veröffentlichung
 
 - WinzerAI steht unter der [MIT-Lizenz](LICENSE).
