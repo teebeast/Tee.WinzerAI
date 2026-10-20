@@ -1,0 +1,114 @@
+# Freigabe: Ein Versions-Tag (v1.2.3) baut die Windows-Installer (x64 und ARM64) und legt einen Release-Entwurf an.
+#   npm version minor          # hebt die Version in package.json, committet und setzt das Tag v0.2.0
+#   git push --follow-tags     # startet diesen Workflow
+# Der Entwurf wird erst sichtbar, wenn er auf GitHub veröffentlicht wird.
+#
+# Von Hand gestartet (Actions → Release → Run workflow) entstehen nur Test-Installer als Artefakte, kein Release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+
+permissions:
+  contents: write
+
+jobs:
+  # Prüft, legt den Release-Entwurf einmal an (sonst entstünden bei parallelen Builds zwei) und hängt die Browser-Version an
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      release_id: ${{ steps.release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tag passt zur Version in package.json
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME passt nicht zur Version $version in package.json"
+            exit 1
+          fi
+
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+      - name: Release-Entwurf mit Browser-Version anlegen
+        id: release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          (cd dist && zip -qr "../WinzerAI-${GITHUB_REF_NAME}-web.zip" .)
+          gh release create "$GITHUB_REF_NAME" "WinzerAI-${GITHUB_REF_NAME}-web.zip" \
+            --draft \
+            --title "WinzerAI $GITHUB_REF_NAME" \
+            --notes "Windows-Installer herunterladen und ausführen: *_x64-setup.exe für die meisten PCs, *_arm64-setup.exe für Windows auf ARM (z. B. Snapdragon). Die Spielstände liegen unter %LOCALAPPDATA%\\WinzerAI\\Spielstände. Die Browser-Version (web.zip) lässt sich auf jedem Webserver ausliefern."
+          echo "id=$(gh release view "$GITHUB_REF_NAME" --json databaseId --jq .databaseId)" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            arch: x64
+          # ARM64 wird auf dem x64-Runner quer kompiliert
+          - target: aarch64-pc-windows-msvc
+            arch: arm64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Installer bauen und an den Release-Entwurf hängen
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          releaseId: ${{ needs.prepare.outputs.release_id }}
+          args: --target ${{ matrix.target }}
+
+      - name: Test-Installer bauen
+        if: github.event_name == 'workflow_dispatch'
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: --target ${{ matrix.target }}
+
+      - name: Test-Installer als Artefakt ablegen
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinzerAI-setup-${{ matrix.arch }}
+          path: src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
+          if-no-files-found: error

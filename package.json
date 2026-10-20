@@ -2,7 +2,7 @@
   "name": "tee-winzer",
   "private": true,
   "license": "MIT",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,8 @@
     "licenses": "node scripts/licenses.mjs",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
-    "desktop:build": "tauri build --target x86_64-pc-windows-msvc"
+    "desktop:build": "tauri build --target x86_64-pc-windows-msvc",
+    "desktop:build:arm64": "tauri build --target aarch64-pc-windows-msvc"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
