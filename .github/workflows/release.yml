@@ -2,6 +2,7 @@
 #   npm version minor          # hebt die Version in package.json, committet und setzt das Tag v0.2.0
 #   git push --follow-tags     # startet diesen Workflow
 # Der Entwurf wird erst sichtbar, wenn er auf GitHub veröffentlicht wird.
+# Gibt es zum Tag schon einen Release (z. B. auf GitHub von Hand angelegt), landen die Dateien dort.
 #
 # Von Hand gestartet (Actions → Release → Run workflow) entstehen nur Test-Installer als Artefakte, kein Release.
 name: Release
@@ -46,17 +47,24 @@ jobs:
       - run: npm test
       - run: npm run build
 
-      - name: Release-Entwurf mit Browser-Version anlegen
+      - name: Release mit Browser-Version anlegen oder weiterverwenden
         id: release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          (cd dist && zip -qr "../WinzerAI-${GITHUB_REF_NAME}-web.zip" .)
-          gh release create "$GITHUB_REF_NAME" "WinzerAI-${GITHUB_REF_NAME}-web.zip" \
-            --draft \
-            --title "WinzerAI $GITHUB_REF_NAME" \
-            --notes "Windows-Installer herunterladen und ausführen: *_x64-setup.exe für die meisten PCs, *_arm64-setup.exe für Windows auf ARM (z. B. Snapdragon). Die Spielstände liegen unter %LOCALAPPDATA%\\WinzerAI\\Spielstände. Die Browser-Version (web.zip) lässt sich auf jedem Webserver ausliefern."
+          zip_name="WinzerAI-${GITHUB_REF_NAME}-web.zip"
+          (cd dist && zip -qr "../$zip_name" .)
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            # z. B. auf GitHub von Hand angelegt – die Dateien kommen dorthin
+            echo "Release zu $GITHUB_REF_NAME existiert bereits – Dateien werden dort angehängt."
+            gh release upload "$GITHUB_REF_NAME" "$zip_name" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$zip_name" \
+              --draft \
+              --title "WinzerAI $GITHUB_REF_NAME" \
+              --notes "Windows-Installer herunterladen und ausführen: *_x64-setup.exe für die meisten PCs, *_arm64-setup.exe für Windows auf ARM (z. B. Snapdragon). Die Spielstände liegen unter %LOCALAPPDATA%\\WinzerAI\\Spielstände. Die Browser-Version (web.zip) lässt sich auf jedem Webserver ausliefern."
+          fi
           echo "id=$(gh release view "$GITHUB_REF_NAME" --json databaseId --jq .databaseId)" >> "$GITHUB_OUTPUT"
 
   windows:
