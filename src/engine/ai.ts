@@ -389,6 +389,8 @@ export function playAiTurn(state: GameState): GameState {
     act({ type: 'repay', amount: Math.min(me().loan, Math.floor(surplus / 1000) * 1000) })
   }
 
+  // Steht mitten im Zug ein Sieger fest (Weinprüfung, gelieferter Auftrag), gibt es kein Zugende mehr
+  if (s.winnerId || s.finished) return s
   return applyAction(s, { type: 'endTurn' })
 
   /**

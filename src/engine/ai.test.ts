@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AI_PROFILES, runAiTurns } from './ai'
+import { AI_PROFILES, playAiTurn, runAiTurns } from './ai'
 import { REGIONS, type RegionId } from './data/regions'
 import { applyAction, currentPlayer, newGame } from './game'
 import { simulate } from './simulate'
@@ -63,5 +63,43 @@ describe('KI-Gegner', () => {
   it('spielt ohne Menschen nicht von allein weiter', () => {
     const state = newGame({ seed: 1, players: [{ name: 'KI', regionId: 'pfalz', ai: 'bio' }] })
     expect(runAiTurns(state)).toBe(state)
+  })
+
+  it('gewinnt mitten im eigenen Zug durch die Weinprüfung, ohne dass die Partie stehen bleibt', () => {
+    let state = newGame({
+      seed: 5,
+      targetPoints: 100,
+      players: [
+        { name: 'Mensch', regionId: 'pfalz' },
+        { name: 'Rebenhain', regionId: 'pfalz', ai: 'tradition' },
+      ],
+    })
+    state = applyAction(state, { type: 'endTurn' })
+    const ai = currentPlayer(state)
+    expect(ai.ai).not.toBeNull()
+    // Kurz vor dem Ziel, mit einem prüfbaren Wein im Lager: Die Prüfung bringt die fehlenden Punkte
+    ai.points = 99
+    ai.money = 200_000
+    ai.bottles.push({
+      id: 'sieg',
+      grape: 'riesling',
+      vintage: 1,
+      oechsle: 95,
+      level: 'auslese',
+      quality: 85,
+      adulterated: null,
+      bottles: 2000,
+      sparkling: false,
+      monthsUntilReady: 0,
+      registered: false,
+      awards: [],
+    })
+
+    const after = playAiTurn(state)
+
+    expect(after.winnerId).toBe(ai.id)
+    expect(after.players[1].points).toBeGreaterThanOrEqual(100)
+    // Weitere Züge der Computergegner ändern nichts mehr und scheitern nicht
+    expect(runAiTurns(after)).toBe(after)
   })
 })
