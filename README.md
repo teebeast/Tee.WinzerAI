@@ -4,7 +4,7 @@ Rundenbasierte Weingut-Simulation als Browsergame (PWA) und Windows-App, angeleh
 
 ![Der Hof im Juni des ersten Jahres](docs/screenshot.png)
 
-> **Neuauflage auf .NET:** [Tee.Winzer.Net](https://github.com/teebeast/Tee.Winzer.Net) überträgt die Spielregeln 1:1 nach C#. Dazu kommen eine gezeichnete Oberfläche als Windows-App (x64 und ARM64) und erweiterte Regeln. Spielstände dieses Spiels lassen sich dort weiterspielen.
+> **Neuauflage auf .NET:** [Tee.WinzerAI.Net](https://github.com/teebeast/Tee.WinzerAI.Net) überträgt die Spielregeln 1:1 nach C#. Dazu kommen eine gezeichnete Oberfläche als Windows-App (x64 und ARM64) und erweiterte Regeln. Spielstände dieses Spiels lassen sich dort weiterspielen.
 
 Spielregeln, Zahlenwerte und Meilensteine stehen in [docs/spieldesign.md](docs/spieldesign.md).
 
